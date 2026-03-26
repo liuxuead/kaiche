@@ -6,7 +6,14 @@ function initGame() {
     startStopwatch();
     // 初始化数据显示
     updateDataDisplay();
+    // 初始化BOSS
+    initBoss();
 }
+
+// BOSS相关变量
+let boss = null;
+let bossHealth = 100;
+let isTouchingBoss = false;
 
 // 存储触摸位置数据
 const touchData = {
@@ -129,25 +136,29 @@ function recordTouchData(touch) {
     
     // 根据计数决定记录到哪个位置
     if (touchCount === 1) {
-        // 第一次长按，记录到下位置
-        touchData.bottom.x = Math.round(touch.clientX);
-        touchData.bottom.y = Math.round(touch.clientY);
-        touchData.bottom.radius = 50;
-        console.log('记录触摸数据到下位置:', touchData.bottom);
-    } else if (touchCount === 2) {
-        // 第二次长按，记录到中位置
-        touchData.middle.x = Math.round(touch.clientX);
-        touchData.middle.y = Math.round(touch.clientY);
-        touchData.middle.radius = 50;
-        console.log('记录触摸数据到中位置:', touchData.middle);
-    } else if (touchCount === 3) {
-        // 第三次长按，记录到上位置
+        // 第一次长按，记录到上位置
         touchData.top.x = Math.round(touch.clientX);
         touchData.top.y = Math.round(touch.clientY);
         touchData.top.radius = 50;
         console.log('记录触摸数据到上位置:', touchData.top);
-        // 重置计数
-        touchCount = 0;
+    } else if (touchCount === 2) {
+        // 第二次长按，记录到中位置
+        if (touchData.top.x !== 0 || touchData.top.y !== 0) {
+            touchData.middle.x = Math.round(touch.clientX);
+            touchData.middle.y = Math.round(touch.clientY);
+            touchData.middle.radius = 50;
+            console.log('记录触摸数据到中位置:', touchData.middle);
+        }
+    } else if (touchCount === 3) {
+        // 第三次长按，记录到下位置
+        if ((touchData.top.x !== 0 || touchData.top.y !== 0) && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
+            touchData.bottom.x = Math.round(touch.clientX);
+            touchData.bottom.y = Math.round(touch.clientY);
+            touchData.bottom.radius = 50;
+            console.log('记录触摸数据到下位置:', touchData.bottom);
+            // 检查是否所有数据都已记录
+            checkAllDataRecorded();
+        }
     }
     
     updateDataDisplay();
@@ -155,9 +166,36 @@ function recordTouchData(touch) {
 
 // 更新数据显示
 function updateDataDisplay() {
-    document.getElementById('data-bottom').textContent = touchData.bottom.x !== 0 || touchData.bottom.y !== 0 ? '1' : '0';
-    document.getElementById('data-middle').textContent = touchData.middle.x !== 0 || touchData.middle.y !== 0 ? '1' : '0';
-    document.getElementById('data-top').textContent = touchData.top.x !== 0 || touchData.top.y !== 0 ? '1' : '0';
+    if (touchData.top.x !== 0 || touchData.top.y !== 0) {
+        document.getElementById('data-top').textContent = `圆心: (${touchData.top.x}, ${touchData.top.y}), 半径: ${touchData.top.radius}`;
+    } else {
+        document.getElementById('data-top').textContent = '0';
+    }
+    
+    if (touchData.middle.x !== 0 || touchData.middle.y !== 0) {
+        document.getElementById('data-middle').textContent = `圆心: (${touchData.middle.x}, ${touchData.middle.y}), 半径: ${touchData.middle.radius}`;
+    } else {
+        document.getElementById('data-middle').textContent = '0';
+    }
+    
+    if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
+        document.getElementById('data-bottom').textContent = `圆心: (${touchData.bottom.x}, ${touchData.bottom.y}), 半径: ${touchData.bottom.radius}`;
+    } else {
+        document.getElementById('data-bottom').textContent = '0';
+    }
+}
+
+// 检查是否所有数据都已记录
+function checkAllDataRecorded() {
+    if ((touchData.top.x !== 0 || touchData.top.y !== 0) && 
+        (touchData.middle.x !== 0 || touchData.middle.y !== 0) && 
+        (touchData.bottom.x !== 0 || touchData.bottom.y !== 0)) {
+        // 所有数据都已记录，在仪表盘显示数字1
+        const dashboardValue = document.querySelector('.dashboard-value');
+        dashboardValue.textContent = '1';
+        // 重置计数
+        touchCount = 0;
+    }
 }
 
 // 更新触摸信息和显示触摸区域

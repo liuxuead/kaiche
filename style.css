@@ -7,6 +7,7 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
+    overflow: hidden;
 }
 
 .game-container {
@@ -21,6 +22,14 @@ body {
     color: white;
 }
 
+/* 横屏适配 */
+@media screen and (orientation: landscape) {
+    .game-container {
+        width: 100vw;
+        height: 100vh;
+    }
+}
+
 .game-container h1 {
     font-size: 3rem;
     margin-bottom: 2rem;
@@ -32,7 +41,7 @@ body {
 
 .dashboard {
     position: absolute;
-    bottom: 20px;
+    top: 20px;
     left: 20px;
     width: 120px;
     height: 120px;
@@ -50,4 +59,14 @@ body {
     font-weight: bold;
     color: #e74c3c;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.touch-info {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
 }

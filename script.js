@@ -9,29 +9,52 @@ function initGame() {
 function setupTouchListeners() {
     const gameContainer = document.querySelector('.game-container');
     const touchInfo = document.querySelector('.touch-info');
+    const touchArea = document.querySelector('.touch-area');
     
     // 触摸开始事件
     gameContainer.addEventListener('touchstart', (e) => {
-        updateTouchInfo(e.touches[0]);
+        e.preventDefault();
+        updateTouchInfo(e.touches[0], touchArea);
     });
     
     // 触摸移动事件
     gameContainer.addEventListener('touchmove', (e) => {
-        updateTouchInfo(e.touches[0]);
+        e.preventDefault();
+        updateTouchInfo(e.touches[0], touchArea);
     });
     
     // 触摸结束事件
     gameContainer.addEventListener('touchend', () => {
         touchInfo.textContent = '触摸位置: (0, 0)';
+        touchArea.style.opacity = '0';
+    });
+    
+    // 鼠标点击事件（用于桌面测试）
+    gameContainer.addEventListener('mousedown', (e) => {
+        updateTouchInfo(e, touchArea);
+    });
+    
+    gameContainer.addEventListener('mousemove', (e) => {
+        updateTouchInfo(e, touchArea);
+    });
+    
+    gameContainer.addEventListener('mouseup', () => {
+        touchInfo.textContent = '触摸位置: (0, 0)';
+        touchArea.style.opacity = '0';
     });
 }
 
-// 更新触摸信息
-function updateTouchInfo(touch) {
+// 更新触摸信息和显示触摸区域
+function updateTouchInfo(touch, touchArea) {
     const touchInfo = document.querySelector('.touch-info');
     const x = Math.round(touch.clientX);
     const y = Math.round(touch.clientY);
     touchInfo.textContent = `触摸位置: (${x}, ${y})`;
+    
+    // 显示触摸区域
+    touchArea.style.left = `${x}px`;
+    touchArea.style.top = `${y}px`;
+    touchArea.style.opacity = '1';
     
     // 可以在这里添加根据触摸位置执行不同操作的逻辑
     console.log(`触摸位置: (${x}, ${y})`);

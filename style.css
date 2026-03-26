@@ -8,10 +8,15 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     overflow: hidden;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
 }
 
 .game-container {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
     background-color: #3498db;
@@ -20,13 +25,26 @@ body {
     justify-content: center;
     align-items: center;
     color: white;
+    transform-origin: center;
+    transition: transform 0.3s ease;
 }
 
 /* 横屏适配 */
 @media screen and (orientation: landscape) {
     .game-container {
+        transform: rotate(0deg);
         width: 100vw;
         height: 100vh;
+    }
+}
+
+/* 竖屏适配 */
+@media screen and (orientation: portrait) {
+    .game-container {
+        transform: rotate(90deg);
+        width: 100vh;
+        height: 100vw;
+        margin-left: calc((100vw - 100vh) / 2);
     }
 }
 
@@ -69,4 +87,18 @@ body {
     padding: 10px;
     border-radius: 5px;
     font-size: 14px;
+    z-index: 10;
+}
+
+.touch-area {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 5;
 }

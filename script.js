@@ -1,6 +1,68 @@
+// 初始化电量条
+function initBatteryBar() {
+    const batteryBars = document.getElementById('battery-bars');
+    if (!batteryBars) return;
+    
+    batteryBars.innerHTML = '';
+    
+    for (let i = 0; i < BATTERY_BAR_COUNT; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.style.cssText = `
+            flex: 1;
+            height: 70%;
+            margin: 0 2px;
+            background: #555;
+            border-radius: 2px;
+            transition: background 0.1s;
+        `;
+        bar.dataset.index = i;
+        batteryBars.appendChild(bar);
+    }
+}
+
+// 更新电量条显示
+function updateBatteryBar(clientY) {
+    const stats = getStatsAverage();
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
+        return;
+    }
+    
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    
+    const rect = gameContainer.getBoundingClientRect();
+    // 把clientY转换成相对于game-container的坐标
+    const relativeY = clientY - rect.top;
+    
+    // 计算当前Y在统计范围内的位置 (0-1)
+    const totalRange = stats.bottom.y - stats.top.y;
+    if (totalRange <= 0) return;
+    
+    let position = (relativeY - stats.top.y) / totalRange;
+    position = Math.max(0, Math.min(1, position));
+    
+    // 计算应该点亮哪些竖杠
+    const centerIndex = Math.round(position * (BATTERY_BAR_COUNT - 1));
+    const spread = 3; // 向两边扩散的范围
+    
+    const bars = document.querySelectorAll('.battery-bar-item');
+    bars.forEach((bar, i) => {
+        const distance = Math.abs(i - centerIndex);
+        if (distance <= spread) {
+            const intensity = 1 - (distance / (spread + 1));
+            const green = Math.round(255 * intensity);
+            bar.style.background = `rgb(0, ${green}, 0)`;
+        } else {
+            bar.style.background = '#555';
+        }
+    });
+}
+
 // 游戏初始化
 function initGame() {
     console.log('游戏初始化完成');
+    initBatteryBar();
     
     // 上中下按钮事件
     const btnTop = document.getElementById('btn-top');
@@ -50,7 +112,7 @@ function initGame() {
     if (resetRecordBtn) {
         resetRecordBtn.onclick = function() {
             console.log('点击了重置记录按钮');
-            // 只清除当前正在记录的数据，不影响统计数据
+            // 重置所有数据
             touchData.top.x = 0;
             touchData.top.y = 0;
             touchData.middle.x = 0;
@@ -60,13 +122,24 @@ function initGame() {
             touchCount = 0;
             lastBottomX = 0;
             lastBottomY = 0;
+            allTouchData.length = 0; // 清空统计数据
+            statsLocked = false; // 解锁统计
             
             // 清除显示
             clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
             clearDisplayText(textTop, textMiddle, textBottom);
             updateDataDisplay();
+            updateStatsPanel();
+            initBatteryBar(); // 重置电量条
             
-            console.log('当前记录数据已重置，可以重新开始记录');
+            // 恢复电量条边框样式
+            const batteryBar = document.querySelector('.battery-bar');
+            if (batteryBar) {
+                batteryBar.style.boxShadow = 'none';
+                batteryBar.style.border = 'none';
+            }
+            
+            console.log('所有数据已重置，可以重新开始记录');
         };
     }
     
@@ -90,6 +163,10 @@ const allTouchData = [];
 // 记录上一次"下"的数据，用来检测变化
 let lastBottomX = 0;
 let lastBottomY = 0;
+// 统计是否锁定（3次后锁定）
+let statsLocked = false;
+// 电量条竖杠数量
+const BATTERY_BAR_COUNT = 20;
 
 // 触摸计时器
 let touchTimer = null;
@@ -143,6 +220,11 @@ function setupTouchListeners() {
         }
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
+        
+        // 实时更新电量条
+        if (statsLocked) {
+            updateBatteryBar(currentTouch.clientY);
+        }
     });
     
     // 触摸结束事件
@@ -192,6 +274,11 @@ function setupTouchListeners() {
     gameContainer.addEventListener('mousemove', (e) => {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
+        
+        // 实时更新电量条
+        if (statsLocked) {
+            updateBatteryBar(e.clientY);
+        }
     });
     
     gameContainer.addEventListener('mouseup', () => {
@@ -291,8 +378,13 @@ function recordTouchData(touch) {
     updateDataDisplay();
 }
 
-// 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发）
+// 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）
 function saveTouchDataToAll() {
+    // 如果已经锁定，就不再保存
+    if (statsLocked) {
+        return;
+    }
+    
     const currentBottomX = touchData.bottom.x;
     const currentBottomY = touchData.bottom.y;
     const currentBottomHasValue = (currentBottomX !== 0 || currentBottomY !== 0);
@@ -315,6 +407,20 @@ function saveTouchDataToAll() {
         
         // 更新统计面板
         updateStatsPanel();
+        
+        // 检查是否达到3次，锁定统计
+        if (allTouchData.length >= 3) {
+            statsLocked = true;
+            // 电量条边框变亮，表示已锁定
+            const batteryBar = document.querySelector('.battery-bar');
+            if (batteryBar) {
+                batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                batteryBar.style.border = '2px solid #00ff00';
+            }
+            console.log('========================================');
+            console.log('统计已锁定！共记录', allTouchData.length, '次');
+            console.log('========================================');
+        }
     }
     
     // 更新状态

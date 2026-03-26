@@ -6,14 +6,9 @@ function initGame() {
     startStopwatch();
     // 初始化数据显示
     updateDataDisplay();
-    // 初始化BOSS
-    initBoss();
 }
 
-// BOSS相关变量
-let boss = null;
-let bossHealth = 100;
-let isTouchingBoss = false;
+
 
 // 存储触摸位置数据
 const touchData = {
@@ -245,20 +240,60 @@ function updateTouchInfo(touch, touchArea) {
 
 // 设置按钮点击事件
 function setupButtons() {
-    const buttons = document.querySelectorAll('.action-button');
-    const touchArea = document.querySelector('.touch-area');
+    const buttons = document.querySelectorAll('.action-button[data-position]');
+    const clearButton = document.getElementById('clear-btn');
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    const textTop = document.getElementById('text-top');
+    const textMiddle = document.getElementById('text-middle');
+    const textBottom = document.getElementById('text-bottom');
     
     buttons.forEach(button => {
-        button.addEventListener('click', () => {
-            const position = button.dataset.position;
-            showTouchArea(position, touchArea);
-        });
+        const position = button.dataset.position;
+        if (position) {
+            button.addEventListener('click', () => {
+                showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom);
+                updateDisplayText(position, textTop, textMiddle, textBottom);
+            });
+        }
     });
+    
+    // 清除按钮点击事件
+    if (clearButton) {
+        clearButton.addEventListener('click', () => {
+            clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom);
+            clearDisplayText(textTop, textMiddle, textBottom);
+        });
+    }
 }
 
-// 显示对应位置的触摸区域
-function showTouchArea(position, touchArea) {
+// 更新显示文本
+function updateDisplayText(position, textTop, textMiddle, textBottom) {
     const data = touchData[position];
+    const text = data.x !== 0 || data.y !== 0 ? 
+        `圆心: (${data.x}, ${data.y}), 半径: ${data.radius}` : '暂无数据';
+    
+    if (position === 'top') {
+        textTop.textContent = text;
+    } else if (position === 'middle') {
+        textMiddle.textContent = text;
+    } else if (position === 'bottom') {
+        textBottom.textContent = text;
+    }
+}
+
+// 清除显示文本
+function clearDisplayText(textTop, textMiddle, textBottom) {
+    textTop.textContent = '';
+    textMiddle.textContent = '';
+    textBottom.textContent = '';
+}
+
+// 显示固定的触摸区域
+function showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom) {
+    const data = touchData[position];
+    console.log(`显示${position}位置的触摸区域，数据:`, data);
     
     // 判断是否有数据
     if (data.x === 0 && data.y === 0) {
@@ -266,28 +301,55 @@ function showTouchArea(position, touchArea) {
         return;
     }
     
-    // 清除之前的颜色类
-    touchArea.classList.remove('blue', 'red', 'yellow');
-    
-    // 根据位置设置不同颜色
+    let targetArea;
+    let targetText;
     if (position === 'top') {
-        touchArea.classList.add('blue');
+        targetArea = touchAreaTop;
+        targetText = textTop;
     } else if (position === 'middle') {
-        touchArea.classList.add('red');
+        targetArea = touchAreaMiddle;
+        targetText = textMiddle;
     } else if (position === 'bottom') {
-        touchArea.classList.add('yellow');
+        targetArea = touchAreaBottom;
+        targetText = textBottom;
     }
     
-    touchArea.style.left = `${data.x}px`;
-    touchArea.style.top = `${data.y}px`;
-    touchArea.style.width = `${data.radius * 2}px`;
-    touchArea.style.height = `${data.radius * 2}px`;
-    touchArea.style.opacity = '1';
+    if (targetArea) {
+        targetArea.style.left = `${data.x}px`;
+        targetArea.style.top = `${data.y}px`;
+        targetArea.style.width = `${data.radius * 2}px`;
+        targetArea.style.height = `${data.radius * 2}px`;
+        targetArea.style.opacity = '1';
+        console.log(`${position}触摸区域设置完成`);
+    }
     
-    // 3秒后隐藏
-    setTimeout(() => {
-        touchArea.style.opacity = '0';
-    }, 3000);
+    // 在按钮下面显示坐标和半径
+    if (targetText) {
+        targetText.textContent = `圆心: (${data.x}, ${data.y}), 半径: ${data.radius}`;
+    }
+}
+
+// 清除所有触摸区域
+function clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom) {
+    if (touchAreaTop) {
+        touchAreaTop.style.opacity = '0';
+    }
+    if (touchAreaMiddle) {
+        touchAreaMiddle.style.opacity = '0';
+    }
+    if (touchAreaBottom) {
+        touchAreaBottom.style.opacity = '0';
+    }
+    if (textTop) {
+        textTop.textContent = '';
+    }
+    if (textMiddle) {
+        textMiddle.textContent = '';
+    }
+    if (textBottom) {
+        textBottom.textContent = '';
+    }
+    console.log('清除所有触摸区域和文字');
 }
 
 // 秒表功能
@@ -326,35 +388,5 @@ function stopStopwatch() {
 // 页面加载完成后初始化游戏
 window.addEventListener('DOMContentLoaded', initGame);
 
-// 模拟触摸数据（实际应用中可以通过触摸事件记录）
-function simulateTouchData() {
-    // 假设屏幕高度为800px，宽度为1200px（横屏）
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    
-    // 下位置：屏幕底部附近
-    touchData.bottom.x = screenWidth / 2;
-    touchData.bottom.y = screenHeight - 100;
-    touchData.bottom.radius = 50;
-    
-    // 中位置：屏幕中间
-    touchData.middle.x = screenWidth / 2;
-    touchData.middle.y = screenHeight / 2;
-    touchData.middle.radius = 50;
-    
-    // 上位置：屏幕顶部附近
-    touchData.top.x = screenWidth / 2;
-    touchData.top.y = 100;
-    touchData.top.radius = 50;
-    
-    // 更新显示
-    document.getElementById('data-bottom').textContent = `圆心: (${touchData.bottom.x}, ${touchData.bottom.y}), 半径: ${touchData.bottom.radius}`;
-    document.getElementById('data-middle').textContent = `圆心: (${touchData.middle.x}, ${touchData.middle.y}), 半径: ${touchData.middle.radius}`;
-    document.getElementById('data-top').textContent = `圆心: (${touchData.top.x}, ${touchData.top.y}), 半径: ${touchData.top.radius}`;
-}
 
-// 窗口大小改变时更新数据
-window.addEventListener('resize', simulateTouchData);
 
-// 初始化触摸数据
-simulateTouchData();

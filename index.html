@@ -16,7 +16,9 @@
         </div>
         <div class="touch-info">触摸位置: (0, 0)</div>
         <div class="touch-area"></div>
-        <div class="boss" id="boss"></div>
+        <div class="touch-area-top"></div>
+        <div class="touch-area-middle"></div>
+        <div class="touch-area-bottom"></div>
         
         <!-- 数据显示区域 -->
         <div class="data-container">
@@ -36,10 +38,20 @@
         
         <!-- 按钮区域 -->
         <div class="button-container">
-            <button class="action-button" data-position="bottom">下</button>
-            <button class="action-button" data-position="middle">中</button>
-            <button class="action-button" data-position="top">上</button>
+            <div class="button-item">
+                <button class="action-button" data-position="bottom">下</button>
+                <div class="button-text" id="text-bottom"></div>
+            </div>
+            <div class="button-item">
+                <button class="action-button" data-position="middle">中</button>
+                <div class="button-text" id="text-middle"></div>
+            </div>
+            <div class="button-item">
+                <button class="action-button" data-position="top">上</button>
+                <div class="button-text" id="text-top"></div>
+            </div>
         </div>
+        <button class="clear-button" id="clear-btn">清除</button>
     </div>
     <script src="script.js"></script>
 </body>

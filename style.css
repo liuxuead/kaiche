@@ -193,7 +193,6 @@ body {
     position: absolute;
     top: 20px;
     left: 60px;
-    transform: rotate(90deg);
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -217,7 +216,6 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    transform: rotate(180deg);
 }
 
 .action-button:hover {
@@ -229,16 +227,22 @@ body {
 }
 
 .button-text {
-    color: white;
-    font-size: 0.75rem;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    transform: rotate(180deg);
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 4px 8px;
-    border-radius: 3px;
+    color: #ff0000;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 0;
+    transform: rotate(0deg);
+    text-align: left;
+    background-color: rgba(255, 255, 0, 0.9);
+    padding: 10px 15px;
+    border: 3px solid #ff0000;
+    border-radius: 5px;
     white-space: nowrap;
+    z-index: 9999;
+    position: relative;
+    min-width: 250px;
+    display: block;
 }
 
 /* 清除按钮样式 */

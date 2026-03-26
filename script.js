@@ -235,7 +235,6 @@ function updateTouchInfo(touch, touchArea) {
     touchArea.style.opacity = '1';
     
     // 可以在这里添加根据触摸位置执行不同操作的逻辑
-    console.log(`触摸位置: (${x}, ${y})`);
 }
 
 // 设置按钮点击事件
@@ -253,7 +252,7 @@ function setupButtons() {
         const position = button.dataset.position;
         if (position) {
             button.addEventListener('click', () => {
-                showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom);
+                showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom);
                 updateDisplayText(position, textTop, textMiddle, textBottom);
             });
         }
@@ -262,7 +261,7 @@ function setupButtons() {
     // 清除按钮点击事件
     if (clearButton) {
         clearButton.addEventListener('click', () => {
-            clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom);
+            clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
             clearDisplayText(textTop, textMiddle, textBottom);
         });
     }
@@ -271,15 +270,20 @@ function setupButtons() {
 // 更新显示文本
 function updateDisplayText(position, textTop, textMiddle, textBottom) {
     const data = touchData[position];
+    console.log('updateDisplayText 被调用, position:', position, 'data:', data);
     const text = data.x !== 0 || data.y !== 0 ? 
         `圆心: (${data.x}, ${data.y}), 半径: ${data.radius}` : '暂无数据';
+    console.log('要显示的文本:', text);
     
     if (position === 'top') {
         textTop.textContent = text;
+        console.log('已设置 textTop.textContent:', textTop.textContent);
     } else if (position === 'middle') {
         textMiddle.textContent = text;
+        console.log('已设置 textMiddle.textContent:', textMiddle.textContent);
     } else if (position === 'bottom') {
         textBottom.textContent = text;
+        console.log('已设置 textBottom.textContent:', textBottom.textContent);
     }
 }
 
@@ -291,7 +295,7 @@ function clearDisplayText(textTop, textMiddle, textBottom) {
 }
 
 // 显示固定的触摸区域
-function showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom) {
+function showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom) {
     const data = touchData[position];
     console.log(`显示${position}位置的触摸区域，数据:`, data);
     
@@ -302,16 +306,12 @@ function showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBo
     }
     
     let targetArea;
-    let targetText;
     if (position === 'top') {
         targetArea = touchAreaTop;
-        targetText = textTop;
     } else if (position === 'middle') {
         targetArea = touchAreaMiddle;
-        targetText = textMiddle;
     } else if (position === 'bottom') {
         targetArea = touchAreaBottom;
-        targetText = textBottom;
     }
     
     if (targetArea) {
@@ -322,15 +322,10 @@ function showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBo
         targetArea.style.opacity = '1';
         console.log(`${position}触摸区域设置完成`);
     }
-    
-    // 在按钮下面显示坐标和半径
-    if (targetText) {
-        targetText.textContent = `圆心: (${data.x}, ${data.y}), 半径: ${data.radius}`;
-    }
 }
 
 // 清除所有触摸区域
-function clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop, textMiddle, textBottom) {
+function clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom) {
     if (touchAreaTop) {
         touchAreaTop.style.opacity = '0';
     }
@@ -340,16 +335,7 @@ function clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom, textTop
     if (touchAreaBottom) {
         touchAreaBottom.style.opacity = '0';
     }
-    if (textTop) {
-        textTop.textContent = '';
-    }
-    if (textMiddle) {
-        textMiddle.textContent = '';
-    }
-    if (textBottom) {
-        textBottom.textContent = '';
-    }
-    console.log('清除所有触摸区域和文字');
+    console.log('清除所有触摸区域');
 }
 
 // 秒表功能

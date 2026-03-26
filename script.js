@@ -27,6 +27,8 @@ let touchTimer = null;
 let currentTouch = null;
 // 长按计数器，用于记录第几次长按
 let touchCount = 0;
+// 记录完成次数（上中下都有值）
+let completeCount = 0;
 
 // 设置触摸事件监听器
 function setupTouchListeners() {
@@ -190,11 +192,22 @@ function checkAllDataRecorded() {
     if ((touchData.top.x !== 0 || touchData.top.y !== 0) && 
         (touchData.middle.x !== 0 || touchData.middle.y !== 0) && 
         (touchData.bottom.x !== 0 || touchData.bottom.y !== 0)) {
-        // 所有数据都已记录，在仪表盘显示数字1
-        const dashboardValue = document.querySelector('.dashboard-value');
-        dashboardValue.textContent = '1';
-        // 重置计数
+        // 增加完成次数
+        completeCount++;
+        // 在仪表盘上方显示完成次数
+        const completeCounter = document.getElementById('complete-counter');
+        completeCounter.textContent = completeCount;
+        // 重置触摸计数
         touchCount = 0;
+        // 重置数据以便下一次记录
+        touchData.top.x = 0;
+        touchData.top.y = 0;
+        touchData.middle.x = 0;
+        touchData.middle.y = 0;
+        touchData.bottom.x = 0;
+        touchData.bottom.y = 0;
+        // 更新显示
+        updateDataDisplay();
     }
 }
 

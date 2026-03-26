@@ -36,6 +36,18 @@ body {
     font-size: 1.5rem;
 }
 
+/* 完成计数器 */
+.complete-counter {
+    position: absolute;
+    bottom: 210px;
+    left: 60px;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #e74c3c;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    z-index: 10;
+}
+
 .dashboard {
     position: absolute;
     bottom: 80px;
@@ -57,7 +69,7 @@ body {
     font-weight: bold;
     color: #e74c3c;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
-    transform: rotate(-270deg);
+    transform: rotate(-180deg);
 }
 
 .touch-info {
@@ -126,7 +138,7 @@ body {
 .button-container {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 140px;
     transform: rotate(90deg);
     display: flex;
     flex-direction: column;

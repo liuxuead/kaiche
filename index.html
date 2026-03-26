@@ -23,6 +23,7 @@
         </div>
     </div>
     <button class="clear-button" id="clear-btn" style="position: fixed; top: 20px; left: 20px; z-index: 99999;">清除</button>
+    <button class="clear-button" id="reset-record-btn" style="position: fixed; top: 20px; left: 120px; z-index: 99999; background: #ff6600;">重置记录</button>
     
     <div class="game-container">
         <h1>H5游戏</h1>
@@ -50,6 +51,27 @@
             <div class="data-item">
                 <div class="data-label">上</div>
                 <div class="data-value" id="data-top">0</div>
+            </div>
+        </div>
+        
+        <!-- 统计面板 -->
+        <div class="stats-container" style="position: fixed; top: 280px; left: 200px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 10px; z-index: 99999; font-size: 14px;">
+            <div style="margin-bottom: 10px; font-weight: bold; font-size: 16px;">统计信息</div>
+            <div>记录次数: <span id="stat-count">0</span></div>
+            <div style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
+                <div style="font-weight: bold; margin-bottom: 5px;">上 (平均):</div>
+                <div>圆心: (<span id="stat-top-x">0</span>, <span id="stat-top-y">0</span>)</div>
+                <div>半径: <span id="stat-top-r">0</span></div>
+            </div>
+            <div style="margin-top: 10px;">
+                <div style="font-weight: bold; margin-bottom: 5px;">中 (平均):</div>
+                <div>圆心: (<span id="stat-middle-x">0</span>, <span id="stat-middle-y">0</span>)</div>
+                <div>半径: <span id="stat-middle-r">0</span></div>
+            </div>
+            <div style="margin-top: 10px;">
+                <div style="font-weight: bold; margin-bottom: 5px;">下 (平均):</div>
+                <div>圆心: (<span id="stat-bottom-x">0</span>, <span id="stat-bottom-y">0</span>)</div>
+                <div>半径: <span id="stat-bottom-r">0</span></div>
             </div>
         </div>
     </div>

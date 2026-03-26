@@ -184,8 +184,8 @@ function recordTouchData(touch) {
             touchData.top.radius = 50;
             console.log('记录触摸数据到上位置:', touchData.top);
             
-            // 重置触摸计数
-            touchCount = 0;
+            // 设置触摸计数为1，表示已经记录了上
+            touchCount = 1;
         } else if (touchData.top.x !== 0 || touchData.top.y !== 0) {
             // 只有上有数据，记录到中
             if (touchData.middle.x === 0 && touchData.middle.y === 0) {
@@ -259,6 +259,25 @@ function setupButtons() {
 // 显示对应位置的触摸区域
 function showTouchArea(position, touchArea) {
     const data = touchData[position];
+    
+    // 判断是否有数据
+    if (data.x === 0 && data.y === 0) {
+        console.log(`${position}位置没有数据`);
+        return;
+    }
+    
+    // 清除之前的颜色类
+    touchArea.classList.remove('blue', 'red', 'yellow');
+    
+    // 根据位置设置不同颜色
+    if (position === 'top') {
+        touchArea.classList.add('blue');
+    } else if (position === 'middle') {
+        touchArea.classList.add('red');
+    } else if (position === 'bottom') {
+        touchArea.classList.add('yellow');
+    }
+    
     touchArea.style.left = `${data.x}px`;
     touchArea.style.top = `${data.y}px`;
     touchArea.style.width = `${data.radius * 2}px`;

@@ -97,6 +97,22 @@ body {
     z-index: 5;
 }
 
+/* 不同颜色的触摸区域 */
+.touch-area.blue {
+    border-color: #3498db;
+    background-color: rgba(52, 152, 219, 0.3);
+}
+
+.touch-area.red {
+    border-color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.3);
+}
+
+.touch-area.yellow {
+    border-color: #f1c40f;
+    background-color: rgba(241, 196, 15, 0.3);
+}
+
 /* 数据显示区域 */
 .data-container {
     position: absolute;
@@ -139,7 +155,7 @@ body {
 .button-container {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 60px;
     transform: rotate(90deg);
     display: flex;
     flex-direction: column;

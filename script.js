@@ -136,6 +136,11 @@ function recordTouchData(touch) {
     // 增加触摸计数
     touchCount++;
     
+    // 检查是否所有数据都已记录
+    const allDataRecorded = (touchData.top.x !== 0 || touchData.top.y !== 0) && 
+                          (touchData.middle.x !== 0 || touchData.middle.y !== 0) && 
+                          (touchData.bottom.x !== 0 || touchData.bottom.y !== 0);
+    
     // 根据计数决定记录到哪个位置
     if (touchCount === 1) {
         // 第一次长按，记录到上位置
@@ -158,8 +163,43 @@ function recordTouchData(touch) {
             touchData.bottom.y = Math.round(touch.clientY);
             touchData.bottom.radius = 50;
             console.log('记录触摸数据到下位置:', touchData.bottom);
-            // 检查是否所有数据都已记录
-            checkAllDataRecorded();
+        }
+    } else if (touchCount >= 4) {
+        // 第四次及以后的按压
+        if (allDataRecorded) {
+            // 三个都有数据，次数+1，清空中和下，记录到上
+            completeCount++;
+            const completeCounter = document.getElementById('complete-counter');
+            completeCounter.textContent = completeCount;
+            
+            // 清空中和下
+            touchData.middle.x = 0;
+            touchData.middle.y = 0;
+            touchData.bottom.x = 0;
+            touchData.bottom.y = 0;
+            
+            // 记录到上
+            touchData.top.x = Math.round(touch.clientX);
+            touchData.top.y = Math.round(touch.clientY);
+            touchData.top.radius = 50;
+            console.log('记录触摸数据到上位置:', touchData.top);
+            
+            // 重置触摸计数
+            touchCount = 0;
+        } else if (touchData.top.x !== 0 || touchData.top.y !== 0) {
+            // 只有上有数据，记录到中
+            if (touchData.middle.x === 0 && touchData.middle.y === 0) {
+                touchData.middle.x = Math.round(touch.clientX);
+                touchData.middle.y = Math.round(touch.clientY);
+                touchData.middle.radius = 50;
+                console.log('记录触摸数据到中位置:', touchData.middle);
+            } else if (touchData.bottom.x === 0 && touchData.bottom.y === 0) {
+                // 上中有数据，记录到下
+                touchData.bottom.x = Math.round(touch.clientX);
+                touchData.bottom.y = Math.round(touch.clientY);
+                touchData.bottom.radius = 50;
+                console.log('记录触摸数据到下位置:', touchData.bottom);
+            }
         }
     }
     
@@ -184,30 +224,6 @@ function updateDataDisplay() {
         document.getElementById('data-bottom').textContent = `圆心: (${touchData.bottom.x}, ${touchData.bottom.y}), 半径: ${touchData.bottom.radius}`;
     } else {
         document.getElementById('data-bottom').textContent = '0';
-    }
-}
-
-// 检查是否所有数据都已记录
-function checkAllDataRecorded() {
-    if ((touchData.top.x !== 0 || touchData.top.y !== 0) && 
-        (touchData.middle.x !== 0 || touchData.middle.y !== 0) && 
-        (touchData.bottom.x !== 0 || touchData.bottom.y !== 0)) {
-        // 增加完成次数
-        completeCount++;
-        // 在仪表盘上方显示完成次数
-        const completeCounter = document.getElementById('complete-counter');
-        completeCounter.textContent = completeCount;
-        // 重置触摸计数
-        touchCount = 0;
-        // 重置数据以便下一次记录
-        touchData.top.x = 0;
-        touchData.top.y = 0;
-        touchData.middle.x = 0;
-        touchData.middle.y = 0;
-        touchData.bottom.x = 0;
-        touchData.bottom.y = 0;
-        // 更新显示
-        updateDataDisplay();
     }
 }
 

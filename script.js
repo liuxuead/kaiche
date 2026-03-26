@@ -2,7 +2,6 @@
 function initGame() {
     console.log('游戏初始化完成');
     setupTouchListeners();
-    setupOrientationListener();
 }
 
 // 设置触摸事件监听器
@@ -58,14 +57,6 @@ function updateTouchInfo(touch, touchArea) {
     
     // 可以在这里添加根据触摸位置执行不同操作的逻辑
     console.log(`触摸位置: (${x}, ${y})`);
-}
-
-// 设置屏幕方向监听器
-function setupOrientationListener() {
-    window.addEventListener('orientationchange', () => {
-        console.log('屏幕方向改变:', window.orientation);
-        // 可以在这里添加根据屏幕方向调整布局的逻辑
-    });
 }
 
 // 页面加载完成后初始化游戏

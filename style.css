@@ -25,27 +25,6 @@ body {
     justify-content: center;
     align-items: center;
     color: white;
-    transform-origin: center;
-    transition: transform 0.3s ease;
-}
-
-/* 横屏适配 */
-@media screen and (orientation: landscape) {
-    .game-container {
-        transform: rotate(0deg);
-        width: 100vw;
-        height: 100vh;
-    }
-}
-
-/* 竖屏适配 */
-@media screen and (orientation: portrait) {
-    .game-container {
-        transform: rotate(90deg);
-        width: 100vh;
-        height: 100vw;
-        margin-left: calc((100vw - 100vh) / 2);
-    }
 }
 
 .game-container h1 {
@@ -59,7 +38,7 @@ body {
 
 .dashboard {
     position: absolute;
-    top: 20px;
+    bottom: 20px;
     left: 20px;
     width: 120px;
     height: 120px;

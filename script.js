@@ -42,8 +42,8 @@ function updateBatteryBar(clientY) {
     let position = (relativeY - stats.top.y) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
-    // 计算应该点亮哪些竖杠
-    const centerIndex = Math.round(position * (BATTERY_BAR_COUNT - 1));
+    // 计算应该点亮哪些竖杠（调换上下：上区域对应右边，下区域对应左边）
+    const centerIndex = Math.round((1 - position) * (BATTERY_BAR_COUNT - 1));
     const spread = 3; // 向两边扩散的范围
     
     const bars = document.querySelectorAll('.battery-bar-item');

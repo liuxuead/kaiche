@@ -2,30 +2,6 @@
 function initGame() {
     console.log('游戏初始化完成');
     
-    // 测试按钮事件
-    const testTop = document.getElementById('test-top');
-    const testMiddle = document.getElementById('test-middle');
-    const testBottom = document.getElementById('test-bottom');
-    
-    if (testTop) {
-        testTop.onclick = function() {
-            console.log('888888 - 测试上');
-            alert('点击了测试上按钮！');
-        };
-    }
-    if (testMiddle) {
-        testMiddle.onclick = function() {
-            console.log('888888 - 测试中');
-            alert('点击了测试中按钮！');
-        };
-    }
-    if (testBottom) {
-        testBottom.onclick = function() {
-            console.log('888888 - 测试下');
-            alert('点击了测试下按钮！');
-        };
-    }
-    
     // 上中下按钮事件
     const btnTop = document.getElementById('btn-top');
     const btnMiddle = document.getElementById('btn-middle');

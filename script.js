@@ -97,13 +97,29 @@ function initGame() {
         };
     }
     
-    // 清除按钮事件
+    // 重置统计按钮事件 - 只清空统计数据，不清空当前记录
     const clearBtn = document.getElementById('clear-btn');
     if (clearBtn) {
         clearBtn.onclick = function() {
-            console.log('点击了清除按钮');
-            clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
-            clearDisplayText(textTop, textMiddle, textBottom);
+            console.log('点击了重置统计按钮');
+            // 只清空统计数据
+            allTouchData.length = 0; // 清空统计数据
+            statsLocked = false; // 解锁统计
+            lastBottomX = 0;
+            lastBottomY = 0;
+            
+            // 更新统计面板为0
+            updateStatsPanel();
+            initBatteryBar(); // 重置电量条
+            
+            // 恢复电量条边框样式
+            const batteryBar = document.querySelector('.battery-bar');
+            if (batteryBar) {
+                batteryBar.style.boxShadow = 'none';
+                batteryBar.style.border = 'none';
+            }
+            
+            console.log('统计数据已重置为0');
         };
     }
     
@@ -221,8 +237,8 @@ function setupTouchListeners() {
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
-        // 实时更新电量条
-        if (statsLocked) {
+        // 实时更新电量条（统计达到3次后才启用）
+        if (allTouchData.length >= 3) {
             updateBatteryBar(currentTouch.clientY);
         }
     });
@@ -275,8 +291,8 @@ function setupTouchListeners() {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
-        // 实时更新电量条
-        if (statsLocked) {
+        // 实时更新电量条（统计达到3次后才启用）
+        if (allTouchData.length >= 3) {
             updateBatteryBar(e.clientY);
         }
     });
@@ -380,8 +396,9 @@ function recordTouchData(touch) {
 
 // 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）
 function saveTouchDataToAll() {
-    // 如果已经锁定，就不再保存
-    if (statsLocked) {
+    // 如果统计数据已经达到3次，记录区域就不再记录
+    if (allTouchData.length >= 3) {
+        console.log('统计已达到3次，记录区域不再记录');
         return;
     }
     
@@ -408,9 +425,8 @@ function saveTouchDataToAll() {
         // 更新统计面板
         updateStatsPanel();
         
-        // 检查是否达到3次，锁定统计
+        // 检查是否达到3次
         if (allTouchData.length >= 3) {
-            statsLocked = true;
             // 电量条边框变亮，表示已锁定
             const batteryBar = document.querySelector('.battery-bar');
             if (batteryBar) {
@@ -418,7 +434,7 @@ function saveTouchDataToAll() {
                 batteryBar.style.border = '2px solid #00ff00';
             }
             console.log('========================================');
-            console.log('统计已锁定！共记录', allTouchData.length, '次');
+            console.log('统计已达到3次！记录区域停止记录');
             console.log('========================================');
         }
     }

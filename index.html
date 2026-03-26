@@ -25,6 +25,14 @@
     <button class="clear-button" id="clear-btn" style="position: fixed; top: 20px; left: 20px; z-index: 99999;">清除</button>
     <button class="clear-button" id="reset-record-btn" style="position: fixed; top: 20px; left: 120px; z-index: 99999; background: #ff6600;">重置记录</button>
     
+    <!-- 电量条 - 横着的长条 -->
+    <div class="battery-bar" style="position: fixed; top: 80px; left: 20px; width: 200px; height: 30px; background: #333; border-radius: 5px; z-index: 99999; overflow: hidden;">
+        <!-- 竖杠显示区 -->
+        <div class="battery-bars" id="battery-bars" style="display: flex; height: 100%; align-items: center; padding: 0 5px;">
+            <!-- 动态生成竖杠 -->
+        </div>
+    </div>
+    
     <div class="game-container">
         <h1>H5游戏</h1>
         <p>游戏内容区域</p>

@@ -16,22 +16,22 @@ function initGame() {
     if (btnTop) {
         btnTop.onclick = function() {
             console.log('点击了上按钮');
-            showFixedTouchArea('top', touchAreaTop, touchAreaMiddle, touchAreaBottom);
-            updateDisplayText('top', textTop, textMiddle, textBottom);
+            showStatsTouchArea('top', touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            updateStatsDisplayText('top', textTop, textMiddle, textBottom);
         };
     }
     if (btnMiddle) {
         btnMiddle.onclick = function() {
             console.log('点击了中按钮');
-            showFixedTouchArea('middle', touchAreaTop, touchAreaMiddle, touchAreaBottom);
-            updateDisplayText('middle', textTop, textMiddle, textBottom);
+            showStatsTouchArea('middle', touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            updateStatsDisplayText('middle', textTop, textMiddle, textBottom);
         };
     }
     if (btnBottom) {
         btnBottom.onclick = function() {
             console.log('点击了下按钮');
-            showFixedTouchArea('bottom', touchAreaTop, touchAreaMiddle, touchAreaBottom);
-            updateDisplayText('bottom', textTop, textMiddle, textBottom);
+            showStatsTouchArea('bottom', touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            updateStatsDisplayText('bottom', textTop, textMiddle, textBottom);
         };
     }
     
@@ -42,6 +42,31 @@ function initGame() {
             console.log('点击了清除按钮');
             clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
             clearDisplayText(textTop, textMiddle, textBottom);
+        };
+    }
+    
+    // 重置记录按钮事件
+    const resetRecordBtn = document.getElementById('reset-record-btn');
+    if (resetRecordBtn) {
+        resetRecordBtn.onclick = function() {
+            console.log('点击了重置记录按钮');
+            // 只清除当前正在记录的数据，不影响统计数据
+            touchData.top.x = 0;
+            touchData.top.y = 0;
+            touchData.middle.x = 0;
+            touchData.middle.y = 0;
+            touchData.bottom.x = 0;
+            touchData.bottom.y = 0;
+            touchCount = 0;
+            lastBottomX = 0;
+            lastBottomY = 0;
+            
+            // 清除显示
+            clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            clearDisplayText(textTop, textMiddle, textBottom);
+            updateDataDisplay();
+            
+            console.log('当前记录数据已重置，可以重新开始记录');
         };
     }
     
@@ -59,6 +84,12 @@ const touchData = {
     middle: { x: 0, y: 0, radius: 50 },
     top: { x: 0, y: 0, radius: 50 }
 };
+
+// 存储所有记录的数据
+const allTouchData = [];
+// 记录上一次"下"的数据，用来检测变化
+let lastBottomX = 0;
+let lastBottomY = 0;
 
 // 触摸计时器
 let touchTimer = null;
@@ -208,6 +239,9 @@ function recordTouchData(touch) {
             touchData.bottom.y = Math.round(touch.clientY);
             touchData.bottom.radius = 50;
             console.log('记录触摸数据到下位置:', touchData.bottom);
+            
+            // 第一次三个数据都记录完，存到数组
+            saveTouchDataToAll();
         }
     } else if (touchCount >= 4) {
         // 第四次及以后的按压
@@ -216,6 +250,9 @@ function recordTouchData(touch) {
             completeCount++;
             const completeCounter = document.getElementById('complete-counter');
             completeCounter.textContent = completeCount;
+            
+            // 存当前这一组数据
+            saveTouchDataToAll();
             
             // 清空中和下
             touchData.middle.x = 0;
@@ -244,11 +281,136 @@ function recordTouchData(touch) {
                 touchData.bottom.y = Math.round(touch.clientY);
                 touchData.bottom.radius = 50;
                 console.log('记录触摸数据到下位置:', touchData.bottom);
+                
+                // 三个数据又记录完，存到数组
+                saveTouchDataToAll();
             }
         }
     }
     
     updateDataDisplay();
+}
+
+// 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发）
+function saveTouchDataToAll() {
+    const currentBottomX = touchData.bottom.x;
+    const currentBottomY = touchData.bottom.y;
+    const currentBottomHasValue = (currentBottomX !== 0 || currentBottomY !== 0);
+    
+    // 只有当"下"有值且和上次不一样时才保存
+    if (currentBottomHasValue && (currentBottomX !== lastBottomX || currentBottomY !== lastBottomY)) {
+        const record = {
+            timestamp: Date.now(),
+            top: { ...touchData.top },
+            middle: { ...touchData.middle },
+            bottom: { ...touchData.bottom }
+        };
+        
+        allTouchData.push(record);
+        console.log('========================================');
+        console.log('新记录已保存！总记录数:', allTouchData.length);
+        console.log('当前记录:', record);
+        console.log('所有记录:', allTouchData);
+        console.log('========================================');
+        
+        // 更新统计面板
+        updateStatsPanel();
+    }
+    
+    // 更新状态
+    lastBottomX = currentBottomX;
+    lastBottomY = currentBottomY;
+}
+
+// 获取统计平均值
+function getStatsAverage() {
+    const count = allTouchData.length;
+    
+    if (count === 0) {
+        return {
+            top: { x: 0, y: 0, radius: 50 },
+            middle: { x: 0, y: 0, radius: 50 },
+            bottom: { x: 0, y: 0, radius: 50 }
+        };
+    }
+    
+    // 计算平均值
+    let sumTopX = 0, sumTopY = 0, sumTopR = 0;
+    let sumMiddleX = 0, sumMiddleY = 0, sumMiddleR = 0;
+    let sumBottomX = 0, sumBottomY = 0, sumBottomR = 0;
+    
+    allTouchData.forEach(record => {
+        sumTopX += record.top.x;
+        sumTopY += record.top.y;
+        sumTopR += record.top.radius;
+        
+        sumMiddleX += record.middle.x;
+        sumMiddleY += record.middle.y;
+        sumMiddleR += record.middle.radius;
+        
+        sumBottomX += record.bottom.x;
+        sumBottomY += record.bottom.y;
+        sumBottomR += record.bottom.radius;
+    });
+    
+    return {
+        top: {
+            x: Math.round(sumTopX / count),
+            y: Math.round(sumTopY / count),
+            radius: Math.round(sumTopR / count)
+        },
+        middle: {
+            x: Math.round(sumMiddleX / count),
+            y: Math.round(sumMiddleY / count),
+            radius: Math.round(sumMiddleR / count)
+        },
+        bottom: {
+            x: Math.round(sumBottomX / count),
+            y: Math.round(sumBottomY / count),
+            radius: Math.round(sumBottomR / count)
+        }
+    };
+}
+
+// 更新统计面板
+function updateStatsPanel() {
+    const count = allTouchData.length;
+    
+    // 更新记录次数
+    const statCount = document.getElementById('stat-count');
+    if (statCount) {
+        statCount.textContent = count;
+    }
+    
+    if (count === 0) {
+        return;
+    }
+    
+    const stats = getStatsAverage();
+    
+    // 更新上的平均值
+    const statTopX = document.getElementById('stat-top-x');
+    const statTopY = document.getElementById('stat-top-y');
+    const statTopR = document.getElementById('stat-top-r');
+    if (statTopX) statTopX.textContent = stats.top.x;
+    if (statTopY) statTopY.textContent = stats.top.y;
+    if (statTopR) statTopR.textContent = stats.top.radius;
+    
+    // 更新中的平均值
+    const statMiddleX = document.getElementById('stat-middle-x');
+    const statMiddleY = document.getElementById('stat-middle-y');
+    const statMiddleR = document.getElementById('stat-middle-r');
+    if (statMiddleX) statMiddleX.textContent = stats.middle.x;
+    if (statMiddleY) statMiddleY.textContent = stats.middle.y;
+    if (statMiddleR) statMiddleR.textContent = stats.middle.radius;
+    
+    // 更新下的平均值
+    const statBottomX = document.getElementById('stat-bottom-x');
+    const statBottomY = document.getElementById('stat-bottom-y');
+    const statBottomR = document.getElementById('stat-bottom-r');
+    if (statBottomX) statBottomX.textContent = stats.bottom.x;
+    if (statBottomY) statBottomY.textContent = stats.bottom.y;
+    if (statBottomR) statBottomR.textContent = stats.bottom.radius;
 }
 
 // 更新数据显示
@@ -396,6 +558,61 @@ function clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom) {
         touchAreaBottom.style.opacity = '0';
     }
     console.log('清除所有触摸区域');
+}
+
+// 显示统计平均值的触摸区域
+function showStatsTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom) {
+    const stats = getStatsAverage();
+    const data = stats[position];
+    console.log(`显示${position}位置的统计平均值，数据:`, data);
+    
+    // 判断是否有数据
+    if (data.x === 0 && data.y === 0) {
+        console.log(`${position}位置没有统计数据`);
+        return;
+    }
+    
+    let targetArea;
+    if (position === 'top') {
+        targetArea = touchAreaTop;
+    } else if (position === 'middle') {
+        targetArea = touchAreaMiddle;
+    } else if (position === 'bottom') {
+        targetArea = touchAreaBottom;
+    }
+    
+    if (targetArea) {
+        targetArea.style.left = `${data.x}px`;
+        targetArea.style.top = `${data.y}px`;
+        targetArea.style.width = `${data.radius * 2}px`;
+        targetArea.style.height = `${data.radius * 2}px`;
+        targetArea.style.opacity = '1';
+        console.log(`${position}统计平均值触摸区域设置完成`);
+    }
+}
+
+// 更新显示统计平均值文本
+function updateStatsDisplayText(position, textTop, textMiddle, textBottom) {
+    const stats = getStatsAverage();
+    const data = stats[position];
+    
+    let targetText;
+    if (position === 'top') {
+        targetText = textTop;
+    } else if (position === 'middle') {
+        targetText = textMiddle;
+    } else if (position === 'bottom') {
+        targetText = textBottom;
+    }
+    
+    if (targetText) {
+        if (data.x !== 0 || data.y !== 0) {
+            targetText.textContent = `圆心: (${data.x}, ${data.y})\n半径: ${data.radius}`;
+            console.log(`${position}统计平均值文本设置完成`);
+        } else {
+            targetText.textContent = '';
+        }
+    }
 }
 
 // 秒表功能

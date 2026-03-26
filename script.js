@@ -32,9 +32,26 @@ function setupTouchListeners() {
         e.preventDefault();
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
+        
+        // 开始计时
+        if (!stopwatchRunning) {
+            resetStopwatch();
+            stopwatchRunning = true;
+            stopwatchInterval = setInterval(() => {
+                stopwatchMilliseconds += 10;
+                if (stopwatchMilliseconds >= 1000) {
+                    stopwatchMilliseconds = 0;
+                    stopwatchSeconds += 1;
+                }
+                
+                const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
+                document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
+            }, 10);
+        }
+        
         // 开始计时
         touchTimer = setTimeout(() => {
-            // 超过1秒，记录数据到中间位置
+            // 超过1秒，记录数据
             recordTouchData(currentTouch);
         }, 1000);
     });
@@ -50,6 +67,10 @@ function setupTouchListeners() {
     gameContainer.addEventListener('touchend', () => {
         touchInfo.textContent = '触摸位置: (0, 0)';
         touchArea.style.opacity = '0';
+        
+        // 停止计时并显示最终时间
+        stopStopwatch();
+        
         // 清除计时器
         clearTimeout(touchTimer);
         currentTouch = null;
@@ -59,9 +80,26 @@ function setupTouchListeners() {
     gameContainer.addEventListener('mousedown', (e) => {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
+        
+        // 开始计时
+        if (!stopwatchRunning) {
+            resetStopwatch();
+            stopwatchRunning = true;
+            stopwatchInterval = setInterval(() => {
+                stopwatchMilliseconds += 10;
+                if (stopwatchMilliseconds >= 1000) {
+                    stopwatchMilliseconds = 0;
+                    stopwatchSeconds += 1;
+                }
+                
+                const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
+                document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
+            }, 10);
+        }
+        
         // 开始计时
         touchTimer = setTimeout(() => {
-            // 超过1秒，记录数据到中间位置
+            // 超过1秒，记录数据
             recordTouchData(e);
         }, 1000);
     });
@@ -74,6 +112,10 @@ function setupTouchListeners() {
     gameContainer.addEventListener('mouseup', () => {
         touchInfo.textContent = '触摸位置: (0, 0)';
         touchArea.style.opacity = '0';
+        
+        // 停止计时并显示最终时间
+        stopStopwatch();
+        
         // 清除计时器
         clearTimeout(touchTimer);
         currentTouch = null;
@@ -113,9 +155,9 @@ function recordTouchData(touch) {
 
 // 更新数据显示
 function updateDataDisplay() {
-    document.getElementById('data-bottom').textContent = `圆心: (${touchData.bottom.x}, ${touchData.bottom.y}), 半径: ${touchData.bottom.radius}`;
-    document.getElementById('data-middle').textContent = `圆心: (${touchData.middle.x}, ${touchData.middle.y}), 半径: ${touchData.middle.radius}`;
-    document.getElementById('data-top').textContent = `圆心: (${touchData.top.x}, ${touchData.top.y}), 半径: ${touchData.top.radius}`;
+    document.getElementById('data-bottom').textContent = touchData.bottom.x !== 0 || touchData.bottom.y !== 0 ? '1' : '0';
+    document.getElementById('data-middle').textContent = touchData.middle.x !== 0 || touchData.middle.y !== 0 ? '1' : '0';
+    document.getElementById('data-top').textContent = touchData.top.x !== 0 || touchData.top.y !== 0 ? '1' : '0';
 }
 
 // 更新触摸信息和显示触摸区域
@@ -163,25 +205,36 @@ function showTouchArea(position, touchArea) {
 }
 
 // 秒表功能
+let stopwatchInterval = null;
+let stopwatchRunning = false;
+let stopwatchSeconds = 0;
+let stopwatchMilliseconds = 0;
+
 function startStopwatch() {
     const dashboardValue = document.querySelector('.dashboard-value');
-    let seconds = 0;
-    let milliseconds = 0;
     
-    // 初始化显示为00:00
-    dashboardValue.textContent = '00:00';
+    // 初始化显示为0
+    dashboardValue.textContent = '0';
+}
+
+function resetStopwatch() {
+    const dashboardValue = document.querySelector('.dashboard-value');
+    stopwatchSeconds = 0;
+    stopwatchMilliseconds = 0;
+    dashboardValue.textContent = '0';
+}
+
+function stopStopwatch() {
+    const dashboardValue = document.querySelector('.dashboard-value');
+    if (stopwatchInterval) {
+        clearInterval(stopwatchInterval);
+        stopwatchInterval = null;
+    }
+    stopwatchRunning = false;
     
-    setInterval(() => {
-        milliseconds += 10;
-        if (milliseconds >= 1000) {
-            milliseconds = 0;
-            seconds += 1;
-        }
-        
-        const formattedSeconds = seconds.toString().padStart(2, '0');
-        const formattedMilliseconds = Math.floor(milliseconds / 10).toString().padStart(2, '0');
-        dashboardValue.textContent = `${formattedSeconds}:${formattedMilliseconds}`;
-    }, 10);
+    // 显示最终时间（秒）
+    const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
+    dashboardValue.textContent = totalSeconds.toFixed(2);
 }
 
 // 页面加载完成后初始化游戏

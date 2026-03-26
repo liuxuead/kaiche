@@ -1,8 +1,75 @@
 // 游戏初始化
 function initGame() {
     console.log('游戏初始化完成');
+    
+    // 测试按钮事件
+    const testTop = document.getElementById('test-top');
+    const testMiddle = document.getElementById('test-middle');
+    const testBottom = document.getElementById('test-bottom');
+    
+    if (testTop) {
+        testTop.onclick = function() {
+            console.log('888888 - 测试上');
+            alert('点击了测试上按钮！');
+        };
+    }
+    if (testMiddle) {
+        testMiddle.onclick = function() {
+            console.log('888888 - 测试中');
+            alert('点击了测试中按钮！');
+        };
+    }
+    if (testBottom) {
+        testBottom.onclick = function() {
+            console.log('888888 - 测试下');
+            alert('点击了测试下按钮！');
+        };
+    }
+    
+    // 上中下按钮事件
+    const btnTop = document.getElementById('btn-top');
+    const btnMiddle = document.getElementById('btn-middle');
+    const btnBottom = document.getElementById('btn-bottom');
+    const textTop = document.getElementById('text-top');
+    const textMiddle = document.getElementById('text-middle');
+    const textBottom = document.getElementById('text-bottom');
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    
+    if (btnTop) {
+        btnTop.onclick = function() {
+            console.log('点击了上按钮');
+            showFixedTouchArea('top', touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            updateDisplayText('top', textTop, textMiddle, textBottom);
+        };
+    }
+    if (btnMiddle) {
+        btnMiddle.onclick = function() {
+            console.log('点击了中按钮');
+            showFixedTouchArea('middle', touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            updateDisplayText('middle', textTop, textMiddle, textBottom);
+        };
+    }
+    if (btnBottom) {
+        btnBottom.onclick = function() {
+            console.log('点击了下按钮');
+            showFixedTouchArea('bottom', touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            updateDisplayText('bottom', textTop, textMiddle, textBottom);
+        };
+    }
+    
+    // 清除按钮事件
+    const clearBtn = document.getElementById('clear-btn');
+    if (clearBtn) {
+        clearBtn.onclick = function() {
+            console.log('点击了清除按钮');
+            clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
+            clearDisplayText(textTop, textMiddle, textBottom);
+        };
+    }
+    
     setupTouchListeners();
-    setupButtons();
     startStopwatch();
     // 初始化数据显示
     updateDataDisplay();
@@ -33,7 +100,9 @@ function setupTouchListeners() {
     
     // 触摸开始事件
     gameContainer.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+        if (e.target.closest('button')) {
+            return;
+        }
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
@@ -62,7 +131,9 @@ function setupTouchListeners() {
     
     // 触摸移动事件
     gameContainer.addEventListener('touchmove', (e) => {
-        e.preventDefault();
+        if (e.target.closest('button')) {
+            return;
+        }
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
     });
@@ -82,6 +153,9 @@ function setupTouchListeners() {
     
     // 鼠标点击事件（用于桌面测试）
     gameContainer.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) {
+            return;
+        }
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
@@ -239,7 +313,11 @@ function updateTouchInfo(touch, touchArea) {
 
 // 设置按钮点击事件
 function setupButtons() {
+    console.log('setupButtons 开始执行');
+    
     const buttons = document.querySelectorAll('.action-button[data-position]');
+    console.log('找到的按钮数量:', buttons.length);
+    
     const clearButton = document.getElementById('clear-btn');
     const touchAreaTop = document.querySelector('.touch-area-top');
     const touchAreaMiddle = document.querySelector('.touch-area-middle');
@@ -248,10 +326,13 @@ function setupButtons() {
     const textMiddle = document.getElementById('text-middle');
     const textBottom = document.getElementById('text-bottom');
     
-    buttons.forEach(button => {
+    buttons.forEach((button, index) => {
         const position = button.dataset.position;
+        console.log(`按钮 ${index} position:`, position);
         if (position) {
             button.addEventListener('click', () => {
+                alert(`点击了${position}按钮！`);
+                console.log(`点击了${position}按钮！`);
                 showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBottom);
                 updateDisplayText(position, textTop, textMiddle, textBottom);
             });
@@ -261,10 +342,13 @@ function setupButtons() {
     // 清除按钮点击事件
     if (clearButton) {
         clearButton.addEventListener('click', () => {
+            alert('点击了清除按钮！');
             clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
             clearDisplayText(textTop, textMiddle, textBottom);
         });
     }
+    
+    console.log('setupButtons 执行完成');
 }
 
 // 更新显示文本

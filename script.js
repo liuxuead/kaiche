@@ -4,6 +4,8 @@ function initGame() {
     setupTouchListeners();
     setupButtons();
     startStopwatch();
+    // 初始化数据显示
+    updateDataDisplay();
 }
 
 // 存储触摸位置数据
@@ -12,6 +14,12 @@ const touchData = {
     middle: { x: 0, y: 0, radius: 50 },
     top: { x: 0, y: 0, radius: 50 }
 };
+
+// 触摸计时器
+let touchTimer = null;
+let currentTouch = null;
+// 长按计数器，用于记录第几次长按
+let touchCount = 0;
 
 // 设置触摸事件监听器
 function setupTouchListeners() {
@@ -22,34 +30,92 @@ function setupTouchListeners() {
     // 触摸开始事件
     gameContainer.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        updateTouchInfo(e.touches[0], touchArea);
+        currentTouch = e.touches[0];
+        updateTouchInfo(currentTouch, touchArea);
+        // 开始计时
+        touchTimer = setTimeout(() => {
+            // 超过1秒，记录数据到中间位置
+            recordTouchData(currentTouch);
+        }, 1000);
     });
     
     // 触摸移动事件
     gameContainer.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        updateTouchInfo(e.touches[0], touchArea);
+        currentTouch = e.touches[0];
+        updateTouchInfo(currentTouch, touchArea);
     });
     
     // 触摸结束事件
     gameContainer.addEventListener('touchend', () => {
         touchInfo.textContent = '触摸位置: (0, 0)';
         touchArea.style.opacity = '0';
+        // 清除计时器
+        clearTimeout(touchTimer);
+        currentTouch = null;
     });
     
     // 鼠标点击事件（用于桌面测试）
     gameContainer.addEventListener('mousedown', (e) => {
+        currentTouch = e;
         updateTouchInfo(e, touchArea);
+        // 开始计时
+        touchTimer = setTimeout(() => {
+            // 超过1秒，记录数据到中间位置
+            recordTouchData(e);
+        }, 1000);
     });
     
     gameContainer.addEventListener('mousemove', (e) => {
+        currentTouch = e;
         updateTouchInfo(e, touchArea);
     });
     
     gameContainer.addEventListener('mouseup', () => {
         touchInfo.textContent = '触摸位置: (0, 0)';
         touchArea.style.opacity = '0';
+        // 清除计时器
+        clearTimeout(touchTimer);
+        currentTouch = null;
     });
+}
+
+// 记录触摸数据
+function recordTouchData(touch) {
+    // 增加触摸计数
+    touchCount++;
+    
+    // 根据计数决定记录到哪个位置
+    if (touchCount === 1) {
+        // 第一次长按，记录到下位置
+        touchData.bottom.x = Math.round(touch.clientX);
+        touchData.bottom.y = Math.round(touch.clientY);
+        touchData.bottom.radius = 50;
+        console.log('记录触摸数据到下位置:', touchData.bottom);
+    } else if (touchCount === 2) {
+        // 第二次长按，记录到中位置
+        touchData.middle.x = Math.round(touch.clientX);
+        touchData.middle.y = Math.round(touch.clientY);
+        touchData.middle.radius = 50;
+        console.log('记录触摸数据到中位置:', touchData.middle);
+    } else if (touchCount === 3) {
+        // 第三次长按，记录到上位置
+        touchData.top.x = Math.round(touch.clientX);
+        touchData.top.y = Math.round(touch.clientY);
+        touchData.top.radius = 50;
+        console.log('记录触摸数据到上位置:', touchData.top);
+        // 重置计数
+        touchCount = 0;
+    }
+    
+    updateDataDisplay();
+}
+
+// 更新数据显示
+function updateDataDisplay() {
+    document.getElementById('data-bottom').textContent = `圆心: (${touchData.bottom.x}, ${touchData.bottom.y}), 半径: ${touchData.bottom.radius}`;
+    document.getElementById('data-middle').textContent = `圆心: (${touchData.middle.x}, ${touchData.middle.y}), 半径: ${touchData.middle.radius}`;
+    document.getElementById('data-top').textContent = `圆心: (${touchData.top.x}, ${touchData.top.y}), 半径: ${touchData.top.radius}`;
 }
 
 // 更新触摸信息和显示触摸区域
@@ -101,6 +167,9 @@ function startStopwatch() {
     const dashboardValue = document.querySelector('.dashboard-value');
     let seconds = 0;
     let milliseconds = 0;
+    
+    // 初始化显示为00:00
+    dashboardValue.textContent = '00:00';
     
     setInterval(() => {
         milliseconds += 10;

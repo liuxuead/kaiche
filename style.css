@@ -56,6 +56,7 @@ body {
     font-weight: bold;
     color: #e74c3c;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    transform: rotate(-90deg);
 }
 
 .touch-info {
@@ -80,4 +81,68 @@ body {
     opacity: 0;
     transition: opacity 0.2s ease;
     z-index: 5;
+}
+
+/* 数据显示区域 */
+.data-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: space-around;
+    width: 90%;
+    max-width: 800px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+.data-item {
+    text-align: center;
+    flex: 1;
+}
+
+.data-label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #e74c3c;
+}
+
+.data-value {
+    font-size: 1rem;
+    color: white;
+}
+
+/* 按钮区域 */
+.button-container {
+    position: absolute;
+    bottom: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 10;
+}
+
+.action-button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+    background-color: #c0392b;
+}
+
+.action-button:active {
+    background-color: #a93226;
 }

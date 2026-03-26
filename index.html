@@ -11,10 +11,33 @@
         <h1>H5游戏</h1>
         <p>游戏内容区域</p>
         <div class="dashboard">
-            <div class="dashboard-value">888</div>
+            <div class="dashboard-value">00:00</div>
         </div>
         <div class="touch-info">触摸位置: (0, 0)</div>
         <div class="touch-area"></div>
+        
+        <!-- 数据显示区域 -->
+        <div class="data-container">
+            <div class="data-item">
+                <div class="data-label">下</div>
+                <div class="data-value" id="data-bottom">圆心: (0, 0), 半径: 0</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">中</div>
+                <div class="data-value" id="data-middle">圆心: (0, 0), 半径: 0</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">上</div>
+                <div class="data-value" id="data-top">圆心: (0, 0), 半径: 0</div>
+            </div>
+        </div>
+        
+        <!-- 按钮区域 -->
+        <div class="button-container">
+            <button class="action-button" data-position="top">上</button>
+            <button class="action-button" data-position="middle">中</button>
+            <button class="action-button" data-position="bottom">下</button>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>

@@ -461,21 +461,11 @@ function setupTouchListeners() {
         }
         
         // 开始计时（1秒记录数据）
-        touchTimer = setTimeout(() => {
-            // 超过1秒，记录数据
-            recordTouchData(currentTouch);
-        }, 1000);
-        
-        // 长按压3秒调整"中"的范围（当completeCount=3时生效）
-        if (completeCount >= 3) {
-            longPressStartTime = Date.now();
-            longPressTimer = setTimeout(() => {
-                // 获取当前触摸位置作为"中"的数据
-                if (currentTouch) {
-                    adjustMiddleRange(currentTouch.clientY);
-                }
-                stopStopwatch();
-            }, 3000);
+        if (completeCount < 3) {
+            touchTimer = setTimeout(() => {
+                // 超过1秒，记录数据
+                recordTouchData(currentTouch);
+            }, 1000);
         }
     });
     
@@ -512,17 +502,6 @@ function setupTouchListeners() {
         // 停止计时并显示最终时间
         stopStopwatch();
         
-        // 检查是否是长按3秒调整"中"的范围（当completeCount=3时）
-        if (completeCount >= 3 && longPressStartTime) {
-            const longPressDuration = Date.now() - longPressStartTime;
-            if (longPressDuration >= 3000) {
-                // 长按时间达到3秒，执行调整
-                if (currentTouch) {
-                    adjustMiddleRange(currentTouch.clientY);
-                }
-            }
-        }
-        
         // 清除计时器
         clearTimeout(touchTimer);
         clearTimeout(longPressTimer);
@@ -554,21 +533,11 @@ function setupTouchListeners() {
         }
         
         // 开始计时（1秒记录数据）
-        touchTimer = setTimeout(() => {
-            // 超过1秒，记录数据
-            recordTouchData(e);
-        }, 1000);
-        
-        // 长按压3秒调整"中"的范围（当completeCount=3时生效）
-        if (completeCount >= 3) {
-            longPressStartTime = Date.now();
-            longPressTimer = setTimeout(() => {
-                // 获取当前触摸位置作为"中"的数据
-                if (currentTouch) {
-                    adjustMiddleRange(currentTouch.clientY);
-                }
-                stopStopwatch();
-            }, 3000);
+        if (completeCount < 3) {
+            touchTimer = setTimeout(() => {
+                // 超过1秒，记录数据
+                recordTouchData(e);
+            }, 1000);
         }
     });
     

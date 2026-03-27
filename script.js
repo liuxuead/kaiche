@@ -242,9 +242,21 @@ function adjustMiddleRange(clientY) {
     if (batteryBar) {
         batteryBar.style.boxShadow = '0 0 20px #ffff00, 0 0 40px #ffff00';
         setTimeout(() => {
-            batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+            batteryBar.style.boxShadow = 'none';
+            batteryBar.style.border = 'none';
         }, 500);
     }
+    
+    // 清除电量条记录状态显示，后面只按照手指滚动逻辑点亮
+    clearBatteryBarRecordStatus();
+}
+
+// 清除电量条记录状态显示
+function clearBatteryBarRecordStatus() {
+    const bars = document.querySelectorAll('.battery-bar-item');
+    bars.forEach(bar => {
+        bar.style.background = '#555';
+    });
 }
 
 // 游戏初始化
@@ -616,8 +628,29 @@ function recordTouchData(touch) {
             touchData.top.radius = 50;
             console.log('记录触摸数据到上位置:', touchData.top);
             
-            // 第一次三个数据都记录完，存到数组
+            // 第一次三个数据都记录完，completeCount+1
+            completeCount++;
+            const completeCounter = document.getElementById('complete-counter');
+            completeCounter.textContent = completeCount;
+            console.log('第一次录入完成，completeCount:', completeCount);
+            
+            // 存到数组
             saveTouchDataToAll();
+            
+            // 检查是否达到3次
+            if (completeCount >= 3) {
+                // 电量条边框变亮，表示统计完成
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                    batteryBar.style.border = '2px solid #00ff00';
+                }
+                
+                console.log('========================================');
+                console.log('统计完成！completeCount = 3');
+                console.log('请长按压3秒调整"中"的范围');
+                console.log('========================================');
+            }
         }
     } else if (touchCount >= 4) {
         // 第四次及以后的按压

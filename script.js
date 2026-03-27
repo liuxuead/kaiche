@@ -1,8 +1,8 @@
 // 电量条分区配置
 const BATTERY_BAR_CONFIG = {
-    top: { count: 6, color: '#3498db' },      // 上：6格，蓝色
+    top: { count: 6, color: '#e74c3c' },      // 上：6格，红色
     middle: { count: 9, color: '#2ecc71' },   // 中：9格，绿色
-    bottom: { count: 5, color: '#e74c3c' }    // 下：5格，红色
+    bottom: { count: 5, color: '#3498db' }    // 下：5格，蓝色
 };
 
 // 初始化电量条
@@ -120,17 +120,17 @@ function updateBatteryBar(clientY) {
         // 上区域
         targetSection = 'top';
         sectionPosition = position / topThreshold;
-        sectionIndex = Math.round((1 - sectionPosition) * (BATTERY_BAR_CONFIG.top.count - 1));
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.top.count - 1));
     } else if (position > bottomThreshold) {
         // 下区域
         targetSection = 'bottom';
         sectionPosition = (position - bottomThreshold) / (1 - bottomThreshold);
-        sectionIndex = Math.round((1 - sectionPosition) * (BATTERY_BAR_CONFIG.bottom.count - 1));
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.bottom.count - 1));
     } else {
         // 中区域
         targetSection = 'middle';
         sectionPosition = (position - topThreshold) / (bottomThreshold - topThreshold);
-        sectionIndex = Math.round((1 - sectionPosition) * (BATTERY_BAR_CONFIG.middle.count - 1));
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.middle.count - 1));
     }
     
     // 计算在总格子中的索引
@@ -156,33 +156,38 @@ function updateBatteryBar(clientY) {
             // 根据区域使用不同颜色
             let r, g, b;
             if (section === 'top') {
-                // 蓝色
-                r = Math.round(52 * intensity);
-                g = Math.round(152 * intensity);
-                b = Math.round(219 * intensity + 100 * (1 - intensity));
+                // 红色（对应记录的上）
+                r = Math.round(231 * intensity + 50 * (1 - intensity));
+                g = Math.round(76 * intensity);
+                b = Math.round(60 * intensity);
             } else if (section === 'middle') {
                 // 绿色
                 r = Math.round(46 * intensity);
                 g = Math.round(204 * intensity + 50 * (1 - intensity));
                 b = Math.round(113 * intensity);
             } else {
-                // 红色
-                r = Math.round(231 * intensity + 50 * (1 - intensity));
-                g = Math.round(76 * intensity);
-                b = Math.round(60 * intensity);
+                // 蓝色（对应记录的下）
+                r = Math.round(52 * intensity);
+                g = Math.round(152 * intensity);
+                b = Math.round(219 * intensity + 100 * (1 - intensity));
             }
             
             bar.style.background = `rgb(${r}, ${g}, ${b})`;
         } else {
-            // 恢复记录状态显示
-            if (section === 'top' && touchData.top.x !== 0) {
-                bar.style.background = BATTERY_BAR_CONFIG.top.color;
-            } else if (section === 'middle' && touchData.middle.x !== 0) {
-                bar.style.background = BATTERY_BAR_CONFIG.middle.color;
-            } else if (section === 'bottom' && touchData.bottom.x !== 0) {
-                bar.style.background = BATTERY_BAR_CONFIG.bottom.color;
-            } else {
+            // completeCount >= 3时，不显示记录状态，只显示默认灰色
+            if (completeCount >= 3) {
                 bar.style.background = '#555';
+            } else {
+                // 恢复记录状态显示
+                if (section === 'top' && touchData.top.x !== 0) {
+                    bar.style.background = BATTERY_BAR_CONFIG.top.color;
+                } else if (section === 'middle' && touchData.middle.x !== 0) {
+                    bar.style.background = BATTERY_BAR_CONFIG.middle.color;
+                } else if (section === 'bottom' && touchData.bottom.x !== 0) {
+                    bar.style.background = BATTERY_BAR_CONFIG.bottom.color;
+                } else {
+                    bar.style.background = '#555';
+                }
             }
         }
     });
@@ -190,15 +195,23 @@ function updateBatteryBar(clientY) {
 
 // 调整"中"的范围（长按压超过3秒后调用）
 function adjustMiddleRange(clientY) {
-    if (middleRangeAdjusted) {
-        console.log('已经调整过"中"的范围，不再调整');
-        return;
-    }
     
-    const stats = getStatsAverage();
+    let stats = getStatsAverage();
+    
+    // 检查统计数据是否完整，如果不完整，使用当前的touchData
     if (stats.top.y === 0 || stats.bottom.y === 0) {
-        console.log('统计数据不完整，无法调整');
-        return;
+        console.log('统计数据不完整，使用当前touchData');
+        stats = {
+            top: { ...touchData.top },
+            middle: { ...touchData.middle },
+            bottom: { ...touchData.bottom }
+        };
+        
+        // 如果touchData也不完整，返回
+        if (stats.top.y === 0 || stats.bottom.y === 0) {
+            console.log('当前touchData也不完整，无法调整');
+            return;
+        }
     }
     
     const gameContainer = document.querySelector('.game-container');
@@ -228,8 +241,6 @@ function adjustMiddleRange(clientY) {
         middleRangeStart = Math.max(0.1, position - 0.35);
         middleRangeEnd = Math.min(0.9, position + 0.15);
     }
-    
-    middleRangeAdjusted = true;
     
     console.log('========================================');
     console.log('长按压超过3秒，调整"中"的范围');
@@ -434,7 +445,7 @@ function setupTouchListeners() {
         updateTouchInfo(currentTouch, touchArea);
         
         // 开始计时
-        if (!stopwatchRunning && completeCount < 3) {
+        if (!stopwatchRunning && completeCount < 4) {
             resetStopwatch();
             stopwatchRunning = true;
             stopwatchInterval = setInterval(() => {
@@ -455,11 +466,15 @@ function setupTouchListeners() {
             recordTouchData(currentTouch);
         }, 1000);
         
-        // 长按压3秒调整"中"的范围（只在completeCount=3且未调整过时生效）
-        if (completeCount >= 3 && !middleRangeAdjusted) {
+        // 长按压3秒调整"中"的范围（当completeCount=3时生效）
+        if (completeCount >= 3) {
             longPressStartTime = Date.now();
             longPressTimer = setTimeout(() => {
-                adjustMiddleRange(currentTouch.clientY);
+                // 获取当前触摸位置作为"中"的数据
+                if (currentTouch) {
+                    adjustMiddleRange(currentTouch.clientY);
+                }
+                stopStopwatch();
             }, 3000);
         }
     });
@@ -497,6 +512,17 @@ function setupTouchListeners() {
         // 停止计时并显示最终时间
         stopStopwatch();
         
+        // 检查是否是长按3秒调整"中"的范围（当completeCount=3时）
+        if (completeCount >= 3 && longPressStartTime) {
+            const longPressDuration = Date.now() - longPressStartTime;
+            if (longPressDuration >= 3000) {
+                // 长按时间达到3秒，执行调整
+                if (currentTouch) {
+                    adjustMiddleRange(currentTouch.clientY);
+                }
+            }
+        }
+        
         // 清除计时器
         clearTimeout(touchTimer);
         clearTimeout(longPressTimer);
@@ -512,7 +538,7 @@ function setupTouchListeners() {
         updateTouchInfo(e, touchArea);
         
         // 开始计时
-        if (!stopwatchRunning && completeCount < 3) {
+        if (!stopwatchRunning && completeCount < 4) {
             resetStopwatch();
             stopwatchRunning = true;
             stopwatchInterval = setInterval(() => {
@@ -533,11 +559,15 @@ function setupTouchListeners() {
             recordTouchData(e);
         }, 1000);
         
-        // 长按压3秒调整"中"的范围（只在completeCount=3且未调整过时生效）
-        if (completeCount >= 3 && !middleRangeAdjusted) {
+        // 长按压3秒调整"中"的范围（当completeCount=3时生效）
+        if (completeCount >= 3) {
             longPressStartTime = Date.now();
             longPressTimer = setTimeout(() => {
-                adjustMiddleRange(e.clientY);
+                // 获取当前触摸位置作为"中"的数据
+                if (currentTouch) {
+                    adjustMiddleRange(currentTouch.clientY);
+                }
+                stopStopwatch();
             }, 3000);
         }
     });
@@ -607,7 +637,7 @@ function recordTouchData(touch) {
     
     // 根据计数决定记录到哪个位置（交换上、下）
     if (touchCount === 1) {
-        // 第一次长按，记录到下位置（原来是上）
+        // 第一次长按，记录到下位置
         touchData.bottom.x = mirrorX;
         touchData.bottom.y = mirrorY;
         touchData.bottom.radius = 50;
@@ -621,7 +651,7 @@ function recordTouchData(touch) {
             console.log('记录触摸数据到中位置:', touchData.middle);
         }
     } else if (touchCount === 3) {
-        // 第三次长按，记录到上位置（原来是下）
+        // 第三次长按，记录到上位置
         if ((touchData.bottom.x !== 0 || touchData.bottom.y !== 0) && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
             touchData.top.x = mirrorX;
             touchData.top.y = mirrorY;
@@ -655,10 +685,7 @@ function recordTouchData(touch) {
     } else if (touchCount >= 4) {
         // 第四次及以后的按压
         if (allDataRecorded) {
-            // 三个都有数据，次数+1，清空中和上，记录到下
-            completeCount++;
-            const completeCounter = document.getElementById('complete-counter');
-            completeCounter.textContent = completeCount;
+            // 三个都有数据，清空中和上，记录到下
             
             // 存当前这一组数据
             saveTouchDataToAll();
@@ -709,7 +736,13 @@ function recordTouchData(touch) {
                 touchData.top.radius = 50;
                 console.log('记录触摸数据到上位置:', touchData.top);
                 
-                // 三个数据又记录完，存到数组
+                // 三个数据又记录完，completeCount+1
+                completeCount++;
+                const completeCounter = document.getElementById('complete-counter');
+                completeCounter.textContent = completeCount;
+                console.log('录入完成，completeCount:', completeCount);
+                
+                // 存到数组
                 saveTouchDataToAll();
             }
         }
@@ -1100,6 +1133,12 @@ function stopStopwatch() {
     // 显示最终时间（秒）
     const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
     dashboardValue.textContent = totalSeconds.toFixed(2);
+    
+    // 当completeCount=3且计时达到3秒时，调整"中"的范围
+    if (completeCount >= 3 && totalSeconds >= 3 && currentTouch) {
+        console.log('计时达到3秒，调整"中"的范围');
+        adjustMiddleRange(currentTouch.clientY);
+    }
 }
 
 // 保存统计数据到localStorage

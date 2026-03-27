@@ -120,6 +120,9 @@ function updateBatteryBar(clientY) {
         position = Math.max(0, Math.min(1, position));
     }
     
+    // 反转位置，让上下对应
+    position = 1 - position;
+    
     // 根据位置确定在哪个区域
     // 上区域：0-0.3 (6格)
     // 中区域：0.3-0.8 (9格)
@@ -264,6 +267,10 @@ function adjustMiddleRange(clientY) {
         position = Math.max(0, Math.min(1, position));
     }
     console.log('position:', position);
+    
+    // 反转位置，让上下对应
+    position = 1 - position;
+    console.log('position (反转后):', position);
     
     // 根据按压位置调整"中"的范围
     // 如果按压在中偏上（0.2-0.5），中区域向上扩展

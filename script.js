@@ -468,6 +468,11 @@ function setupTouchListeners() {
                 // 记录完成后停止计时
                 stopStopwatch();
             }, 1000);
+        } else if (completeCount >= 3) {
+            // 当completeCount=3时，3秒后自动停止计时
+            longPressTimer = setTimeout(() => {
+                stopStopwatch();
+            }, 3000);
         }
     });
     
@@ -542,6 +547,11 @@ function setupTouchListeners() {
                 // 记录完成后停止计时
                 stopStopwatch();
             }, 1000);
+        } else if (completeCount >= 3) {
+            // 当completeCount=3时，3秒后自动停止计时
+            longPressTimer = setTimeout(() => {
+                stopStopwatch();
+            }, 3000);
         }
     });
     
@@ -1106,6 +1116,8 @@ function stopStopwatch() {
     // 显示最终时间（秒）
     const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
     dashboardValue.textContent = totalSeconds.toFixed(2);
+    
+    console.log('stopStopwatch 被调用，completeCount:', completeCount, 'totalSeconds:', totalSeconds, 'currentTouch:', currentTouch ? '存在' : '不存在');
     
     // 当completeCount=3且计时达到3秒时，调整"中"的范围
     if (completeCount >= 3 && totalSeconds >= 3 && currentTouch) {

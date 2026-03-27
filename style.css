@@ -39,7 +39,7 @@ body {
 /* 完成计数器 */
 .complete-counter {
     position: absolute;
-    bottom: 210px;
+    bottom: 170px;
     left: 60px;
     font-size: 2rem;
     font-weight: bold;
@@ -51,7 +51,7 @@ body {
 
 .dashboard {
     position: absolute;
-    bottom: 80px;
+    bottom: 40px;
     left: 20px;
     width: 120px;
     height: 120px;

@@ -465,6 +465,8 @@ function setupTouchListeners() {
             touchTimer = setTimeout(() => {
                 // 超过1秒，记录数据
                 recordTouchData(currentTouch);
+                // 记录完成后停止计时
+                stopStopwatch();
             }, 1000);
         }
     });
@@ -537,6 +539,8 @@ function setupTouchListeners() {
             touchTimer = setTimeout(() => {
                 // 超过1秒，记录数据
                 recordTouchData(e);
+                // 记录完成后停止计时
+                stopStopwatch();
             }, 1000);
         }
     });

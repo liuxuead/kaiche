@@ -717,7 +717,8 @@ function updateTouchInfo(touch, touchArea) {
     const originalY = Math.round(touch.clientY);
     const y = containerHeight - originalY;
     
-    touchInfo.textContent = `触摸位置: (${x}, ${y})`;
+    // 触摸位置只显示黑条，不要文字
+    touchInfo.textContent = '';
     
     // 显示触摸区域（使用镜像后的坐标）
     touchArea.style.left = `${x}px`;

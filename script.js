@@ -195,8 +195,10 @@ function updateBatteryBar(clientY) {
 
 // 调整"中"的范围（长按压超过3秒后调用）
 function adjustMiddleRange(clientY) {
+    console.log('adjustMiddleRange 开始执行，clientY:', clientY);
     
     let stats = getStatsAverage();
+    console.log('stats:', stats);
     
     // 检查统计数据是否完整，如果不完整，使用当前的touchData
     if (stats.top.y === 0 || stats.bottom.y === 0) {
@@ -215,17 +217,30 @@ function adjustMiddleRange(clientY) {
     }
     
     const gameContainer = document.querySelector('.game-container');
-    if (!gameContainer) return;
+    if (!gameContainer) {
+        console.log('gameContainer 不存在');
+        return;
+    }
     
     const rect = gameContainer.getBoundingClientRect();
     const relativeY = clientY - rect.top;
+    console.log('relativeY:', relativeY);
     
     // 计算按压位置在统计范围内的位置 (0-1)
-    const totalRange = stats.bottom.y - stats.top.y;
-    if (totalRange <= 0) return;
+    const totalRange = Math.abs(stats.bottom.y - stats.top.y);
+    console.log('totalRange:', totalRange);
+    if (totalRange <= 0) {
+        console.log('totalRange <= 0，返回');
+        return;
+    }
     
-    let position = (relativeY - stats.top.y) / totalRange;
+    // 确定哪个是上，哪个是下
+    const minY = Math.min(stats.top.y, stats.bottom.y);
+    const maxY = Math.max(stats.top.y, stats.bottom.y);
+    
+    let position = (relativeY - minY) / totalRange;
     position = Math.max(0, Math.min(1, position));
+    console.log('position:', position);
     
     // 根据按压位置调整"中"的范围
     // 如果按压在中偏上（0.2-0.5），中区域向上扩展
@@ -468,7 +483,7 @@ function setupTouchListeners() {
                 // 记录完成后停止计时
                 stopStopwatch();
             }, 1000);
-        } else if (completeCount >= 3) {
+        } else if (completeCount === 3) {
             // 当completeCount=3时，3秒后自动停止计时
             longPressTimer = setTimeout(() => {
                 stopStopwatch();
@@ -547,7 +562,7 @@ function setupTouchListeners() {
                 // 记录完成后停止计时
                 stopStopwatch();
             }, 1000);
-        } else if (completeCount >= 3) {
+        } else if (completeCount === 3) {
             // 当completeCount=3时，3秒后自动停止计时
             longPressTimer = setTimeout(() => {
                 stopStopwatch();
@@ -1120,9 +1135,13 @@ function stopStopwatch() {
     console.log('stopStopwatch 被调用，completeCount:', completeCount, 'totalSeconds:', totalSeconds, 'currentTouch:', currentTouch ? '存在' : '不存在');
     
     // 当completeCount=3且计时达到3秒时，调整"中"的范围
-    if (completeCount >= 3 && totalSeconds >= 3 && currentTouch) {
+    if (completeCount === 3 && totalSeconds >= 3 && currentTouch) {
         console.log('计时达到3秒，调整"中"的范围');
         adjustMiddleRange(currentTouch.clientY);
+        // 将completeCount增加到4，避免再次触发
+        completeCount = 4;
+        const completeCounter = document.getElementById('complete-counter');
+        completeCounter.textContent = completeCount;
     }
 }
 

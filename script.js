@@ -324,8 +324,8 @@ function setupTouchListeners() {
             recordTouchData(currentTouch);
         }, 1000);
         
-        // 长按压3秒调整"中"的范围（只在统计完成后且未调整过时生效）
-        if (allTouchData.length >= 3 && !middleRangeAdjusted) {
+        // 长按压3秒调整"中"的范围（只在completeCount=3且未调整过时生效）
+        if (completeCount >= 3 && !middleRangeAdjusted) {
             longPressStartTime = Date.now();
             longPressTimer = setTimeout(() => {
                 adjustMiddleRange(currentTouch.clientY);
@@ -341,8 +341,8 @@ function setupTouchListeners() {
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
-        // 实时更新电量条（统计达到3次后才启用）
-        if (allTouchData.length >= 3) {
+        // 实时更新电量条（completeCount达到3后才启用）
+        if (completeCount >= 3) {
             updateBatteryBar(currentTouch.clientY);
         }
     });
@@ -391,8 +391,8 @@ function setupTouchListeners() {
             recordTouchData(e);
         }, 1000);
         
-        // 长按压3秒调整"中"的范围（只在统计完成后且未调整过时生效）
-        if (allTouchData.length >= 3 && !middleRangeAdjusted) {
+        // 长按压3秒调整"中"的范围（只在completeCount=3且未调整过时生效）
+        if (completeCount >= 3 && !middleRangeAdjusted) {
             longPressStartTime = Date.now();
             longPressTimer = setTimeout(() => {
                 adjustMiddleRange(e.clientY);
@@ -404,8 +404,8 @@ function setupTouchListeners() {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
-        // 实时更新电量条（统计达到3次后才启用）
-        if (allTouchData.length >= 3) {
+        // 实时更新电量条（completeCount达到3后才启用）
+        if (completeCount >= 3) {
             updateBatteryBar(e.clientY);
         }
     });
@@ -426,82 +426,139 @@ function setupTouchListeners() {
 
 // 记录触摸数据
 function recordTouchData(touch) {
-    // 增加触摸计数
-    touchCount++;
+    // 使用仪表盘旁边的completeCount来控制记录逻辑
+    // completeCount = 0,1,2 时记录上中下
+    // completeCount = 3 时，即使过了1秒也不会记录，只等待长按压3秒调整"中"的范围
+    
+    if (completeCount >= 3) {
+        console.log('completeCount >= 3，不再记录数据，只等待长按压3秒调整"中"的范围');
+        return;
+    }
     
     // 检查是否所有数据都已记录
     const allDataRecorded = (touchData.top.x !== 0 || touchData.top.y !== 0) && 
                           (touchData.middle.x !== 0 || touchData.middle.y !== 0) && 
                           (touchData.bottom.x !== 0 || touchData.bottom.y !== 0);
     
-    // 根据计数决定记录到哪个位置
-    if (touchCount === 1) {
-        // 第一次长按，记录到上位置
-        touchData.top.x = Math.round(touch.clientX);
-        touchData.top.y = Math.round(touch.clientY);
-        touchData.top.radius = 50;
-        console.log('记录触摸数据到上位置:', touchData.top);
-    } else if (touchCount === 2) {
-        // 第二次长按，记录到中位置
-        if (touchData.top.x !== 0 || touchData.top.y !== 0) {
+    // 根据completeCount决定记录到哪个位置
+    if (completeCount === 0) {
+        // 第0组，记录上中下
+        if (touchData.top.x === 0 && touchData.top.y === 0) {
+            // 记录到上位置
+            touchData.top.x = Math.round(touch.clientX);
+            touchData.top.y = Math.round(touch.clientY);
+            touchData.top.radius = 50;
+            console.log('第0组 - 记录触摸数据到上位置:', touchData.top);
+        } else if (touchData.middle.x === 0 && touchData.middle.y === 0) {
+            // 记录到中位置
             touchData.middle.x = Math.round(touch.clientX);
             touchData.middle.y = Math.round(touch.clientY);
             touchData.middle.radius = 50;
-            console.log('记录触摸数据到中位置:', touchData.middle);
-        }
-    } else if (touchCount === 3) {
-        // 第三次长按，记录到下位置
-        if ((touchData.top.x !== 0 || touchData.top.y !== 0) && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
+            console.log('第0组 - 记录触摸数据到中位置:', touchData.middle);
+        } else if (touchData.bottom.x === 0 && touchData.bottom.y === 0) {
+            // 记录到下位置
             touchData.bottom.x = Math.round(touch.clientX);
             touchData.bottom.y = Math.round(touch.clientY);
             touchData.bottom.radius = 50;
-            console.log('记录触摸数据到下位置:', touchData.bottom);
+            console.log('第0组 - 记录触摸数据到下位置:', touchData.bottom);
             
-            // 第一次三个数据都记录完，存到数组
+            // 三个数据都记录完，存到数组
             saveTouchDataToAll();
-        }
-    } else if (touchCount >= 4) {
-        // 第四次及以后的按压
-        if (allDataRecorded) {
-            // 三个都有数据，次数+1，清空中和下，记录到上
+            
+            // 增加completeCount
             completeCount++;
             const completeCounter = document.getElementById('complete-counter');
             completeCounter.textContent = completeCount;
             
-            // 存当前这一组数据
+            // 清空中和下，保留上，为下一组做准备
+            touchData.middle.x = 0;
+            touchData.middle.y = 0;
+            touchData.bottom.x = 0;
+            touchData.bottom.y = 0;
+        }
+    } else if (completeCount === 1) {
+        // 第1组，记录上中下
+        if (touchData.top.x === 0 && touchData.top.y === 0) {
+            // 记录到上位置
+            touchData.top.x = Math.round(touch.clientX);
+            touchData.top.y = Math.round(touch.clientY);
+            touchData.top.radius = 50;
+            console.log('第1组 - 记录触摸数据到上位置:', touchData.top);
+        } else if (touchData.middle.x === 0 && touchData.middle.y === 0) {
+            // 记录到中位置
+            touchData.middle.x = Math.round(touch.clientX);
+            touchData.middle.y = Math.round(touch.clientY);
+            touchData.middle.radius = 50;
+            console.log('第1组 - 记录触摸数据到中位置:', touchData.middle);
+        } else if (touchData.bottom.x === 0 && touchData.bottom.y === 0) {
+            // 记录到下位置
+            touchData.bottom.x = Math.round(touch.clientX);
+            touchData.bottom.y = Math.round(touch.clientY);
+            touchData.bottom.radius = 50;
+            console.log('第1组 - 记录触摸数据到下位置:', touchData.bottom);
+            
+            // 三个数据都记录完，存到数组
             saveTouchDataToAll();
             
-            // 清空中和下
+            // 增加completeCount
+            completeCount++;
+            const completeCounter = document.getElementById('complete-counter');
+            completeCounter.textContent = completeCount;
+            
+            // 清空中和下，保留上，为下一组做准备
+            touchData.middle.x = 0;
+            touchData.middle.y = 0;
+            touchData.bottom.x = 0;
+            touchData.bottom.y = 0;
+        }
+    } else if (completeCount === 2) {
+        // 第2组，记录上中下
+        if (touchData.top.x === 0 && touchData.top.y === 0) {
+            // 记录到上位置
+            touchData.top.x = Math.round(touch.clientX);
+            touchData.top.y = Math.round(touch.clientY);
+            touchData.top.radius = 50;
+            console.log('第2组 - 记录触摸数据到上位置:', touchData.top);
+        } else if (touchData.middle.x === 0 && touchData.middle.y === 0) {
+            // 记录到中位置
+            touchData.middle.x = Math.round(touch.clientX);
+            touchData.middle.y = Math.round(touch.clientY);
+            touchData.middle.radius = 50;
+            console.log('第2组 - 记录触摸数据到中位置:', touchData.middle);
+        } else if (touchData.bottom.x === 0 && touchData.bottom.y === 0) {
+            // 记录到下位置
+            touchData.bottom.x = Math.round(touch.clientX);
+            touchData.bottom.y = Math.round(touch.clientY);
+            touchData.bottom.radius = 50;
+            console.log('第2组 - 记录触摸数据到下位置:', touchData.bottom);
+            
+            // 三个数据都记录完，存到数组
+            saveTouchDataToAll();
+            
+            // 增加completeCount到3
+            completeCount++;
+            const completeCounter = document.getElementById('complete-counter');
+            completeCounter.textContent = completeCount;
+            
+            // 清空所有数据，不再记录
+            touchData.top.x = 0;
+            touchData.top.y = 0;
             touchData.middle.x = 0;
             touchData.middle.y = 0;
             touchData.bottom.x = 0;
             touchData.bottom.y = 0;
             
-            // 记录到上
-            touchData.top.x = Math.round(touch.clientX);
-            touchData.top.y = Math.round(touch.clientY);
-            touchData.top.radius = 50;
-            console.log('记录触摸数据到上位置:', touchData.top);
-            
-            // 设置触摸计数为1，表示已经记录了上
-            touchCount = 1;
-        } else if (touchData.top.x !== 0 || touchData.top.y !== 0) {
-            // 只有上有数据，记录到中
-            if (touchData.middle.x === 0 && touchData.middle.y === 0) {
-                touchData.middle.x = Math.round(touch.clientX);
-                touchData.middle.y = Math.round(touch.clientY);
-                touchData.middle.radius = 50;
-                console.log('记录触摸数据到中位置:', touchData.middle);
-            } else if (touchData.bottom.x === 0 && touchData.bottom.y === 0) {
-                // 上中有数据，记录到下
-                touchData.bottom.x = Math.round(touch.clientX);
-                touchData.bottom.y = Math.round(touch.clientY);
-                touchData.bottom.radius = 50;
-                console.log('记录触摸数据到下位置:', touchData.bottom);
-                
-                // 三个数据又记录完，存到数组
-                saveTouchDataToAll();
+            // 电量条边框变亮，表示统计完成
+            const batteryBar = document.querySelector('.battery-bar');
+            if (batteryBar) {
+                batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                batteryBar.style.border = '2px solid #00ff00';
             }
+            
+            console.log('========================================');
+            console.log('统计完成！completeCount = 3');
+            console.log('请长按压3秒调整"中"的范围');
+            console.log('========================================');
         }
     }
     
@@ -510,9 +567,9 @@ function recordTouchData(touch) {
 
 // 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）
 function saveTouchDataToAll() {
-    // 如果统计数据已经达到3次，记录区域就不再记录
-    if (allTouchData.length >= 3) {
-        console.log('统计已达到3次，记录区域不再记录');
+    // 如果completeCount已经达到3，不再保存数据
+    if (completeCount >= 3) {
+        console.log('completeCount >= 3，不再保存数据');
         return;
     }
     

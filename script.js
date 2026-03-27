@@ -273,18 +273,19 @@ function adjustMiddleRange(clientY) {
     console.log('position (反转后):', position);
     
     // 根据按压位置调整"中"的范围
-    // 如果按压在中偏上（0.2-0.5），中区域向上扩展
-    // 如果按压在中偏下（0.5-0.8），中区域向下扩展
-    // 如果按压在正中间（0.4-0.6），中区域向两边扩展
+    // "中"至少占 50%
+    const minMiddleRange = 0.5;
     
     if (position < 0.5) {
         // 中偏上，向上扩展
-        middleRangeStart = Math.max(0.1, position - 0.15);
-        middleRangeEnd = Math.min(0.9, position + 0.35);
+        middleRangeStart = Math.max(0.1, position - 0.25);
+        middleRangeEnd = middleRangeStart + minMiddleRange;
+        middleRangeEnd = Math.min(0.9, middleRangeEnd);
     } else {
         // 中偏下，向下扩展
-        middleRangeStart = Math.max(0.1, position - 0.35);
-        middleRangeEnd = Math.min(0.9, position + 0.15);
+        middleRangeEnd = Math.min(0.9, position + 0.25);
+        middleRangeStart = middleRangeEnd - minMiddleRange;
+        middleRangeStart = Math.max(0.1, middleRangeStart);
     }
     
     console.log('========================================');
@@ -445,9 +446,9 @@ function initGame() {
 
 // 存储触摸位置数据
 const touchData = {
-    bottom: { x: 0, y: 0, radius: 50 },
-    middle: { x: 0, y: 0, radius: 50 },
-    top: { x: 0, y: 0, radius: 50 }
+    bottom: { x: 0, y: 0, radius: 50, width: 100, height: 100 },
+    middle: { x: 0, y: 0, radius: 50, width: 200, height: 100 },
+    top: { x: 0, y: 0, radius: 50, width: 100, height: 100 }
 };
 
 // 存储所有记录的数据
@@ -669,6 +670,8 @@ function recordTouchData(touch) {
         touchData.bottom.x = mirrorX;
         touchData.bottom.y = mirrorY;
         touchData.bottom.radius = 50;
+        touchData.bottom.width = 100;
+        touchData.bottom.height = 100;
         console.log('记录触摸数据到下位置:', touchData.bottom);
     } else if (touchCount === 2) {
         // 第二次长按，记录到中位置
@@ -676,6 +679,8 @@ function recordTouchData(touch) {
             touchData.middle.x = mirrorX;
             touchData.middle.y = mirrorY;
             touchData.middle.radius = 50;
+            touchData.middle.width = 150;
+            touchData.middle.height = 100;
             console.log('记录触摸数据到中位置:', touchData.middle);
         }
     } else if (touchCount === 3) {
@@ -684,6 +689,8 @@ function recordTouchData(touch) {
             touchData.top.x = mirrorX;
             touchData.top.y = mirrorY;
             touchData.top.radius = 50;
+            touchData.top.width = 100;
+            touchData.top.height = 100;
             console.log('记录触摸数据到上位置:', touchData.top);
             
             // 第一次三个数据都记录完，completeCount+1
@@ -746,6 +753,8 @@ function recordTouchData(touch) {
             touchData.bottom.x = mirrorX;
             touchData.bottom.y = mirrorY;
             touchData.bottom.radius = 50;
+            touchData.bottom.width = 100;
+            touchData.bottom.height = 100;
             console.log('记录触摸数据到下位置:', touchData.bottom);
             
             // 设置触摸计数为1，表示已经记录了下
@@ -756,12 +765,16 @@ function recordTouchData(touch) {
                 touchData.middle.x = mirrorX;
                 touchData.middle.y = mirrorY;
                 touchData.middle.radius = 50;
+                touchData.middle.width = 150;
+                touchData.middle.height = 100;
                 console.log('记录触摸数据到中位置:', touchData.middle);
             } else if (touchData.top.x === 0 && touchData.top.y === 0) {
                 // 下中有数据，记录到上
                 touchData.top.x = mirrorX;
                 touchData.top.y = mirrorY;
                 touchData.top.radius = 50;
+                touchData.top.width = 100;
+                touchData.top.height = 100;
                 console.log('记录触摸数据到上位置:', touchData.top);
                 
                 // 三个数据又记录完，completeCount+1
@@ -839,46 +852,58 @@ function getStatsAverage() {
     
     if (count === 0) {
         return {
-            top: { x: 0, y: 0, radius: 50 },
-            middle: { x: 0, y: 0, radius: 50 },
-            bottom: { x: 0, y: 0, radius: 50 }
+            top: { x: 0, y: 0, radius: 50, width: 100, height: 100 },
+            middle: { x: 0, y: 0, radius: 50, width: 150, height: 100 },
+            bottom: { x: 0, y: 0, radius: 50, width: 100, height: 100 }
         };
     }
     
     // 计算平均值
-    let sumTopX = 0, sumTopY = 0, sumTopR = 0;
-    let sumMiddleX = 0, sumMiddleY = 0, sumMiddleR = 0;
-    let sumBottomX = 0, sumBottomY = 0, sumBottomR = 0;
+    let sumTopX = 0, sumTopY = 0, sumTopR = 0, sumTopW = 0, sumTopH = 0;
+    let sumMiddleX = 0, sumMiddleY = 0, sumMiddleR = 0, sumMiddleW = 0, sumMiddleH = 0;
+    let sumBottomX = 0, sumBottomY = 0, sumBottomR = 0, sumBottomW = 0, sumBottomH = 0;
     
     allTouchData.forEach(record => {
         sumTopX += record.top.x;
         sumTopY += record.top.y;
         sumTopR += record.top.radius;
+        sumTopW += record.top.width || 100;
+        sumTopH += record.top.height || 100;
         
         sumMiddleX += record.middle.x;
         sumMiddleY += record.middle.y;
         sumMiddleR += record.middle.radius;
+        sumMiddleW += record.middle.width || 200;
+        sumMiddleH += record.middle.height || 100;
         
         sumBottomX += record.bottom.x;
         sumBottomY += record.bottom.y;
         sumBottomR += record.bottom.radius;
+        sumBottomW += record.bottom.width || 100;
+        sumBottomH += record.bottom.height || 100;
     });
     
     return {
         top: {
             x: Math.round(sumTopX / count),
             y: Math.round(sumTopY / count),
-            radius: Math.round(sumTopR / count)
+            radius: Math.round(sumTopR / count),
+            width: Math.round(sumTopW / count),
+            height: Math.round(sumTopH / count)
         },
         middle: {
             x: Math.round(sumMiddleX / count),
             y: Math.round(sumMiddleY / count),
-            radius: Math.round(sumMiddleR / count)
+            radius: Math.round(sumMiddleR / count),
+            width: Math.round(sumMiddleW / count),
+            height: Math.round(sumMiddleH / count)
         },
         bottom: {
             x: Math.round(sumBottomX / count),
             y: Math.round(sumBottomY / count),
-            radius: Math.round(sumBottomR / count)
+            radius: Math.round(sumBottomR / count),
+            width: Math.round(sumBottomW / count),
+            height: Math.round(sumBottomH / count)
         }
     };
 }
@@ -927,19 +952,19 @@ function updateStatsPanel() {
 // 更新数据显示
 function updateDataDisplay() {
     if (touchData.top.x !== 0 || touchData.top.y !== 0) {
-        document.getElementById('data-top').textContent = `圆心: (${touchData.top.x}, ${touchData.top.y}), 半径: ${touchData.top.radius}`;
+        document.getElementById('data-top').textContent = `圆心: (${touchData.top.x}, ${touchData.top.y}), 半径: ${touchData.top.radius}, 尺寸: ${touchData.top.width}x${touchData.top.height}`;
     } else {
         document.getElementById('data-top').textContent = '0';
     }
     
     if (touchData.middle.x !== 0 || touchData.middle.y !== 0) {
-        document.getElementById('data-middle').textContent = `圆心: (${touchData.middle.x}, ${touchData.middle.y}), 半径: ${touchData.middle.radius}`;
+        document.getElementById('data-middle').textContent = `圆心: (${touchData.middle.x}, ${touchData.middle.y}), 半径: ${touchData.middle.radius}, 尺寸: ${touchData.middle.width}x${touchData.middle.height}`;
     } else {
         document.getElementById('data-middle').textContent = '0';
     }
     
     if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
-        document.getElementById('data-bottom').textContent = `圆心: (${touchData.bottom.x}, ${touchData.bottom.y}), 半径: ${touchData.bottom.radius}`;
+        document.getElementById('data-bottom').textContent = `圆心: (${touchData.bottom.x}, ${touchData.bottom.y}), 半径: ${touchData.bottom.radius}, 尺寸: ${touchData.bottom.width}x${touchData.bottom.height}`;
     } else {
         document.getElementById('data-bottom').textContent = '0';
     }
@@ -1172,6 +1197,8 @@ function stopStopwatch() {
         completeCount = 4;
         const completeCounter = document.getElementById('complete-counter');
         completeCounter.textContent = completeCount;
+        // 绘制按压区域
+        drawPressAreas();
     }
 }
 
@@ -1206,6 +1233,11 @@ function loadSavedData() {
                 
                 // 更新统计面板
                 updateStatsPanel();
+                
+                // 如果 completeCount >= 4，绘制按压区域
+                if (completeCount >= 4) {
+                    drawPressAreas();
+                }
                 
                 // 激活电量条
                 const batteryBar = document.querySelector('.battery-bar');
@@ -1308,6 +1340,9 @@ function resetAllData() {
     updateStatsPanel();
     initBatteryBar(); // 重置电量条
     
+    // 清除按压区域
+    clearPressAreas();
+    
     // 恢复电量条边框样式
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
@@ -1323,6 +1358,110 @@ function resetAllData() {
     resetStopwatch();
     
     console.log('所有数据已重置，可以重新开始记录');
+}
+
+// 绘制按压区域
+function drawPressAreas() {
+    const stats = getStatsAverage();
+    if (stats.top.y === 0 || stats.bottom.y === 0 || stats.middle.y === 0) {
+        console.log('统计数据不完整，无法绘制按压区域');
+        return;
+    }
+    
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    
+    // 获取容器高度，用于反转镜像坐标
+    const containerHeight = gameContainer.clientHeight;
+    
+    // 先清除现有的按压区域
+    clearPressAreas();
+    
+    // 反转镜像坐标
+    const reversedBottom = {
+        x: stats.bottom.x,
+        y: containerHeight - stats.bottom.y,
+        radius: stats.bottom.radius,
+        width: stats.bottom.width,
+        height: stats.bottom.height
+    };
+    
+    const reversedMiddle = {
+        x: stats.middle.x,
+        y: containerHeight - stats.middle.y,
+        radius: stats.middle.radius,
+        width: stats.middle.width,
+        height: stats.middle.height
+    };
+    
+    const reversedTop = {
+        x: stats.top.x,
+        y: containerHeight - stats.top.y,
+        radius: stats.top.radius,
+        width: stats.top.width,
+        height: stats.top.height
+    };
+    
+    // 绘制下区域（黑色）
+    createPressArea(gameContainer, reversedBottom, '#000000', '下');
+    
+    // 绘制中区域（绿色）
+    createPressArea(gameContainer, reversedMiddle, '#2ecc71', '中');
+    
+    // 绘制上区域（红色）
+    createPressArea(gameContainer, reversedTop, '#e74c3c', '上');
+    
+    console.log('按压区域已绘制');
+}
+
+// 创建单个按压区域
+function createPressArea(container, position, color, label) {
+    const area = document.createElement('div');
+    area.className = 'press-area';
+    
+    // 使用记录的 width 和 height
+    const width = position.width || 100;
+    const height = position.height || 100;
+    
+    area.style.cssText = `
+        position: absolute;
+        width: ${width}px;
+        height: ${height}px;
+        border: 3px solid ${color};
+        border-radius: 50%;
+        background-color: transparent;
+        transform: translate(-50%, -50%);
+        left: ${position.x}px;
+        top: ${position.y}px;
+        z-index: 20;
+        pointer-events: none;
+    `;
+    
+    // 添加标签
+    const labelEl = document.createElement('div');
+    labelEl.style.cssText = `
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: ${color};
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(0,0,0,0.8);
+    `;
+    labelEl.textContent = label;
+    area.appendChild(labelEl);
+    
+    container.appendChild(area);
+}
+
+// 清除按压区域
+function clearPressAreas() {
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    
+    const areas = gameContainer.querySelectorAll('.press-area');
+    areas.forEach(area => area.remove());
 }
 
 // 页面加载完成后初始化游戏

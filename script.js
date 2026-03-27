@@ -709,18 +709,15 @@ function updateDataDisplay() {
 // 更新触摸信息和显示触摸区域
 function updateTouchInfo(touch, touchArea) {
     const touchInfo = document.querySelector('.touch-info');
-    const gameContainer = document.querySelector('.game-container');
-    const containerHeight = gameContainer.clientHeight;
     
-    // 镜像坐标：以横向中线为基准翻转
+    // 直接使用触摸坐标，不做镜像
     const x = Math.round(touch.clientX);
-    const originalY = Math.round(touch.clientY);
-    const y = containerHeight - originalY;
+    const y = Math.round(touch.clientY);
     
     // 触摸位置只显示黑条，不要文字
     touchInfo.textContent = '';
     
-    // 显示触摸区域（使用镜像后的坐标）
+    // 显示触摸区域（直接使用触摸坐标，不做镜像）
     touchArea.style.left = `${x}px`;
     touchArea.style.top = `${y}px`;
     touchArea.style.opacity = '1';

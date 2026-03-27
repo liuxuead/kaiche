@@ -102,11 +102,23 @@ function updateBatteryBar(clientY) {
     const relativeY = clientY - rect.top;
     
     // 计算当前Y在统计范围内的位置 (0-1)
-    const totalRange = stats.bottom.y - stats.top.y;
-    if (totalRange <= 0) return;
+    let totalRange = Math.abs(stats.bottom.y - stats.top.y);
+    if (totalRange <= 0) {
+        console.log('updateBatteryBar: totalRange <= 0，使用默认范围 100');
+        totalRange = 100;
+    }
     
-    let position = (relativeY - stats.top.y) / totalRange;
-    position = Math.max(0, Math.min(1, position));
+    // 确定哪个是上，哪个是下
+    const minY = Math.min(stats.top.y, stats.bottom.y);
+    const maxY = Math.max(stats.top.y, stats.bottom.y);
+    
+    let position;
+    if (totalRange === 100) {
+        position = 0.5;
+    } else {
+        position = (relativeY - minY) / totalRange;
+        position = Math.max(0, Math.min(1, position));
+    }
     
     // 根据位置确定在哪个区域
     // 上区域：0-0.3 (6格)
@@ -199,6 +211,8 @@ function adjustMiddleRange(clientY) {
     
     let stats = getStatsAverage();
     console.log('stats:', stats);
+    console.log('stats.top.y:', stats.top.y);
+    console.log('stats.bottom.y:', stats.bottom.y);
     
     // 检查统计数据是否完整，如果不完整，使用当前的touchData
     if (stats.top.y === 0 || stats.bottom.y === 0) {
@@ -223,23 +237,32 @@ function adjustMiddleRange(clientY) {
     }
     
     const rect = gameContainer.getBoundingClientRect();
-    const relativeY = clientY - rect.top;
-    console.log('relativeY:', relativeY);
+    const containerHeight = gameContainer.clientHeight;
+    const originalY = clientY - rect.top;
+    const mirrorY = containerHeight - originalY; // 镜像坐标
+    const relativeY = mirrorY;
+    console.log('relativeY (镜像后):', relativeY);
     
     // 计算按压位置在统计范围内的位置 (0-1)
-    const totalRange = Math.abs(stats.bottom.y - stats.top.y);
+    let totalRange = Math.abs(stats.bottom.y - stats.top.y);
     console.log('totalRange:', totalRange);
     if (totalRange <= 0) {
-        console.log('totalRange <= 0，返回');
-        return;
+        console.log('totalRange <= 0，使用默认范围 100');
+        totalRange = 100; // 使用一个小的默认范围
     }
     
     // 确定哪个是上，哪个是下
     const minY = Math.min(stats.top.y, stats.bottom.y);
     const maxY = Math.max(stats.top.y, stats.bottom.y);
     
-    let position = (relativeY - minY) / totalRange;
-    position = Math.max(0, Math.min(1, position));
+    let position;
+    if (totalRange === 100) {
+        // 如果使用了默认范围，直接使用相对位置的比例
+        position = 0.5; // 默认在中间
+    } else {
+        position = (relativeY - minY) / totalRange;
+        position = Math.max(0, Math.min(1, position));
+    }
     console.log('position:', position);
     
     // 根据按压位置调整"中"的范围
@@ -507,8 +530,8 @@ function setupTouchListeners() {
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
-        // 实时更新电量条（completeCount达到3后才启用）
-        if (completeCount >= 3) {
+        // 实时更新电量条（completeCount达到4后才启用）
+        if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
             const mirrorY = containerHeight - currentTouch.clientY;
@@ -582,8 +605,8 @@ function setupTouchListeners() {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
-        // 实时更新电量条（completeCount达到3后才启用）
-        if (completeCount >= 3) {
+        // 实时更新电量条（completeCount达到4后才启用）
+        if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
             const mirrorY = containerHeight - e.clientY;

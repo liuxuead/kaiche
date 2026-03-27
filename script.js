@@ -209,8 +209,8 @@ function updateBatteryBar(clientY) {
 }
 
 // 调整"中"的范围（长按压超过3秒后调用）
-function adjustMiddleRange(clientY) {
-    console.log('adjustMiddleRange 开始执行，clientY:', clientY);
+function adjustMiddleRange(touch) {
+    console.log('adjustMiddleRange 开始执行，touch:', touch);
     
     let stats = getStatsAverage();
     console.log('stats:', stats);
@@ -241,9 +241,12 @@ function adjustMiddleRange(clientY) {
     
     const rect = gameContainer.getBoundingClientRect();
     const containerHeight = gameContainer.clientHeight;
-    const originalY = clientY - rect.top;
-    const mirrorY = containerHeight - originalY; // 镜像坐标
+    const originalX = touch.clientX - rect.left;
+    const originalY = touch.clientY - rect.top;
+    const mirrorX = originalX; // X坐标不需要镜像
+    const mirrorY = containerHeight - originalY; // Y坐标镜像
     const relativeY = mirrorY;
+    console.log('mirrorX:', mirrorX, 'mirrorY:', mirrorY);
     console.log('relativeY (镜像后):', relativeY);
     
     // 计算按压位置在统计范围内的位置 (0-1)
@@ -271,6 +274,31 @@ function adjustMiddleRange(clientY) {
     // 反转位置，让上下对应
     position = 1 - position;
     console.log('position (反转后):', position);
+    
+    // 记录"中"的数据：更新圆心位置为当前按压的位置
+    // 使用镜像后的坐标
+    touchData.middle.x = Math.round(mirrorX);
+    touchData.middle.y = Math.round(mirrorY);
+    touchData.middle.radius = 50;
+    touchData.middle.width = 150;
+    touchData.middle.height = 100;
+    console.log('记录新的"中"的数据:', touchData.middle);
+    
+    // 更新数据显示
+    updateDataDisplay();
+    
+    // 更新所有统计数据中的"中"的数据
+    allTouchData.forEach(record => {
+        record.middle.x = touchData.middle.x;
+        record.middle.y = touchData.middle.y;
+        record.middle.radius = touchData.middle.radius;
+        record.middle.width = touchData.middle.width;
+        record.middle.height = touchData.middle.height;
+    });
+    console.log('已更新所有统计数据中的"中"的数据');
+    
+    // 更新统计面板显示
+    updateStatsPanel();
     
     // 根据按压位置调整"中"的范围
     // "中"至少占 50%
@@ -1192,7 +1220,7 @@ function stopStopwatch() {
     // 当completeCount=3且计时达到3秒时，调整"中"的范围
     if (completeCount === 3 && totalSeconds >= 3 && currentTouch) {
         console.log('计时达到3秒，调整"中"的范围');
-        adjustMiddleRange(currentTouch.clientY);
+        adjustMiddleRange(currentTouch);
         // 将completeCount增加到4，避免再次触发
         completeCount = 4;
         const completeCounter = document.getElementById('complete-counter');

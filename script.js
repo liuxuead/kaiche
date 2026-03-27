@@ -43,7 +43,29 @@ function updateBatteryBar(clientY) {
     position = Math.max(0, Math.min(1, position));
     
     // 计算应该点亮哪些竖杠（调换上下：上区域对应右边，下区域对应左边）
-    const centerIndex = Math.round((1 - position) * (BATTERY_BAR_COUNT - 1));
+    // 如果已调整过"中"的范围，使用新的阈值
+    let centerIndex;
+    if (middleRangeAdjusted) {
+        // 使用调整后的阈值
+        // 上区域：0 - middleRangeStart
+        // 中区域：middleRangeStart - middleRangeEnd
+        // 下区域：middleRangeEnd - 1
+        if (position < middleRangeStart) {
+            // 上区域，映射到右边的竖杠
+            centerIndex = Math.round((1 - (position / middleRangeStart) * 0.2) * (BATTERY_BAR_COUNT - 1));
+        } else if (position > middleRangeEnd) {
+            // 下区域，映射到左边的竖杠
+            centerIndex = Math.round((1 - 0.8 - ((position - middleRangeEnd) / (1 - middleRangeEnd)) * 0.2) * (BATTERY_BAR_COUNT - 1));
+        } else {
+            // 中区域，映射到中间的竖杠
+            const middlePosition = (position - middleRangeStart) / (middleRangeEnd - middleRangeStart);
+            centerIndex = Math.round((1 - 0.2 - middlePosition * 0.6) * (BATTERY_BAR_COUNT - 1));
+        }
+    } else {
+        // 使用默认阈值
+        centerIndex = Math.round((1 - position) * (BATTERY_BAR_COUNT - 1));
+    }
+    
     const spread = 3; // 向两边扩散的范围
     
     const bars = document.querySelectorAll('.battery-bar-item');
@@ -57,6 +79,65 @@ function updateBatteryBar(clientY) {
             bar.style.background = '#555';
         }
     });
+}
+
+// 调整"中"的范围（长按压超过3秒后调用）
+function adjustMiddleRange(clientY) {
+    if (middleRangeAdjusted) {
+        console.log('已经调整过"中"的范围，不再调整');
+        return;
+    }
+    
+    const stats = getStatsAverage();
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
+        console.log('统计数据不完整，无法调整');
+        return;
+    }
+    
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    
+    const rect = gameContainer.getBoundingClientRect();
+    const relativeY = clientY - rect.top;
+    
+    // 计算按压位置在统计范围内的位置 (0-1)
+    const totalRange = stats.bottom.y - stats.top.y;
+    if (totalRange <= 0) return;
+    
+    let position = (relativeY - stats.top.y) / totalRange;
+    position = Math.max(0, Math.min(1, position));
+    
+    // 根据按压位置调整"中"的范围
+    // 如果按压在中偏上（0.2-0.5），中区域向上扩展
+    // 如果按压在中偏下（0.5-0.8），中区域向下扩展
+    // 如果按压在正中间（0.4-0.6），中区域向两边扩展
+    
+    if (position < 0.5) {
+        // 中偏上，向上扩展
+        middleRangeStart = Math.max(0.1, position - 0.15);
+        middleRangeEnd = Math.min(0.9, position + 0.35);
+    } else {
+        // 中偏下，向下扩展
+        middleRangeStart = Math.max(0.1, position - 0.35);
+        middleRangeEnd = Math.min(0.9, position + 0.15);
+    }
+    
+    middleRangeAdjusted = true;
+    
+    console.log('========================================');
+    console.log('长按压超过3秒，调整"中"的范围');
+    console.log('按压位置:', position.toFixed(2));
+    console.log('新的"中"范围:', middleRangeStart.toFixed(2), '-', middleRangeEnd.toFixed(2));
+    console.log('========================================');
+    
+    // 电量条闪烁提示
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.style.boxShadow = '0 0 20px #ffff00, 0 0 40px #ffff00';
+        setTimeout(() => {
+            batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+        }, 500);
+    }
 }
 
 // 游戏初始化
@@ -104,9 +185,13 @@ function initGame() {
             console.log('点击了重置统计按钮');
             // 只清空统计数据
             allTouchData.length = 0; // 清空统计数据
-            statsLocked = false; // 解锁统计
             lastBottomX = 0;
             lastBottomY = 0;
+            
+            // 重置"中"范围调整状态
+            middleRangeAdjusted = false;
+            middleRangeStart = 0.33;
+            middleRangeEnd = 0.66;
             
             // 更新统计面板为0
             updateStatsPanel();
@@ -139,7 +224,11 @@ function initGame() {
             lastBottomX = 0;
             lastBottomY = 0;
             allTouchData.length = 0; // 清空统计数据
-            statsLocked = false; // 解锁统计
+            
+            // 重置"中"范围调整状态
+            middleRangeAdjusted = false;
+            middleRangeStart = 0.33;
+            middleRangeEnd = 0.66;
             
             // 清除显示
             clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
@@ -179,10 +268,17 @@ const allTouchData = [];
 // 记录上一次"下"的数据，用来检测变化
 let lastBottomX = 0;
 let lastBottomY = 0;
-// 统计是否锁定（3次后锁定）
-let statsLocked = false;
 // 电量条竖杠数量
 const BATTERY_BAR_COUNT = 20;
+// 是否已调整过"中"的范围
+let middleRangeAdjusted = false;
+// 调整后的阈值（默认是0.33-0.66，调整后是0.2-0.8）
+let middleRangeStart = 0.33;
+let middleRangeEnd = 0.66;
+// 长按压3秒的计时器
+let longPressTimer = null;
+// 长按压开始时间
+let longPressStartTime = 0;
 
 // 触摸计时器
 let touchTimer = null;
@@ -222,11 +318,19 @@ function setupTouchListeners() {
             }, 10);
         }
         
-        // 开始计时
+        // 开始计时（1秒记录数据）
         touchTimer = setTimeout(() => {
             // 超过1秒，记录数据
             recordTouchData(currentTouch);
         }, 1000);
+        
+        // 长按压3秒调整"中"的范围（只在统计完成后且未调整过时生效）
+        if (allTouchData.length >= 3 && !middleRangeAdjusted) {
+            longPressStartTime = Date.now();
+            longPressTimer = setTimeout(() => {
+                adjustMiddleRange(currentTouch.clientY);
+            }, 3000);
+        }
     });
     
     // 触摸移动事件
@@ -253,6 +357,7 @@ function setupTouchListeners() {
         
         // 清除计时器
         clearTimeout(touchTimer);
+        clearTimeout(longPressTimer);
         currentTouch = null;
     });
     
@@ -280,11 +385,19 @@ function setupTouchListeners() {
             }, 10);
         }
         
-        // 开始计时
+        // 开始计时（1秒记录数据）
         touchTimer = setTimeout(() => {
             // 超过1秒，记录数据
             recordTouchData(e);
         }, 1000);
+        
+        // 长按压3秒调整"中"的范围（只在统计完成后且未调整过时生效）
+        if (allTouchData.length >= 3 && !middleRangeAdjusted) {
+            longPressStartTime = Date.now();
+            longPressTimer = setTimeout(() => {
+                adjustMiddleRange(e.clientY);
+            }, 3000);
+        }
     });
     
     gameContainer.addEventListener('mousemove', (e) => {
@@ -306,6 +419,7 @@ function setupTouchListeners() {
         
         // 清除计时器
         clearTimeout(touchTimer);
+        clearTimeout(longPressTimer);
         currentTouch = null;
     });
 }

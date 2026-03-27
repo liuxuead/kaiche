@@ -331,9 +331,6 @@ function adjustMiddleRange(touch) {
             batteryBar.style.border = 'none';
         }, 500);
     }
-    
-    // 清除电量条记录状态显示，后面只按照手指滚动逻辑点亮
-    clearBatteryBarRecordStatus();
 }
 
 // 更新仪表盘数值（平滑动画）
@@ -1319,9 +1316,11 @@ function stopStopwatch() {
     }
     stopwatchRunning = false;
     
-    // 显示最终时间（秒）
+    // 显示最终时间（秒）- 只有 completeCount <4 时才显示
     const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
-    dashboardValue.textContent = totalSeconds.toFixed(2);
+    if (completeCount < 4) {
+        dashboardValue.textContent = totalSeconds.toFixed(2);
+    }
     
     console.log('stopStopwatch 被调用，completeCount:', completeCount, 'totalSeconds:', totalSeconds, 'currentTouch:', currentTouch ? '存在' : '不存在');
     

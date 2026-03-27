@@ -193,6 +193,9 @@ function initGame() {
             middleRangeStart = 0.33;
             middleRangeEnd = 0.66;
             
+            // 清除保存的统计数据
+            clearSavedData();
+            
             // 更新统计面板为0
             updateStatsPanel();
             initBatteryBar(); // 重置电量条
@@ -224,11 +227,15 @@ function initGame() {
             lastBottomX = 0;
             lastBottomY = 0;
             allTouchData.length = 0; // 清空统计数据
+            completeCount = 0;
             
             // 重置"中"范围调整状态
             middleRangeAdjusted = false;
             middleRangeStart = 0.33;
             middleRangeEnd = 0.66;
+            
+            // 清除保存的统计数据
+            clearSavedData();
             
             // 清除显示
             clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
@@ -244,11 +251,16 @@ function initGame() {
                 batteryBar.style.border = 'none';
             }
             
+            // 更新完成计数器
+            const completeCounter = document.getElementById('complete-counter');
+            completeCounter.textContent = completeCount;
+            
             console.log('所有数据已重置，可以重新开始记录');
         };
     }
     
     setupTouchListeners();
+    setupDashboardListeners();
     startStopwatch();
     // 初始化数据显示
     updateDataDisplay();
@@ -598,17 +610,20 @@ function saveTouchDataToAll() {
         updateStatsPanel();
         
         // 检查是否达到3次
-        if (allTouchData.length >= 3) {
-            // 电量条边框变亮，表示已锁定
-            const batteryBar = document.querySelector('.battery-bar');
-            if (batteryBar) {
-                batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                batteryBar.style.border = '2px solid #00ff00';
+            if (allTouchData.length >= 3) {
+                // 电量条边框变亮，表示已锁定
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                    batteryBar.style.border = '2px solid #00ff00';
+                }
+                console.log('========================================');
+                console.log('统计已达到3次！记录区域停止记录');
+                console.log('========================================');
+                
+                // 保存统计数据到localStorage
+                saveStatsData();
             }
-            console.log('========================================');
-            console.log('统计已达到3次！记录区域停止记录');
-            console.log('========================================');
-        }
     }
     
     // 更新状态
@@ -944,6 +959,156 @@ function stopStopwatch() {
     // 显示最终时间（秒）
     const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
     dashboardValue.textContent = totalSeconds.toFixed(2);
+}
+
+// 保存统计数据到localStorage
+function saveStatsData() {
+    if (allTouchData.length >= 3) {
+        const stats = getStatsAverage();
+        const savedData = {
+            stats: stats,
+            allTouchData: allTouchData,
+            completeCount: completeCount
+        };
+        localStorage.setItem('gameStats', JSON.stringify(savedData));
+        console.log('统计数据已保存到localStorage');
+    }
+}
+
+// 从localStorage加载统计数据
+function loadSavedData() {
+    const savedData = localStorage.getItem('gameStats');
+    if (savedData) {
+        try {
+            const parsedData = JSON.parse(savedData);
+            if (parsedData.stats && parsedData.allTouchData) {
+                // 加载统计数据
+                allTouchData = parsedData.allTouchData;
+                completeCount = parsedData.completeCount || 3;
+                
+                // 更新UI
+                const completeCounter = document.getElementById('complete-counter');
+                completeCounter.textContent = completeCount;
+                
+                // 更新统计面板
+                updateStatsPanel();
+                
+                // 激活电量条
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                    batteryBar.style.border = '2px solid #00ff00';
+                }
+                
+                console.log('从localStorage加载了统计数据');
+            }
+        } catch (error) {
+            console.error('加载保存数据失败:', error);
+        }
+    }
+}
+
+// 清除保存的统计数据
+function clearSavedData() {
+    localStorage.removeItem('gameStats');
+    console.log('已清除保存的统计数据');
+}
+
+// 设置仪表盘监听器（长按重置）
+function setupDashboardListeners() {
+    const dashboard = document.querySelector('.dashboard');
+    if (!dashboard) return;
+    
+    let dashboardLongPressTimer = null;
+    const dashboardLongPressDuration = 3000; // 3秒
+    
+    // 鼠标按下事件
+    dashboard.addEventListener('mousedown', () => {
+        console.log('仪表盘被按下');
+        dashboardLongPressTimer = setTimeout(() => {
+            console.log('长按仪表盘超过3秒，重置所有数据');
+            resetAllData();
+        }, dashboardLongPressDuration);
+    });
+    
+    // 鼠标释放事件
+    dashboard.addEventListener('mouseup', () => {
+        clearTimeout(dashboardLongPressTimer);
+    });
+    
+    // 鼠标离开事件
+    dashboard.addEventListener('mouseleave', () => {
+        clearTimeout(dashboardLongPressTimer);
+    });
+    
+    // 触摸开始事件
+    dashboard.addEventListener('touchstart', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        console.log('仪表盘被触摸');
+        dashboardLongPressTimer = setTimeout(() => {
+            console.log('长按仪表盘超过3秒，重置所有数据');
+            resetAllData();
+        }, dashboardLongPressDuration);
+    });
+    
+    // 触摸结束事件
+    dashboard.addEventListener('touchend', () => {
+        clearTimeout(dashboardLongPressTimer);
+    });
+}
+
+// 重置所有数据
+function resetAllData() {
+    // 重置所有数据
+    touchData.top.x = 0;
+    touchData.top.y = 0;
+    touchData.middle.x = 0;
+    touchData.middle.y = 0;
+    touchData.bottom.x = 0;
+    touchData.bottom.y = 0;
+    touchCount = 0;
+    completeCount = 0;
+    lastBottomX = 0;
+    lastBottomY = 0;
+    allTouchData.length = 0; // 清空统计数据
+    
+    // 重置"中"范围调整状态
+    middleRangeAdjusted = false;
+    middleRangeStart = 0.33;
+    middleRangeEnd = 0.66;
+    
+    // 清除保存的统计数据
+    clearSavedData();
+    
+    // 清除显示
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    const textTop = document.getElementById('text-top');
+    const textMiddle = document.getElementById('text-middle');
+    const textBottom = document.getElementById('text-bottom');
+    
+    clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
+    clearDisplayText(textTop, textMiddle, textBottom);
+    updateDataDisplay();
+    updateStatsPanel();
+    initBatteryBar(); // 重置电量条
+    
+    // 恢复电量条边框样式
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.style.boxShadow = 'none';
+        batteryBar.style.border = 'none';
+    }
+    
+    // 更新完成计数器
+    const completeCounter = document.getElementById('complete-counter');
+    completeCounter.textContent = completeCount;
+    
+    // 重置秒表
+    resetStopwatch();
+    
+    console.log('所有数据已重置，可以重新开始记录');
 }
 
 // 页面加载完成后初始化游戏

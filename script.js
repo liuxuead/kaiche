@@ -1,3 +1,10 @@
+// 电量条分区配置
+const BATTERY_BAR_CONFIG = {
+    top: { count: 6, color: '#3498db' },      // 上：6格，蓝色
+    middle: { count: 9, color: '#2ecc71' },   // 中：9格，绿色
+    bottom: { count: 5, color: '#e74c3c' }    // 下：5格，红色
+};
+
 // 初始化电量条
 function initBatteryBar() {
     const batteryBars = document.getElementById('battery-bars');
@@ -5,9 +12,12 @@ function initBatteryBar() {
     
     batteryBars.innerHTML = '';
     
-    for (let i = 0; i < BATTERY_BAR_COUNT; i++) {
+    // 创建上部分（6格，蓝色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.top.count; i++) {
         const bar = document.createElement('div');
         bar.className = 'battery-bar-item';
+        bar.dataset.section = 'top';
+        bar.dataset.index = i;
         bar.style.cssText = `
             flex: 1;
             height: 70%;
@@ -16,12 +26,68 @@ function initBatteryBar() {
             border-radius: 2px;
             transition: background 0.1s;
         `;
+        batteryBars.appendChild(bar);
+    }
+    
+    // 创建中部分（9格，绿色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.middle.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'middle';
         bar.dataset.index = i;
+        bar.style.cssText = `
+            flex: 1;
+            height: 70%;
+            margin: 0 2px;
+            background: #555;
+            border-radius: 2px;
+            transition: background 0.1s;
+        `;
+        batteryBars.appendChild(bar);
+    }
+    
+    // 创建下部分（5格，红色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.bottom.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'bottom';
+        bar.dataset.index = i;
+        bar.style.cssText = `
+            flex: 1;
+            height: 70%;
+            margin: 0 2px;
+            background: #555;
+            border-radius: 2px;
+            transition: background 0.1s;
+        `;
         batteryBars.appendChild(bar);
     }
 }
 
-// 更新电量条显示
+// 更新电量条记录状态显示
+function updateBatteryBarRecordStatus() {
+    const bars = document.querySelectorAll('.battery-bar-item');
+    
+    bars.forEach(bar => {
+        const section = bar.dataset.section;
+        
+        if (section === 'top' && touchData.top.x !== 0) {
+            // 上有数据，亮起蓝色
+            bar.style.background = BATTERY_BAR_CONFIG.top.color;
+        } else if (section === 'middle' && touchData.middle.x !== 0) {
+            // 中有数据，亮起绿色
+            bar.style.background = BATTERY_BAR_CONFIG.middle.color;
+        } else if (section === 'bottom' && touchData.bottom.x !== 0) {
+            // 下有数据，亮起红色
+            bar.style.background = BATTERY_BAR_CONFIG.bottom.color;
+        } else {
+            // 无数据，灰色
+            bar.style.background = '#555';
+        }
+    });
+}
+
+// 更新电量条显示（实时追踪手指位置）
 function updateBatteryBar(clientY) {
     const stats = getStatsAverage();
     if (stats.top.y === 0 || stats.bottom.y === 0) {
@@ -42,41 +108,82 @@ function updateBatteryBar(clientY) {
     let position = (relativeY - stats.top.y) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
-    // 计算应该点亮哪些竖杠（调换上下：上区域对应右边，下区域对应左边）
-    // 如果已调整过"中"的范围，使用新的阈值
-    let centerIndex;
-    if (middleRangeAdjusted) {
-        // 使用调整后的阈值
-        // 上区域：0 - middleRangeStart
-        // 中区域：middleRangeStart - middleRangeEnd
-        // 下区域：middleRangeEnd - 1
-        if (position < middleRangeStart) {
-            // 上区域，映射到右边的竖杠
-            centerIndex = Math.round((1 - (position / middleRangeStart) * 0.2) * (BATTERY_BAR_COUNT - 1));
-        } else if (position > middleRangeEnd) {
-            // 下区域，映射到左边的竖杠
-            centerIndex = Math.round((1 - 0.8 - ((position - middleRangeEnd) / (1 - middleRangeEnd)) * 0.2) * (BATTERY_BAR_COUNT - 1));
-        } else {
-            // 中区域，映射到中间的竖杠
-            const middlePosition = (position - middleRangeStart) / (middleRangeEnd - middleRangeStart);
-            centerIndex = Math.round((1 - 0.2 - middlePosition * 0.6) * (BATTERY_BAR_COUNT - 1));
-        }
+    // 根据位置确定在哪个区域
+    // 上区域：0-0.3 (6格)
+    // 中区域：0.3-0.8 (9格)
+    // 下区域：0.8-1 (5格) - 偏下一些，方便指尖操作
+    let targetSection, sectionIndex, sectionPosition;
+    const topThreshold = 0.3;
+    const bottomThreshold = 0.8;
+    
+    if (position < topThreshold) {
+        // 上区域
+        targetSection = 'top';
+        sectionPosition = position / topThreshold;
+        sectionIndex = Math.round((1 - sectionPosition) * (BATTERY_BAR_CONFIG.top.count - 1));
+    } else if (position > bottomThreshold) {
+        // 下区域
+        targetSection = 'bottom';
+        sectionPosition = (position - bottomThreshold) / (1 - bottomThreshold);
+        sectionIndex = Math.round((1 - sectionPosition) * (BATTERY_BAR_CONFIG.bottom.count - 1));
     } else {
-        // 使用默认阈值
-        centerIndex = Math.round((1 - position) * (BATTERY_BAR_COUNT - 1));
+        // 中区域
+        targetSection = 'middle';
+        sectionPosition = (position - topThreshold) / (bottomThreshold - topThreshold);
+        sectionIndex = Math.round((1 - sectionPosition) * (BATTERY_BAR_CONFIG.middle.count - 1));
     }
     
-    const spread = 3; // 向两边扩散的范围
+    // 计算在总格子中的索引
+    let centerIndex;
+    if (targetSection === 'top') {
+        centerIndex = sectionIndex;
+    } else if (targetSection === 'middle') {
+        centerIndex = BATTERY_BAR_CONFIG.top.count + sectionIndex;
+    } else {
+        centerIndex = BATTERY_BAR_CONFIG.top.count + BATTERY_BAR_CONFIG.middle.count + sectionIndex;
+    }
+    
+    const spread = 2; // 向两边扩散的范围
     
     const bars = document.querySelectorAll('.battery-bar-item');
     bars.forEach((bar, i) => {
         const distance = Math.abs(i - centerIndex);
+        const section = bar.dataset.section;
+        
         if (distance <= spread) {
             const intensity = 1 - (distance / (spread + 1));
-            const green = Math.round(255 * intensity);
-            bar.style.background = `rgb(0, ${green}, 0)`;
+            
+            // 根据区域使用不同颜色
+            let r, g, b;
+            if (section === 'top') {
+                // 蓝色
+                r = Math.round(52 * intensity);
+                g = Math.round(152 * intensity);
+                b = Math.round(219 * intensity + 100 * (1 - intensity));
+            } else if (section === 'middle') {
+                // 绿色
+                r = Math.round(46 * intensity);
+                g = Math.round(204 * intensity + 50 * (1 - intensity));
+                b = Math.round(113 * intensity);
+            } else {
+                // 红色
+                r = Math.round(231 * intensity + 50 * (1 - intensity));
+                g = Math.round(76 * intensity);
+                b = Math.round(60 * intensity);
+            }
+            
+            bar.style.background = `rgb(${r}, ${g}, ${b})`;
         } else {
-            bar.style.background = '#555';
+            // 恢复记录状态显示
+            if (section === 'top' && touchData.top.x !== 0) {
+                bar.style.background = BATTERY_BAR_CONFIG.top.color;
+            } else if (section === 'middle' && touchData.middle.x !== 0) {
+                bar.style.background = BATTERY_BAR_CONFIG.middle.color;
+            } else if (section === 'bottom' && touchData.bottom.x !== 0) {
+                bar.style.background = BATTERY_BAR_CONFIG.bottom.color;
+            } else {
+                bar.style.background = '#555';
+            }
         }
     });
 }
@@ -486,28 +593,28 @@ function recordTouchData(touch) {
                           (touchData.middle.x !== 0 || touchData.middle.y !== 0) && 
                           (touchData.bottom.x !== 0 || touchData.bottom.y !== 0);
     
-    // 根据计数决定记录到哪个位置
+    // 根据计数决定记录到哪个位置（交换上、下）
     if (touchCount === 1) {
-        // 第一次长按，记录到上位置
-        touchData.top.x = mirrorX;
-        touchData.top.y = mirrorY;
-        touchData.top.radius = 50;
-        console.log('记录触摸数据到上位置:', touchData.top);
+        // 第一次长按，记录到下位置（原来是上）
+        touchData.bottom.x = mirrorX;
+        touchData.bottom.y = mirrorY;
+        touchData.bottom.radius = 50;
+        console.log('记录触摸数据到下位置:', touchData.bottom);
     } else if (touchCount === 2) {
         // 第二次长按，记录到中位置
-        if (touchData.top.x !== 0 || touchData.top.y !== 0) {
+        if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
             touchData.middle.x = mirrorX;
             touchData.middle.y = mirrorY;
             touchData.middle.radius = 50;
             console.log('记录触摸数据到中位置:', touchData.middle);
         }
     } else if (touchCount === 3) {
-        // 第三次长按，记录到下位置
-        if ((touchData.top.x !== 0 || touchData.top.y !== 0) && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
-            touchData.bottom.x = mirrorX;
-            touchData.bottom.y = mirrorY;
-            touchData.bottom.radius = 50;
-            console.log('记录触摸数据到下位置:', touchData.bottom);
+        // 第三次长按，记录到上位置（原来是下）
+        if ((touchData.bottom.x !== 0 || touchData.bottom.y !== 0) && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
+            touchData.top.x = mirrorX;
+            touchData.top.y = mirrorY;
+            touchData.top.radius = 50;
+            console.log('记录触摸数据到上位置:', touchData.top);
             
             // 第一次三个数据都记录完，存到数组
             saveTouchDataToAll();
@@ -515,7 +622,7 @@ function recordTouchData(touch) {
     } else if (touchCount >= 4) {
         // 第四次及以后的按压
         if (allDataRecorded) {
-            // 三个都有数据，次数+1，清空中和下，记录到上
+            // 三个都有数据，次数+1，清空中和上，记录到下
             completeCount++;
             const completeCounter = document.getElementById('complete-counter');
             completeCounter.textContent = completeCount;
@@ -523,11 +630,11 @@ function recordTouchData(touch) {
             // 存当前这一组数据
             saveTouchDataToAll();
             
-            // 清空中和下
+            // 清空中和上
             touchData.middle.x = 0;
             touchData.middle.y = 0;
-            touchData.bottom.x = 0;
-            touchData.bottom.y = 0;
+            touchData.top.x = 0;
+            touchData.top.y = 0;
             
             // 检查是否达到3次，如果是就不再记录
             if (completeCount >= 3) {
@@ -547,27 +654,27 @@ function recordTouchData(touch) {
                 return;
             }
             
-            // 记录到上
-            touchData.top.x = mirrorX;
-            touchData.top.y = mirrorY;
-            touchData.top.radius = 50;
-            console.log('记录触摸数据到上位置:', touchData.top);
+            // 记录到下
+            touchData.bottom.x = mirrorX;
+            touchData.bottom.y = mirrorY;
+            touchData.bottom.radius = 50;
+            console.log('记录触摸数据到下位置:', touchData.bottom);
             
-            // 设置触摸计数为1，表示已经记录了上
+            // 设置触摸计数为1，表示已经记录了下
             touchCount = 1;
-        } else if (touchData.top.x !== 0 || touchData.top.y !== 0) {
-            // 只有上有数据，记录到中
+        } else if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
+            // 只有下有数据，记录到中
             if (touchData.middle.x === 0 && touchData.middle.y === 0) {
                 touchData.middle.x = mirrorX;
                 touchData.middle.y = mirrorY;
                 touchData.middle.radius = 50;
                 console.log('记录触摸数据到中位置:', touchData.middle);
-            } else if (touchData.bottom.x === 0 && touchData.bottom.y === 0) {
-                // 上中有数据，记录到下
-                touchData.bottom.x = mirrorX;
-                touchData.bottom.y = mirrorY;
-                touchData.bottom.radius = 50;
-                console.log('记录触摸数据到下位置:', touchData.bottom);
+            } else if (touchData.top.x === 0 && touchData.top.y === 0) {
+                // 下中有数据，记录到上
+                touchData.top.x = mirrorX;
+                touchData.top.y = mirrorY;
+                touchData.top.radius = 50;
+                console.log('记录触摸数据到上位置:', touchData.top);
                 
                 // 三个数据又记录完，存到数组
                 saveTouchDataToAll();
@@ -576,6 +683,7 @@ function recordTouchData(touch) {
     }
     
     updateDataDisplay();
+    updateBatteryBarRecordStatus(); // 更新电量条记录状态
 }
 
 // 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）

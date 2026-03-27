@@ -118,9 +118,9 @@ body {
     position: absolute;
     width: 100px;
     height: 100px;
-    border: 3px solid #27ae60;
+    border: 3px solid #3498db;
     border-radius: 50%;
-    background-color: rgba(39, 174, 96, 0.2);
+    background-color: rgba(52, 152, 219, 0.2);
     transform: translate(-50%, -50%);
     opacity: 0;
     z-index: 15;
@@ -130,9 +130,9 @@ body {
     position: absolute;
     width: 100px;
     height: 100px;
-    border: 3px solid #e74c3c;
+    border: 3px solid #2ecc71;
     border-radius: 50%;
-    background-color: rgba(231, 76, 60, 0.2);
+    background-color: rgba(46, 204, 113, 0.2);
     transform: translate(-50%, -50%);
     opacity: 0;
     z-index: 15;
@@ -142,9 +142,9 @@ body {
     position: absolute;
     width: 100px;
     height: 100px;
-    border: 3px solid #f1c40f;
+    border: 3px solid #e74c3c;
     border-radius: 50%;
-    background-color: rgba(241, 196, 15, 0.2);
+    background-color: rgba(231, 76, 60, 0.2);
     transform: translate(-50%, -50%);
     opacity: 0;
     z-index: 15;

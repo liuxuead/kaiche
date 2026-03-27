@@ -39,19 +39,19 @@ body {
 /* 完成计数器 */
 .complete-counter {
     position: absolute;
-    bottom: 170px;
+    top: 170px;
     left: 60px;
     font-size: 2rem;
     font-weight: bold;
     color: #e74c3c;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
     z-index: 10;
-    transform: rotate(-90deg);
+    transform: rotate(90deg);
 }
 
 .dashboard {
     position: absolute;
-    bottom: 40px;
+    top: 40px;
     left: 20px;
     width: 120px;
     height: 120px;
@@ -62,7 +62,7 @@ body {
     align-items: center;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     border: 3px solid #e74c3c;
-    transform: rotate(90deg);
+    transform: rotate(-90deg);
 }
 
 .dashboard-value {
@@ -75,7 +75,7 @@ body {
 
 .touch-info {
     position: absolute;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     background-color: rgba(0, 0, 0, 0.7);
     padding: 10px;
@@ -191,7 +191,7 @@ body {
 /* 按钮区域 */
 .button-container {
     position: absolute;
-    top: 20px;
+    bottom: 20px;
     left: 60px;
     display: flex;
     flex-direction: column;

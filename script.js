@@ -303,7 +303,7 @@ function setupTouchListeners() {
         updateTouchInfo(currentTouch, touchArea);
         
         // 开始计时
-        if (!stopwatchRunning) {
+        if (!stopwatchRunning && completeCount < 3) {
             resetStopwatch();
             stopwatchRunning = true;
             stopwatchInterval = setInterval(() => {
@@ -370,7 +370,7 @@ function setupTouchListeners() {
         updateTouchInfo(e, touchArea);
         
         // 开始计时
-        if (!stopwatchRunning) {
+        if (!stopwatchRunning && completeCount < 3) {
             resetStopwatch();
             stopwatchRunning = true;
             stopwatchInterval = setInterval(() => {
@@ -435,6 +435,15 @@ function recordTouchData(touch) {
         return;
     }
     
+    // 获取容器高度用于镜像坐标
+    const gameContainer = document.querySelector('.game-container');
+    const containerHeight = gameContainer.clientHeight;
+    
+    // 镜像坐标：以横向中线为基准翻转
+    const mirrorX = Math.round(touch.clientX);
+    const originalY = Math.round(touch.clientY);
+    const mirrorY = containerHeight - originalY;
+    
     // 增加触摸计数
     touchCount++;
     
@@ -446,23 +455,23 @@ function recordTouchData(touch) {
     // 根据计数决定记录到哪个位置
     if (touchCount === 1) {
         // 第一次长按，记录到上位置
-        touchData.top.x = Math.round(touch.clientX);
-        touchData.top.y = Math.round(touch.clientY);
+        touchData.top.x = mirrorX;
+        touchData.top.y = mirrorY;
         touchData.top.radius = 50;
         console.log('记录触摸数据到上位置:', touchData.top);
     } else if (touchCount === 2) {
         // 第二次长按，记录到中位置
         if (touchData.top.x !== 0 || touchData.top.y !== 0) {
-            touchData.middle.x = Math.round(touch.clientX);
-            touchData.middle.y = Math.round(touch.clientY);
+            touchData.middle.x = mirrorX;
+            touchData.middle.y = mirrorY;
             touchData.middle.radius = 50;
             console.log('记录触摸数据到中位置:', touchData.middle);
         }
     } else if (touchCount === 3) {
         // 第三次长按，记录到下位置
         if ((touchData.top.x !== 0 || touchData.top.y !== 0) && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
-            touchData.bottom.x = Math.round(touch.clientX);
-            touchData.bottom.y = Math.round(touch.clientY);
+            touchData.bottom.x = mirrorX;
+            touchData.bottom.y = mirrorY;
             touchData.bottom.radius = 50;
             console.log('记录触摸数据到下位置:', touchData.bottom);
             
@@ -486,16 +495,7 @@ function recordTouchData(touch) {
             touchData.bottom.x = 0;
             touchData.bottom.y = 0;
             
-            // 记录到上
-            touchData.top.x = Math.round(touch.clientX);
-            touchData.top.y = Math.round(touch.clientY);
-            touchData.top.radius = 50;
-            console.log('记录触摸数据到上位置:', touchData.top);
-            
-            // 设置触摸计数为1，表示已经记录了上
-            touchCount = 1;
-            
-            // 检查是否达到3次
+            // 检查是否达到3次，如果是就不再记录
             if (completeCount >= 3) {
                 // 电量条边框变亮，表示统计完成
                 const batteryBar = document.querySelector('.battery-bar');
@@ -508,18 +508,30 @@ function recordTouchData(touch) {
                 console.log('统计完成！completeCount = 3');
                 console.log('请长按压3秒调整"中"的范围');
                 console.log('========================================');
+                
+                // 不再记录
+                return;
             }
+            
+            // 记录到上
+            touchData.top.x = mirrorX;
+            touchData.top.y = mirrorY;
+            touchData.top.radius = 50;
+            console.log('记录触摸数据到上位置:', touchData.top);
+            
+            // 设置触摸计数为1，表示已经记录了上
+            touchCount = 1;
         } else if (touchData.top.x !== 0 || touchData.top.y !== 0) {
             // 只有上有数据，记录到中
             if (touchData.middle.x === 0 && touchData.middle.y === 0) {
-                touchData.middle.x = Math.round(touch.clientX);
-                touchData.middle.y = Math.round(touch.clientY);
+                touchData.middle.x = mirrorX;
+                touchData.middle.y = mirrorY;
                 touchData.middle.radius = 50;
                 console.log('记录触摸数据到中位置:', touchData.middle);
             } else if (touchData.bottom.x === 0 && touchData.bottom.y === 0) {
                 // 上中有数据，记录到下
-                touchData.bottom.x = Math.round(touch.clientX);
-                touchData.bottom.y = Math.round(touch.clientY);
+                touchData.bottom.x = mirrorX;
+                touchData.bottom.y = mirrorY;
                 touchData.bottom.radius = 50;
                 console.log('记录触摸数据到下位置:', touchData.bottom);
                 
@@ -697,11 +709,17 @@ function updateDataDisplay() {
 // 更新触摸信息和显示触摸区域
 function updateTouchInfo(touch, touchArea) {
     const touchInfo = document.querySelector('.touch-info');
+    const gameContainer = document.querySelector('.game-container');
+    const containerHeight = gameContainer.clientHeight;
+    
+    // 镜像坐标：以横向中线为基准翻转
     const x = Math.round(touch.clientX);
-    const y = Math.round(touch.clientY);
+    const originalY = Math.round(touch.clientY);
+    const y = containerHeight - originalY;
+    
     touchInfo.textContent = `触摸位置: (${x}, ${y})`;
     
-    // 显示触摸区域
+    // 显示触摸区域（使用镜像后的坐标）
     touchArea.style.left = `${x}px`;
     touchArea.style.top = `${y}px`;
     touchArea.style.opacity = '1';

@@ -333,17 +333,28 @@ function setupTouchListeners() {
         }
     });
     
-    // 触摸移动事件
+    // 触摸移动事件（添加节流，减少更新频率）
+    let lastUpdateTime = 0;
     gameContainer.addEventListener('touchmove', (e) => {
         if (e.target.closest('button')) {
             return;
         }
+        
+        const now = Date.now();
+        if (now - lastUpdateTime < 16) {
+            return;
+        }
+        lastUpdateTime = now;
+        
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
         // 实时更新电量条（completeCount达到3后才启用）
         if (completeCount >= 3) {
-            updateBatteryBar(currentTouch.clientY);
+            const gameContainer = document.querySelector('.game-container');
+            const containerHeight = gameContainer.clientHeight;
+            const mirrorY = containerHeight - currentTouch.clientY;
+            updateBatteryBar(mirrorY);
         }
     });
     
@@ -400,13 +411,24 @@ function setupTouchListeners() {
         }
     });
     
+    // 鼠标移动事件（添加节流，减少更新频率）
+    let lastMouseMoveTime = 0;
     gameContainer.addEventListener('mousemove', (e) => {
+        const now = Date.now();
+        if (now - lastMouseMoveTime < 16) {
+            return;
+        }
+        lastMouseMoveTime = now;
+        
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
         // 实时更新电量条（completeCount达到3后才启用）
         if (completeCount >= 3) {
-            updateBatteryBar(e.clientY);
+            const gameContainer = document.querySelector('.game-container');
+            const containerHeight = gameContainer.clientHeight;
+            const mirrorY = containerHeight - e.clientY;
+            updateBatteryBar(mirrorY);
         }
     });
     

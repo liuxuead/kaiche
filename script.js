@@ -336,18 +336,70 @@ function adjustMiddleRange(touch) {
     clearBatteryBarRecordStatus();
 }
 
-// 清除电量条记录状态显示
-function clearBatteryBarRecordStatus() {
-    const bars = document.querySelectorAll('.battery-bar-item');
-    bars.forEach(bar => {
-        bar.style.background = '#555';
-    });
+// 更新仪表盘数值（平滑动画）
+function updateDashboardValue() {
+    const dashboardEl = document.querySelector('.dashboard-value');
+    if (!dashboardEl) return;
+    
+    // 计算差值，平滑过渡
+    const diff = targetDashboardValue - dashboardValue;
+    if (Math.abs(diff) < 0.1) {
+        // 差值很小，直接设置
+        dashboardValue = targetDashboardValue;
+        dashboardEl.textContent = Math.round(dashboardValue);
+        dashboardAnimationId = null;
+        return;
+    }
+    
+    // 快速平滑过渡（每次移动差值的20%）
+    dashboardValue += diff * 0.2;
+    dashboardEl.textContent = Math.round(dashboardValue);
+    
+    // 继续动画
+    dashboardAnimationId = requestAnimationFrame(updateDashboardValue);
+}
+
+// 根据触摸位置计算仪表盘数值
+function calculateDashboardValue(mirrorY) {
+    const stats = getStatsAverage();
+    
+    // 获取上、中、下的位置
+    const bottomY = stats.bottom.y;
+    const middleY = stats.middle.y;
+    const topY = stats.top.y;
+    
+    // 确定范围边界
+    const minY = Math.min(bottomY, middleY, topY);
+    const maxY = Math.max(bottomY, middleY, topY);
+    const totalRange = maxY - minY;
+    
+    if (totalRange <= 0) {
+        return DASHBOARD_MAX_VALUE / 2; // 默认中间值
+    }
+    
+    // 计算触摸位置在整个范围内的比例 (0-1)
+    let position = (mirrorY - minY) / totalRange;
+    position = Math.max(0, Math.min(1, position));
+    
+    // 反转位置，让下对应0，上对应300
+    position = 1 - position;
+    
+    // 映射到 0-300
+    return position * DASHBOARD_MAX_VALUE;
 }
 
 // 游戏初始化
 function initGame() {
     console.log('游戏初始化完成');
     initBatteryBar();
+    
+    // 初始化仪表盘显示0
+    dashboardValue = 0;
+    targetDashboardValue = 0;
+    const dashboardEl = document.querySelector('.dashboard-value');
+    if (dashboardEl) {
+        dashboardEl.textContent = '0';
+    }
     
     // 上中下按钮事件
     const btnTop = document.getElementById('btn-top');
@@ -411,6 +463,14 @@ function initGame() {
                 batteryBar.style.border = 'none';
             }
             
+            // 重置仪表盘显示0
+            dashboardValue = 0;
+            targetDashboardValue = 0;
+            const dashboardEl = document.querySelector('.dashboard-value');
+            if (dashboardEl) {
+                dashboardEl.textContent = '0';
+            }
+            
             console.log('统计数据已重置为0');
         };
     }
@@ -459,6 +519,14 @@ function initGame() {
             const completeCounter = document.getElementById('complete-counter');
             completeCounter.textContent = completeCount;
             
+            // 重置仪表盘显示0
+            dashboardValue = 0;
+            targetDashboardValue = 0;
+            const dashboardEl = document.querySelector('.dashboard-value');
+            if (dashboardEl) {
+                dashboardEl.textContent = '0';
+            }
+            
             console.log('所有数据已重置，可以重新开始记录');
         };
     }
@@ -504,6 +572,12 @@ let touchCount = 0;
 // 记录完成次数（上中下都有值）
 let completeCount = 0;
 
+// 仪表盘数值相关
+let dashboardValue = 0; // 当前仪表盘显示的数值
+let targetDashboardValue = 0; // 目标数值
+let dashboardAnimationId = null; // 动画requestId
+const DASHBOARD_MAX_VALUE = 300; // 仪表盘最大值
+
 // 设置触摸事件监听器
 function setupTouchListeners() {
     const gameContainer = document.querySelector('.game-container');
@@ -530,7 +604,10 @@ function setupTouchListeners() {
                 }
                 
                 const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
-                document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
+                // 只有 completeCount <4 时才显示秒数
+                if (completeCount < 4) {
+                    document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
+                }
             }, 10);
         }
         
@@ -572,6 +649,12 @@ function setupTouchListeners() {
             const containerHeight = gameContainer.clientHeight;
             const mirrorY = containerHeight - currentTouch.clientY;
             updateBatteryBar(mirrorY);
+            
+            // 更新仪表盘数值
+            targetDashboardValue = calculateDashboardValue(mirrorY);
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
         }
     });
     
@@ -587,6 +670,14 @@ function setupTouchListeners() {
         clearTimeout(touchTimer);
         clearTimeout(longPressTimer);
         currentTouch = null;
+        
+        // completeCount >=4 时，仪表盘数值回落到0
+        if (completeCount >= 4) {
+            targetDashboardValue = 0;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
+        }
     });
     
     // 鼠标点击事件（用于桌面测试）
@@ -609,7 +700,10 @@ function setupTouchListeners() {
                 }
                 
                 const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
-                document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
+                // 只有 completeCount <4 时才显示秒数
+                if (completeCount < 4) {
+                    document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
+                }
             }, 10);
         }
         
@@ -647,6 +741,12 @@ function setupTouchListeners() {
             const containerHeight = gameContainer.clientHeight;
             const mirrorY = containerHeight - e.clientY;
             updateBatteryBar(mirrorY);
+            
+            // 更新仪表盘数值
+            targetDashboardValue = calculateDashboardValue(mirrorY);
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
         }
     });
     
@@ -661,6 +761,14 @@ function setupTouchListeners() {
         clearTimeout(touchTimer);
         clearTimeout(longPressTimer);
         currentTouch = null;
+        
+        // completeCount >=4 时，仪表盘数值回落到0
+        if (completeCount >= 4) {
+            targetDashboardValue = 0;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
+        }
     });
 }
 

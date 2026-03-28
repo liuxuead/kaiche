@@ -62,7 +62,7 @@ body {
     justify-content: center;
     align-items: center;
     box-shadow: none; /* 移除阴影 */
-    border: 3px solid #e74c3c;
+    border: 3px solid #3498db;
     transform: rotate(90deg);
     touch-action: none;
     z-index: 100;

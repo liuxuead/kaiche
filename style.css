@@ -365,13 +365,13 @@ body {
     animation: laneMove 2s linear infinite;
 }
 
-/* 车道线移动动画 */
+/* 车道线移动动画 - 向前移动（红色是车头） */
 @keyframes laneMove {
     0% {
         background-position: 0 0;
     }
     100% {
-        background-position: -40px 0;
+        background-position: 40px 0;
     }
 }
 

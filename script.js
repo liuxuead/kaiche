@@ -1411,12 +1411,18 @@ function recordTouchData(touch) {
             completeCounter.textContent = completeCount;
             console.log('第一次录入完成，completeCount:', completeCount);
             
-            // 当completeCount变为3时，开始仪表盘闪烁
+            // 当completeCount变为3时，开始仪表盘闪烁，隐藏电量条
             if (completeCount === 3) {
-                console.log('completeCount 变为3，开始仪表盘闪烁');
+                console.log('completeCount 变为3，开始仪表盘闪烁，隐藏电量条');
                 const dashboard = document.querySelector('.dashboard');
                 if (dashboard) {
                     dashboard.classList.add('blinking');
+                }
+                
+                // 隐藏电量条
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    batteryBar.classList.add('hidden');
                 }
             }
             
@@ -1949,6 +1955,12 @@ function stopStopwatch() {
             dashboard.classList.remove('blinking');
         }
         
+        // 确保电量条保持隐藏状态
+        const batteryBar = document.querySelector('.battery-bar');
+        if (batteryBar) {
+            batteryBar.classList.add('hidden');
+        }
+        
         adjustMiddleRange(currentTouch);
         // 将completeCount增加到4，避免再次触发
         completeCount = 4;
@@ -2167,12 +2179,12 @@ function resetRecordData() {
     updateDataDisplay();
     updateStatsPanel();
     
-    
-    // 恢复电量条边框样式
+    // 恢复电量条显示
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
+        batteryBar.classList.remove('hidden');
         batteryBar.style.boxShadow = 'none';
-        batteryBar.style.border = 'none';
+        batteryBar.style.border = '2px solid #3498db';
     }
     
     // 更新完成计数器
@@ -2373,6 +2385,13 @@ function clearPressAreas() {
     areas.forEach(area => area.remove());
 }
 
+// 电量条分区配置
+const BATTERY_BAR_CONFIG = {
+    top: { count: 6, color: '#e74c3c' },      // 上：6格，红色
+    middle: { count: 9, color: '#2ecc71' },   // 中：9格，绿色
+    bottom: { count: 5, color: '#3498db' }    // 下：5格，蓝色
+};
+
 // 初始化电量条
 function initBatteryBar() {
     const batteryBarContainer = document.getElementById('battery-bar-container');
@@ -2381,37 +2400,139 @@ function initBatteryBar() {
     // 清空现有内容
     batteryBarContainer.innerHTML = '';
     
-    // 创建10个电量条格子
-    for (let i = 0; i < 10; i++) {
-        const barItem = document.createElement('div');
-        barItem.className = 'battery-bar-item';
-        barItem.id = `battery-bar-item-${i}`;
-        batteryBarContainer.appendChild(barItem);
+    // 创建上部分（6格，红色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.top.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'top';
+        bar.dataset.index = i;
+        batteryBarContainer.appendChild(bar);
+    }
+    
+    // 创建中部分（9格，绿色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.middle.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'middle';
+        bar.dataset.index = i;
+        batteryBarContainer.appendChild(bar);
+    }
+    
+    // 创建下部分（5格，蓝色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.bottom.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'bottom';
+        bar.dataset.index = i;
+        batteryBarContainer.appendChild(bar);
     }
 }
 
 // 更新电量条显示
 function updateBatteryBar(value) {
-    // value: 0-30，映射到0-10个格子
-    const barCount = Math.floor((value / 30) * 10);
-    
-    for (let i = 0; i < 10; i++) {
-        const barItem = document.getElementById(`battery-bar-item-${i}`);
-        if (barItem) {
-            if (i < barCount) {
-                // 根据位置设置不同颜色
-                if (i < 3) {
-                    barItem.style.backgroundColor = '#2ecc71'; // 绿色
-                } else if (i < 7) {
-                    barItem.style.backgroundColor = '#f1c40f'; // 黄色
-                } else {
-                    barItem.style.backgroundColor = '#e74c3c'; // 红色
-                }
-            } else {
-                barItem.style.backgroundColor = 'transparent';
-            }
-        }
+    // value: 0-30，映射到0-20个格子（6+9+5）
+    const stats = getStatsAverage();
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
+        return;
     }
+    
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    
+    const rect = gameContainer.getBoundingClientRect();
+    // 根据仪表盘数值计算相对Y坐标
+    const relativeY = (value / 30) * rect.height;
+    
+    // 计算当前Y在统计范围内的位置 (0-1)
+    let totalRange = Math.abs(stats.bottom.y - stats.top.y);
+    if (totalRange <= 0) {
+        totalRange = 100;
+    }
+    
+    // 确定哪个是上，哪个是下
+    const minY = Math.min(stats.top.y, stats.bottom.y);
+    const maxY = Math.max(stats.top.y, stats.bottom.y);
+    
+    let position;
+    if (totalRange === 100) {
+        position = 0.5;
+    } else {
+        position = (relativeY - minY) / totalRange;
+        position = Math.max(0, Math.min(1, position));
+    }
+    
+    // 反转位置，让上下对应
+    position = 1 - position;
+    
+    // 根据位置确定在哪个区域
+    // 上区域：0-0.3 (6格)
+    // 中区域：0.3-0.8 (9格)
+    // 下区域：0.8-1 (5格)
+    let targetSection, sectionIndex, sectionPosition;
+    const topThreshold = 0.3;
+    const bottomThreshold = 0.8;
+    
+    if (position < topThreshold) {
+        // 上区域
+        targetSection = 'top';
+        sectionPosition = position / topThreshold;
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.top.count - 1));
+    } else if (position > bottomThreshold) {
+        // 下区域
+        targetSection = 'bottom';
+        sectionPosition = (position - bottomThreshold) / (1 - bottomThreshold);
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.bottom.count - 1));
+    } else {
+        // 中区域
+        targetSection = 'middle';
+        sectionPosition = (position - topThreshold) / (bottomThreshold - topThreshold);
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.middle.count - 1));
+    }
+    
+    // 计算在总格子中的索引
+    let centerIndex;
+    if (targetSection === 'top') {
+        centerIndex = sectionIndex;
+    } else if (targetSection === 'middle') {
+        centerIndex = BATTERY_BAR_CONFIG.top.count + sectionIndex;
+    } else {
+        centerIndex = BATTERY_BAR_CONFIG.top.count + BATTERY_BAR_CONFIG.middle.count + sectionIndex;
+    }
+    
+    const spread = 2; // 向两边扩散的范围
+    
+    const bars = document.querySelectorAll('.battery-bar-item');
+    bars.forEach((bar, i) => {
+        const distance = Math.abs(i - centerIndex);
+        const section = bar.dataset.section;
+        
+        if (distance <= spread) {
+            const intensity = 1 - (distance / (spread + 1));
+            
+            // 根据区域使用不同颜色
+            let r, g, b;
+            if (section === 'top') {
+                // 红色（对应记录的上）
+                r = Math.round(231 * intensity + 50 * (1 - intensity));
+                g = Math.round(76 * intensity);
+                b = Math.round(60 * intensity);
+            } else if (section === 'middle') {
+                // 绿色
+                r = Math.round(46 * intensity);
+                g = Math.round(204 * intensity + 50 * (1 - intensity));
+                b = Math.round(113 * intensity);
+            } else {
+                // 蓝色（对应记录的下）
+                r = Math.round(52 * intensity);
+                g = Math.round(152 * intensity);
+                b = Math.round(219 * intensity + 100 * (1 - intensity));
+            }
+            
+            bar.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+        } else {
+            bar.style.backgroundColor = 'transparent';
+        }
+    });
 }
 
 // 页面加载完成后初始化游戏

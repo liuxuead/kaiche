@@ -170,25 +170,27 @@ body {
 
 /* 电量条 */
 .battery-bar {
-    position: absolute;
-    left: 20px;
-    top: 180px;
-    width: 30px;
-    height: 200px;
-    border: 2px solid #3498db;
+    position: fixed;
+    bottom: 170px;
+    right: 20px;
+    width: 320px;
+    height: 30px;
+    background: #333;
     border-radius: 5px;
-    background-color: rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column-reverse;
-    padding: 2px;
-    z-index: 16;
+    z-index: 99999;
+    overflow: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.battery-bar.hidden {
+    display: none !important;
 }
 
 .battery-bar-container {
     display: flex;
-    flex-direction: column-reverse;
     height: 100%;
-    width: 100%;
+    align-items: center;
+    padding: 0 5px;
 }
 
 .battery-bar-item {

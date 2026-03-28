@@ -2007,12 +2007,12 @@ function drawPressAreas() {
         const batteryBar = document.querySelector('.battery-bar');
         if (batteryBar) {
             batteryBar.style.position = 'fixed';
-            batteryBar.style.bottom = '170px';
+            batteryBar.style.bottom = '90px'; // 向下延伸，bottom减少80px
             batteryBar.style.right = '20px';
             batteryBar.style.transform = 'none';
             batteryBar.style.zIndex = '99999';
-            batteryBar.style.width = '200px';
-            batteryBar.style.height = '80px';
+            batteryBar.style.width = '320px'; // 水平长度恢复到原来的 320px
+            batteryBar.style.height = '160px'; // 垂直高度延伸两个自身宽度 (80px + 80px)
             batteryBar.style.pointerEvents = 'none'; // 添加事件穿透
         }
         

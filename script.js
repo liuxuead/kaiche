@@ -1090,17 +1090,18 @@ function initGame() {
                     }
                     // 速度差>=10，得0分
                     
+                    // 更新游戏系统数据
+                    totalEatenBalls++;
                     if (points > 0) {
-                        totalScore += points;
-                        // 更新得分显示
-                        const scoreValue = document.getElementById('score-value');
-                        if (scoreValue) {
-                            scoreValue.textContent = totalScore;
-                        }
+                        roundScore += points;
+                        validEatenBalls++;
                         console.log(`碰撞得分: ${points}分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
                     } else {
                         console.log(`碰撞无得分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
                     }
+                    
+                    // 更新得分显示
+                    updateScoreDisplay();
                     
                     // 移除小绿球
                     frame.removeChild(ball.element);

@@ -440,7 +440,8 @@ function updateLaneSpeed(speed) {
 // 持续更新车道线（即使速度稳定时也能保持运动）
 let lastSpeed = 0;
 function continuousLaneUpdate() {
-    if (Math.abs(dashboardValue - lastSpeed) > 0.1 || dashboardValue > 0) {
+    // 只在速度真正变化时才更新车道线动画
+    if (Math.abs(dashboardValue - lastSpeed) > 0.1) {
         updateLaneSpeed(dashboardValue);
         lastSpeed = dashboardValue;
     }
@@ -684,6 +685,9 @@ function initGame() {
     // 启动持续更新函数
     continuousLaneUpdate();
     updateCarPosition();
+    
+    // 初始化车道线动画
+    updateLaneSpeed(0);
 }
 
 

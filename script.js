@@ -335,11 +335,6 @@ function adjustMiddleRange(touch) {
 
 // 判断触摸位置是否在绘制范围附近
 function isNearDrawArea(mirrorX, mirrorY) {
-    // 当 completeCount >= 4 时，直接返回 true，让任何触摸位置都能触发电量条响应
-    if (completeCount >= 4) {
-        return true;
-    }
-    
     const stats = getStatsAverage();
     
     console.log('isNearDrawArea 统计数据:');
@@ -1963,11 +1958,20 @@ function resetAllData() {
     // 清除按压区域
     clearPressAreas();
     
-    // 恢复电量条边框样式
+    // 恢复电量条边框样式和位置大小
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
         batteryBar.style.boxShadow = 'none';
         batteryBar.style.border = 'none';
+        // 重置电量条位置和大小
+        batteryBar.style.position = 'fixed';
+        batteryBar.style.bottom = '170px';
+        batteryBar.style.right = '20px';
+        batteryBar.style.transform = 'none';
+        batteryBar.style.zIndex = '99999';
+        batteryBar.style.width = '320px'; // 恢复原来的宽度
+        batteryBar.style.height = '30px'; // 恢复原来的高度
+        batteryBar.style.pointerEvents = 'auto'; // 恢复事件捕获
     }
     
     // 更新完成计数器
@@ -2000,7 +2004,6 @@ function drawPressAreas() {
         clearPressAreas();
         
         // 调整电量条位置，让它覆盖原来的触摸区域
-        // 保持在右侧，尺寸适中
         const batteryBar = document.querySelector('.battery-bar');
         if (batteryBar) {
             batteryBar.style.position = 'fixed';
@@ -2008,8 +2011,9 @@ function drawPressAreas() {
             batteryBar.style.right = '20px';
             batteryBar.style.transform = 'none';
             batteryBar.style.zIndex = '99999';
-            batteryBar.style.width = '200px'; // 保持适中宽度
-            batteryBar.style.height = '80px'; // 垂直方向增加到原来的4倍
+            batteryBar.style.width = '200px';
+            batteryBar.style.height = '80px';
+            batteryBar.style.pointerEvents = 'none'; // 添加事件穿透
         }
         
         return;

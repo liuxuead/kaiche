@@ -56,12 +56,12 @@ body {
     left: 20px;
     width: 120px;
     height: 120px;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: transparent; /* 完全透明背景 */
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: none; /* 移除阴影 */
     border: 3px solid #e74c3c;
     transform: rotate(90deg);
     touch-action: none;

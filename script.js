@@ -436,7 +436,26 @@ function calculateDashboardValue(mirrorY) {
     
     // 电量条下方亮 = 仪表盘0，电量条上方亮 = 仪表盘300
     // 直接返回计算值：下方position=0时返回0，上方position=1时返回300
-    return position * DASHBOARD_MAX_VALUE;
+    let rawValue = position * DASHBOARD_MAX_VALUE;
+    
+    // 数值锁定到稳定点
+    rawValue = lockToStablePoints(rawValue);
+    
+    return rawValue;
+}
+
+// 稳定点列表
+const STABLE_POINTS = [40, 60, 80, 100, 110, 120, 150, 210, 220];
+const STABLE_POINT_TOLERANCE = 5; // 容错范围
+
+// 锁定到稳定点
+function lockToStablePoints(value) {
+    for (const point of STABLE_POINTS) {
+        if (Math.abs(value - point) <= STABLE_POINT_TOLERANCE) {
+            return point;
+        }
+    }
+    return value;
 }
 
 // 游戏初始化
@@ -1937,13 +1956,13 @@ function drawPressAreas() {
     };
     
     // 绘制下区域（黑色）
-    createPressArea(gameContainer, reversedBottom, '#000000', '下');
+    createPressArea(gameContainer, reversedBottom, '#000000');
     
     // 绘制中区域（绿色）
-    createPressArea(gameContainer, reversedMiddle, '#2ecc71', '中');
+    createPressArea(gameContainer, reversedMiddle, '#2ecc71');
     
     // 绘制上区域（红色）
-    createPressArea(gameContainer, reversedTop, '#e74c3c', '上');
+    createPressArea(gameContainer, reversedTop, '#e74c3c');
     
     console.log('按压区域已绘制');
 }
@@ -1971,20 +1990,22 @@ function createPressArea(container, position, color, label) {
         pointer-events: none;
     `;
     
-    // 添加标签
-    const labelEl = document.createElement('div');
-    labelEl.style.cssText = `
-        position: absolute;
-        top: -30px;
-        left: 50%;
-        transform: translateX(-50%);
-        color: ${color};
-        font-size: 1.2rem;
-        font-weight: bold;
-        text-shadow: 0 0 5px rgba(0,0,0,0.8);
-    `;
-    labelEl.textContent = label;
-    area.appendChild(labelEl);
+    // 添加标签（如果有）
+    if (label) {
+        const labelEl = document.createElement('div');
+        labelEl.style.cssText = `
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: ${color};
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+        `;
+        labelEl.textContent = label;
+        area.appendChild(labelEl);
+    }
     
     container.appendChild(area);
 }

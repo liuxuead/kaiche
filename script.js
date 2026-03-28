@@ -335,6 +335,11 @@ function adjustMiddleRange(touch) {
 
 // 判断触摸位置是否在绘制范围附近
 function isNearDrawArea(mirrorX, mirrorY) {
+    // 当 completeCount >= 4 时，直接返回 true，让任何触摸位置都能触发电量条响应
+    if (completeCount >= 4) {
+        return true;
+    }
+    
     const stats = getStatsAverage();
     
     console.log('isNearDrawArea 统计数据:');
@@ -435,6 +440,35 @@ function updateLaneSpeed(speed) {
         topLane.classList.add('very-high-speed');
         bottomLane.classList.add('very-high-speed');
     }
+}
+
+// 持续更新车道线（即使速度稳定时也能保持运动）
+let lastSpeed = 0;
+function continuousLaneUpdate() {
+    if (Math.abs(dashboardValue - lastSpeed) > 0.1 || dashboardValue > 0) {
+        updateLaneSpeed(dashboardValue);
+        lastSpeed = dashboardValue;
+    }
+    requestAnimationFrame(continuousLaneUpdate);
+}
+
+// 更新小车位置（加速向上，降速向下）
+function updateCarPosition() {
+    const car = document.getElementById('yellow-rectangle');
+    if (!car) return;
+    
+    // 计算速度变化
+    const speedDiff = targetDashboardValue - dashboardValue;
+    
+    // 根据速度变化调整小车垂直位置
+    // 加速（speedDiff > 0）时向上移动，降速（speedDiff < 0）时向下移动
+    const maxOffset = 15; // 最大偏移量
+    const offset = Math.max(-maxOffset, Math.min(maxOffset, speedDiff * 0.3));
+    
+    // 保持旋转角度
+    car.style.transform = `translate(-50%, calc(-65% + ${offset}px)) rotate(${rectangleRotation}deg)`;
+    
+    requestAnimationFrame(updateCarPosition);
 }
 
 // 更新长方形旋转
@@ -651,6 +685,10 @@ function initGame() {
     startStopwatch();
     // 初始化数据显示
     updateDataDisplay();
+    
+    // 启动持续更新函数
+    continuousLaneUpdate();
+    updateCarPosition();
 }
 
 
@@ -1954,6 +1992,29 @@ function resetAllData() {
 
 // 绘制按压区域
 function drawPressAreas() {
+    // 当 completeCount >= 4 时，不绘制触摸区域，只调整电量条位置
+    if (completeCount >= 4) {
+        console.log('completeCount >= 4，隐藏触摸区域，调整电量条位置');
+        
+        // 清除现有按压区域
+        clearPressAreas();
+        
+        // 调整电量条位置，让它覆盖原来的触摸区域
+        // 保持在右侧，尺寸适中
+        const batteryBar = document.querySelector('.battery-bar');
+        if (batteryBar) {
+            batteryBar.style.position = 'fixed';
+            batteryBar.style.bottom = '170px';
+            batteryBar.style.right = '20px';
+            batteryBar.style.transform = 'none';
+            batteryBar.style.zIndex = '99999';
+            batteryBar.style.width = '200px'; // 保持适中宽度
+            batteryBar.style.height = '80px'; // 垂直方向增加到原来的4倍
+        }
+        
+        return;
+    }
+    
     const stats = getStatsAverage();
     if (stats.top.y === 0 || stats.bottom.y === 0 || stats.middle.y === 0) {
         console.log('统计数据不完整，无法绘制按压区域');

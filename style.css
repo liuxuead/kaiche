@@ -366,7 +366,7 @@ body {
     transform: translate(-50%, -50%);
     border: none;
     border-radius: 0;
-    z-index: 15;
+    z-index: 150;
     pointer-events: none;
     box-sizing: border-box;
     background-color: rgba(255, 255, 255, 0.1);
@@ -380,7 +380,7 @@ body {
     height: 40px;
     background-color: #f1c40f;
     border-radius: 50%;
-    z-index: 150;
+    z-index: 200;
     pointer-events: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     /* 初始位置：右下角 */
@@ -410,7 +410,7 @@ body {
     height: 30px;
     background-color: #2ecc71;
     border-radius: 50%;
-    z-index: 150;
+    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;

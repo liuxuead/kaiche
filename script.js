@@ -704,38 +704,8 @@ function initGame() {
         // 边界碰撞检测和处理
         let collided = false;
         
-        // 仪表盘的安全区域（仪表盘在左上角，需要避开）
-        const dashboardLeft = 20;
-        const dashboardTop = 40;
-        const dashboardSize = 120;
-        const dashboardRight = dashboardLeft + dashboardSize;
-        const dashboardBottom = dashboardTop + dashboardSize;
-        const dashboardPadding = 20; // 仪表盘周围的额外安全距离
-        
-        // 检查小球是否在仪表盘区域内
-        const ballRight = newX + ballSize;
-        const ballBottom = newY + ballSize;
-        
-        // 如果小球进入仪表盘区域，将其推出来
-        if (newX < dashboardRight + dashboardPadding && newY < dashboardBottom + dashboardPadding) {
-            // 简单处理：将小球推到仪表盘右下方
-            if (ballRight > dashboardLeft && ballBottom > dashboardTop) {
-                // 确定从哪个方向推出来
-                const overlapLeft = ballRight - dashboardLeft;
-                const overlapTop = ballBottom - dashboardTop;
-                
-                if (overlapLeft < overlapTop) {
-                    // 从左边推出来
-                    newX = dashboardRight + dashboardPadding;
-                    ballSpeedX = Math.abs(ballSpeedX) * 0.8; // 反弹
-                } else {
-                    // 从上边推出来
-                    newY = dashboardBottom + dashboardPadding;
-                    ballSpeedY = Math.abs(ballSpeedY) * 0.8; // 反弹
-                }
-                collided = true;
-            }
-        }
+        // 移除仪表盘安全区域检测，让小黄球可以自由通过
+        // 仪表盘的z-index已经设置为100，而小黄球的z-index为200，所以小黄球会显示在仪表盘上方
         
         // 左右边界
         if (newX < 0) {

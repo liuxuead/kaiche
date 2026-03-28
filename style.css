@@ -345,38 +345,42 @@ body {
 /* 四方向箭头 */
 .arrow {
     position: absolute;
-    width: 12px;
-    height: 12px;
-    border: 2px solid #3498db;
-    border-left: none;
-    border-bottom: none;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 14px solid #e74c3c;
     opacity: 0.6;
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .arrow-up {
-    top: -5px;
-    transform: rotate(-45deg);
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .arrow-down {
-    bottom: -5px;
-    transform: rotate(135deg);
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%) rotate(180deg);
 }
 
 .arrow-left {
-    left: -5px;
-    transform: rotate(225deg);
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
 }
 
 .arrow-right {
-    right: -5px;
-    transform: rotate(45deg);
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
 }
 
 .arrow.active {
     opacity: 1;
     transform: scale(1.2);
-    box-shadow: 0 0 8px rgba(52, 152, 219, 0.8);
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.8);
 }
 

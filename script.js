@@ -761,9 +761,23 @@ function initGame() {
         let directionTouchId = null; // 控制方向的手指ID
         let lastDirectionTouchX = 0;
         let lastDirectionTouchY = 0;
+        let lastTouchX = 0; // 记录上一次触摸位置
+        let lastTouchY = 0;
+        let touchStartTime = 0; // 记录触摸开始时间
+        let touchStartX = 0; // 记录触摸开始位置
+        let touchStartY = 0;
         
         gameContainer.addEventListener('touchstart', (e) => {
             const touches = e.touches;
+            
+            // 记录触摸开始信息
+            if (touches.length === 1) {
+                touchStartTime = Date.now();
+                touchStartX = touches[0].clientX;
+                touchStartY = touches[0].clientY;
+                lastTouchX = touches[0].clientX;
+                lastTouchY = touches[0].clientY;
+            }
             
             // 第一个手指默认用于控制速度
             if (touches.length === 1 && !speedTouchId) {
@@ -787,7 +801,27 @@ function initGame() {
             e.preventDefault();
             const touches = e.touches;
             
-            // 查找控制方向的手指
+            // 单指触摸时，同时控制速度和方向
+            if (touches.length === 1) {
+                const touch = touches[0];
+                const deltaX = touch.clientX - lastTouchX;
+                const deltaY = touch.clientY - lastTouchY;
+                
+                // 计算触摸方向
+                const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                if (length > 5) { // 避免微小移动
+                    touchDirectionX = deltaX / length;
+                    touchDirectionY = deltaY / length;
+                    
+                    // 激活对应方向的箭头
+                    updateActiveArrows(touchDirectionX, touchDirectionY);
+                }
+                
+                lastTouchX = touch.clientX;
+                lastTouchY = touch.clientY;
+            }
+            
+            // 查找控制方向的手指（双指触摸）
             for (let i = 0; i < touches.length; i++) {
                 if (touches[i].identifier === directionTouchId) {
                     const touch = touches[i];
@@ -813,6 +847,26 @@ function initGame() {
         
         gameContainer.addEventListener('touchend', (e) => {
             const touches = e.touches;
+            
+            // 计算双指动能
+            if (touches.length === 0) {
+                const touchEndTime = Date.now();
+                const touchDuration = touchEndTime - touchStartTime;
+                const deltaX = touchStartX - lastTouchX;
+                const deltaY = touchStartY - lastTouchY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                // 如果触摸时间短且移动距离大，认为是双指动能（快速滑动）
+                if (touchDuration < 300 && distance > 50) {
+                    // 根据滑动方向增加动能
+                    const kineticEnergy = Math.min(distance / 10, 5); // 限制最大动能
+                    touchDirectionX = (deltaX / distance) * kineticEnergy;
+                    touchDirectionY = (deltaY / distance) * kineticEnergy;
+                    
+                    // 激活对应方向的箭头
+                    updateActiveArrows(touchDirectionX, touchDirectionY);
+                }
+            }
             
             // 检查控制方向的手指是否离开
             let directionTouchFound = false;

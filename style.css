@@ -103,13 +103,15 @@ body {
     transform: rotate(-90deg);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .level-display {
     display: flex;
     align-items: center;
     gap: 5px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .level-label {
@@ -140,6 +142,173 @@ body {
     font-weight: bold;
     color: #f1c40f;
     text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
+}
+
+.score-value.not-met {
+    color: #e74c3c;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+}
+
+.score-value.met {
+    color: #2ecc71;
+    text-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+}
+
+.success-rate-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.success-rate-label {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.success-rate-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f1c40f;
+    text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
+}
+
+.success-rate-value.not-met {
+    color: #e74c3c;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+}
+
+.success-rate-value.met {
+    color: #2ecc71;
+    text-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+}
+
+/* 等级选择面板 */
+.level-select-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    z-index: 9999;
+    max-width: 400px;
+    width: 90%;
+}
+
+.panel-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.level-item {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.level-item.locked {
+    background-color: #555;
+    color: #888;
+}
+
+.level-item.unlocked {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.level-item.current {
+    background-color: #e74c3c;
+    color: white;
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
+    transform: scale(1.1);
+}
+
+.level-item:hover:not(.locked) {
+    transform: scale(1.15);
+}
+
+/* 模态框 */
+.challenge-fail-modal,
+.level-up-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background-color: #333;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 350px;
+    width: 90%;
+}
+
+.modal-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #e74c3c;
+    margin-bottom: 15px;
+}
+
+.level-up-title {
+    color: #2ecc71;
+}
+
+.modal-message {
+    font-size: 18px;
+    color: white;
+    margin-bottom: 25px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.retry-btn,
+.continue-btn {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.modal-btn:hover {
+    transform: scale(1.05);
 }
 
 .touch-info {

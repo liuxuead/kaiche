@@ -564,7 +564,7 @@ let carX = 0; // 小车水平位置偏移
 let carY = 0; // 小车垂直位置偏移
 let currentLane = 0; // 当前车道：-1（上）、0（中）、1（下）
 
-// 更新小车位置（加速向上，降速向下，根据旋转角度变道）
+// 更新小车位置（只保留中间车道，移除变道功能）
 function updateCarPosition() {
     const car = document.getElementById('yellow-rectangle');
     if (!car) return;
@@ -575,36 +575,7 @@ function updateCarPosition() {
     // 根据速度变化调整小车垂直位置（加速时向上，降速时向下）
     const speedYOffset = Math.max(-15, Math.min(15, speedDiff * 0.3));
     
-    // 根据旋转角度和速度调整小车垂直位置（变道）
-    // 夹角为正（向上）时向上变道，夹角为负（向下）时向下变道
-    const maxLaneChangeOffset = 60; // 增加车道间距
-    const rotationEffect = rectangleRotation * 0.8; // 调整旋转效果（符号相反）
-    const speedEffect = Math.min(dashboardValue / 200, 1); // 降低速度阈值，使变道更敏感
-    const laneChangeYOffset = Math.max(-maxLaneChangeOffset, Math.min(maxLaneChangeOffset, rotationEffect * speedEffect * 2)); // 增加变道幅度
-    
-    // 检测是否需要切换车道
-    if (Math.abs(rectangleRotation) > 8) { // 降低旋转角度阈值
-        if (rectangleRotation > 0) {
-            // 向上倾斜，向上变道
-            currentLane = -1;
-        } else {
-            // 向下倾斜，向下变道
-            currentLane = 1;
-        }
-    } else if (Math.abs(rectangleRotation) < 2 && Math.abs(laneChangeYOffset) < 5 && Math.abs(carY) < 20) {
-        // 旋转角度很小且变道偏移很小且位置接近中间，回到中间车道
-        currentLane = 0;
-    }
-    
-    // 计算车道中心位置
-    let laneCenterOffset = 0;
-    if (currentLane === -1) {
-        laneCenterOffset = -maxLaneChangeOffset; // 上车道
-    } else if (currentLane === 1) {
-        laneCenterOffset = maxLaneChangeOffset; // 下车道
-    }
-    
-    // 变道后重置旋转角度到水平状态
+    // 重置旋转角度到水平状态
     if (Math.abs(rectangleRotation) > 1) {
         // 平滑回到水平
         rectangleRotation *= 0.95;
@@ -614,14 +585,14 @@ function updateCarPosition() {
         updateRectangleRotation();
     }
     
-    // 总的垂直偏移 = 速度变化偏移 + 变道偏移 + 车道中心偏移
-    const targetY = speedYOffset + laneChangeYOffset + laneCenterOffset;
+    // 只保留速度变化带来的垂直偏移，固定在中间车道
+    const targetY = speedYOffset;
     
     // 平滑过渡到目标位置（增加平滑系数，提高响应速度）
     carY += (targetY - carY) * 0.2;
     
-    // 应用变换
-    car.style.transform = `translate(calc(-50% + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
+    // 应用变换 - 小车水平位置向右偏移，居于中间车道靠右
+    car.style.transform = `translate(calc(-50% + 50px + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
     
     requestAnimationFrame(updateCarPosition);
 }
@@ -631,7 +602,7 @@ function updateRectangleRotation() {
     const yellowRectangle = document.getElementById('yellow-rectangle');
     if (!yellowRectangle) return;
     
-    yellowRectangle.style.transform = `translate(calc(-50% + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
+    yellowRectangle.style.transform = `translate(calc(-50% + 50px + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
 }
 
 // 根据触摸位置计算仪表盘数值

@@ -416,6 +416,9 @@ function initGame() {
         dashboardEl.textContent = '0';
     }
     
+    // 初始化电量条
+    initBatteryBar();
+    
     // 上中下按钮事件
     const btnTop = document.getElementById('btn-top');
     const btnMiddle = document.getElementById('btn-middle');
@@ -1109,6 +1112,25 @@ function setupTouchListeners() {
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
+        // 实时更新电量条和仪表盘（completeCount <= 3 时启用）
+        if (completeCount <= 3) {
+            const gameContainer = document.querySelector('.game-container');
+            const containerHeight = gameContainer.clientHeight;
+            const rect = gameContainer.getBoundingClientRect();
+            
+            const mirrorX = currentTouch.clientX - rect.left;
+            const mirrorY = containerHeight - currentTouch.clientY;
+            
+            // 更新仪表盘数值
+            targetDashboardValue = calculateDashboardValue(mirrorY);
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
+            
+            // 更新电量条
+            updateBatteryBar(targetDashboardValue);
+        }
+        
         // 实时更新电量条（completeCount达到4后才启用）
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
@@ -1155,6 +1177,19 @@ function setupTouchListeners() {
         clearTimeout(touchTimer);
         clearTimeout(longPressTimer);
         currentTouch = null;
+        
+        // completeCount <= 3 时，仪表盘数值回落到0，电量条也清空
+        if (completeCount <= 3) {
+            targetDashboardValue = 0;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
+            // 清空电量条，恢复透明
+            const bars = document.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = 'transparent';
+            });
+        }
         
         // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
         if (completeCount >= 4) {
@@ -1240,6 +1275,24 @@ function setupTouchListeners() {
         
         currentTouch = e;
         updateTouchInfo(e, touchArea);
+        
+        // 实时更新电量条和仪表盘（completeCount <= 3 时启用）
+        if (completeCount <= 3) {
+            const gameContainer = document.querySelector('.game-container');
+            const containerHeight = gameContainer.clientHeight;
+            const rect = gameContainer.getBoundingClientRect();
+            const mirrorX = e.clientX - rect.left;
+            const mirrorY = containerHeight - e.clientY;
+            
+            // 更新仪表盘数值
+            targetDashboardValue = calculateDashboardValue(mirrorY);
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
+            
+            // 更新电量条
+            updateBatteryBar(targetDashboardValue);
+        }
         
         // 实时更新电量条（completeCount达到4后才启用）
         if (completeCount >= 4) {
@@ -1357,6 +1410,15 @@ function recordTouchData(touch) {
             const completeCounter = document.getElementById('complete-counter');
             completeCounter.textContent = completeCount;
             console.log('第一次录入完成，completeCount:', completeCount);
+            
+            // 当completeCount变为3时，开始仪表盘闪烁
+            if (completeCount === 3) {
+                console.log('completeCount 变为3，开始仪表盘闪烁');
+                const dashboard = document.querySelector('.dashboard');
+                if (dashboard) {
+                    dashboard.classList.add('blinking');
+                }
+            }
             
             // 测试：当 completeCount 变为4时显示长方形
             if (completeCount === 4) {
@@ -1862,6 +1924,8 @@ function resetStopwatch() {
 
 function stopStopwatch() {
     const dashboardValue = document.querySelector('.dashboard-value');
+    const dashboard = document.querySelector('.dashboard');
+    
     if (stopwatchInterval) {
         clearInterval(stopwatchInterval);
         stopwatchInterval = null;
@@ -1879,6 +1943,12 @@ function stopStopwatch() {
     // 当completeCount=3且计时达到3秒时，调整"中"的范围
     if (completeCount === 3 && totalSeconds >= 3 && currentTouch) {
         console.log('计时达到3秒，调整"中"的范围');
+        
+        // 停止仪表盘闪烁
+        if (dashboard) {
+            dashboard.classList.remove('blinking');
+        }
+        
         adjustMiddleRange(currentTouch);
         // 将completeCount增加到4，避免再次触发
         completeCount = 4;
@@ -2301,6 +2371,47 @@ function clearPressAreas() {
     
     const areas = gameContainer.querySelectorAll('.press-area');
     areas.forEach(area => area.remove());
+}
+
+// 初始化电量条
+function initBatteryBar() {
+    const batteryBarContainer = document.getElementById('battery-bar-container');
+    if (!batteryBarContainer) return;
+    
+    // 清空现有内容
+    batteryBarContainer.innerHTML = '';
+    
+    // 创建10个电量条格子
+    for (let i = 0; i < 10; i++) {
+        const barItem = document.createElement('div');
+        barItem.className = 'battery-bar-item';
+        barItem.id = `battery-bar-item-${i}`;
+        batteryBarContainer.appendChild(barItem);
+    }
+}
+
+// 更新电量条显示
+function updateBatteryBar(value) {
+    // value: 0-30，映射到0-10个格子
+    const barCount = Math.floor((value / 30) * 10);
+    
+    for (let i = 0; i < 10; i++) {
+        const barItem = document.getElementById(`battery-bar-item-${i}`);
+        if (barItem) {
+            if (i < barCount) {
+                // 根据位置设置不同颜色
+                if (i < 3) {
+                    barItem.style.backgroundColor = '#2ecc71'; // 绿色
+                } else if (i < 7) {
+                    barItem.style.backgroundColor = '#f1c40f'; // 黄色
+                } else {
+                    barItem.style.backgroundColor = '#e74c3c'; // 红色
+                }
+            } else {
+                barItem.style.backgroundColor = 'transparent';
+            }
+        }
+    }
 }
 
 // 页面加载完成后初始化游戏

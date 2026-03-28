@@ -94,19 +94,45 @@ body {
 .score-display {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 80px;
     background-color: transparent;
     padding: 10px 15px;
     border-radius: 8px;
     z-index: 100;
     text-align: center;
     transform: rotate(-90deg);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.level-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.level-label {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.level-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #e74c3c;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+}
+
+.score-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .score-label {
     font-size: 14px;
     color: #aaa;
-    margin-bottom: 5px;
 }
 
 .score-value {

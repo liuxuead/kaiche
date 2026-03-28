@@ -947,21 +947,6 @@ function initGame() {
         });
     }
     
-    // 小绿球相关变量
-    const greenBalls = []; // 存储小绿球信息
-    const MAX_GREEN_BALLS = 5; // 最大小绿球数量
-    const GREEN_BALL_SIZE = 30; // 小绿球大小
-    
-    // 得分变量
-    let totalScore = 0; // 总得分
-    
-    // 小绿球速度等级配置
-    const GREEN_BALL_SPEEDS = [
-        { min: 1, max: 10, probability: 0.2 }, // 慢速
-        { min: 11, max: 20, probability: 0.5 }, // 中速
-        { min: 21, max: 30, probability: 0.3 }  // 快速
-    ];
-    
     // 生成小绿球
     function createGreenBall() {
         // 检查当前小绿球数量是否达到上限
@@ -1171,6 +1156,21 @@ const DEFAULT_GAME_DATA = {
     middleRangeStart: 0.1,
     middleRangeEnd: 0.6
 };
+
+// 小绿球相关变量
+const greenBalls = []; // 存储小绿球信息
+const MAX_GREEN_BALLS = 5; // 最大小绿球数量
+const GREEN_BALL_SIZE = 30; // 小绿球大小
+
+// 得分变量
+let totalScore = 0; // 总得分
+
+// 小绿球速度等级配置
+const GREEN_BALL_SPEEDS = [
+    { min: 1, max: 10, probability: 0.2 }, // 慢速
+    { min: 11, max: 20, probability: 0.5 }, // 中速
+    { min: 21, max: 30, probability: 0.3 }  // 快速
+];
 
 // 存储触摸位置数据
 const touchData = {
@@ -2313,6 +2313,10 @@ function loadDefaultData() {
         batteryBar.classList.add('hidden');
     }
     
+    // 重置游戏回合，确保得分和成功率从0开始
+    resetRound();
+    updateScoreDisplay();
+    
     console.log('默认游戏数据加载完成，completeCount:', completeCount);
 }
 
@@ -2718,6 +2722,10 @@ function getCurrentLevelConfig() {
 function updateScoreDisplay() {
     const config = getCurrentLevelConfig();
     
+    console.log('=== updateScoreDisplay 日志 ===');
+    console.log('totalEatenBalls:', totalEatenBalls);
+    console.log('validEatenBalls:', validEatenBalls);
+    
     // 更新等级显示
     const levelValue = document.getElementById('level-value');
     if (levelValue) {
@@ -2736,11 +2744,13 @@ function updateScoreDisplay() {
     const successRateValue = document.getElementById('success-rate-value');
     if (successRateValue) {
         const rate = totalEatenBalls > 0 ? (validEatenBalls / totalEatenBalls * 100).toFixed(0) : 0;
+        console.log('计算的成功率:', rate + '%');
         successRateValue.textContent = `${rate}%`;
         successRateValue.classList.remove('met', 'not-met');
         const currentRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 0;
         successRateValue.classList.add(currentRate >= config.targetSuccessRate ? 'met' : 'not-met');
     }
+    console.log('=== updateScoreDisplay 结束 ===');
 }
 
 // 重置本局

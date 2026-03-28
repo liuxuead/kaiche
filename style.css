@@ -314,7 +314,7 @@ body {
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%) translate(-120px, -120px); /* 向仪表盘方向移动一个仪表盘的距离 */
+    transform: translate(-50%, -50%);
     border: none;
     border-radius: 0;
     z-index: 15;

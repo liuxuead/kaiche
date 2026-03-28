@@ -563,16 +563,15 @@ function initGame() {
         const frame = document.getElementById('dynamic-frame');
         if (!frame) return;
         
-        // 根据窗口大小设置长方形框的大小
+        // 将框设置为整个屏幕大小
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
         
-        // 宽度占屏幕的90%，高度占屏幕的75%，创建长方形
-        const frameWidth = windowWidth * 0.9;
-        const frameHeight = windowHeight * 0.75;
-        
-        frame.style.width = `${frameWidth}px`;
-        frame.style.height = `${frameHeight}px`;
+        frame.style.left = '0px';
+        frame.style.top = '0px';
+        frame.style.transform = 'none';
+        frame.style.width = `${windowWidth}px`;
+        frame.style.height = `${windowHeight}px`;
     }
     
     // 初始化框大小
@@ -582,7 +581,7 @@ function initGame() {
     window.addEventListener('resize', updateDynamicFrameSize);
     
     // 控制球相关变量
-    let ballX = 100; // 球的X坐标（相对于框，避开左侧绘制区域）
+    let ballX = 0; // 球的X坐标（相对于框）
     let ballY = 0; // 球的Y坐标（相对于框）
     let ballSpeedX = 0; // 球的X方向速度
     let ballSpeedY = 0; // 球的Y方向速度
@@ -595,7 +594,7 @@ function initGame() {
     const BALL_ACCELERATION = 0.5; // 球的加速度
     const BALL_DECELERATION = 0.9; // 球的减速系数
     
-    // 初始化球的位置（右下角）
+    // 初始化球的位置（屏幕中间）
     function initBallPosition() {
         const frame = document.getElementById('dynamic-frame');
         const ball = document.getElementById('control-ball');
@@ -604,9 +603,9 @@ function initGame() {
         const frameRect = frame.getBoundingClientRect();
         const ballSize = 40; // 球的大小
         
-        // 初始位置：右下角
-        ballX = frameRect.width - ballSize - 10;
-        ballY = frameRect.height - ballSize - 10;
+        // 初始位置：屏幕中间
+        ballX = (frameRect.width - ballSize) / 2;
+        ballY = (frameRect.height - ballSize) / 2;
         
         updateBallPosition();
     }
@@ -702,10 +701,40 @@ function initGame() {
         // 边界碰撞检测和处理
         let collided = false;
         
-        // 仪表盘的安全距离（仪表盘在左上角，需要避开）
-        const dashboardPadding = 160; // 仪表盘占据的右边界和下边界
+        // 仪表盘的安全区域（仪表盘在左上角，需要避开）
+        const dashboardLeft = 20;
+        const dashboardTop = 40;
+        const dashboardSize = 120;
+        const dashboardRight = dashboardLeft + dashboardSize;
+        const dashboardBottom = dashboardTop + dashboardSize;
+        const dashboardPadding = 20; // 仪表盘周围的额外安全距离
         
-        // 左右边界 - 移除左侧限制，让小球可以扩展到靠仪表盘那边
+        // 检查小球是否在仪表盘区域内
+        const ballRight = newX + ballSize;
+        const ballBottom = newY + ballSize;
+        
+        // 如果小球进入仪表盘区域，将其推出来
+        if (newX < dashboardRight + dashboardPadding && newY < dashboardBottom + dashboardPadding) {
+            // 简单处理：将小球推到仪表盘右下方
+            if (ballRight > dashboardLeft && ballBottom > dashboardTop) {
+                // 确定从哪个方向推出来
+                const overlapLeft = ballRight - dashboardLeft;
+                const overlapTop = ballBottom - dashboardTop;
+                
+                if (overlapLeft < overlapTop) {
+                    // 从左边推出来
+                    newX = dashboardRight + dashboardPadding;
+                    ballSpeedX = Math.abs(ballSpeedX) * 0.8; // 反弹
+                } else {
+                    // 从上边推出来
+                    newY = dashboardBottom + dashboardPadding;
+                    ballSpeedY = Math.abs(ballSpeedY) * 0.8; // 反弹
+                }
+                collided = true;
+            }
+        }
+        
+        // 左右边界
         if (newX < 0) {
             newX = 0;
             // 沿着边缘运动
@@ -728,7 +757,7 @@ function initGame() {
             collided = true;
         }
         
-        // 上下边界 - 移除上边界限制，让小球可以扩展到靠仪表盘那边
+        // 上下边界
         if (newY < 0) {
             newY = 0;
             // 沿着边缘运动

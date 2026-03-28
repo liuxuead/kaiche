@@ -309,12 +309,12 @@ body {
     100% { transform: translateY(-50%) scale(1); }
 }
 
-/* 可随页面动的正方形框 */
+/* 可随页面动的长方形框 */
 .dynamic-frame {
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) translate(-120px, -120px); /* 向仪表盘方向移动一个仪表盘的距离 */
     border: none;
     border-radius: 0;
     z-index: 15;

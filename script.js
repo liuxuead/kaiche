@@ -952,6 +952,9 @@ function initGame() {
     const MAX_GREEN_BALLS = 5; // 最大小绿球数量
     const GREEN_BALL_SIZE = 30; // 小绿球大小
     
+    // 得分变量
+    let totalScore = 0; // 总得分
+    
     // 小绿球速度等级配置
     const GREEN_BALL_SPEEDS = [
         { min: 2, max: 4, probability: 0.5 }, // 慢速
@@ -1086,10 +1089,34 @@ function initGame() {
                 
                 // 碰撞检测
                 if (distance < (GREEN_BALL_SIZE + yellowBallSize) / 2) {
+                    // 计算得分
+                    const yellowBallSpeed = Math.round(dashboardValue);
+                    const greenBallSpeed = ball.speed;
+                    const speedDiff = Math.abs(yellowBallSpeed - greenBallSpeed);
+                    
+                    let points = 0;
+                    if (speedDiff === 0) {
+                        points = 10; // 相同速度，得10分
+                    } else if (speedDiff < 10) {
+                        points = 10 - speedDiff; // 速度差1-9，得9-1分
+                    }
+                    // 速度差>=10，得0分
+                    
+                    if (points > 0) {
+                        totalScore += points;
+                        // 更新得分显示
+                        const scoreValue = document.getElementById('score-value');
+                        if (scoreValue) {
+                            scoreValue.textContent = totalScore;
+                        }
+                        console.log(`碰撞得分: ${points}分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
+                    } else {
+                        console.log(`碰撞无得分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
+                    }
+                    
                     // 移除小绿球
                     frame.removeChild(ball.element);
                     greenBalls.splice(i, 1);
-                    console.log('碰撞小绿球，已移除');
                 }
             }
         }

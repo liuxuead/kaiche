@@ -90,6 +90,31 @@ body {
     animation: dashboard-blink 0.5s ease-in-out infinite;
 }
 
+/* 记分显示 */
+.score-display {
+    position: absolute;
+    top: 170px;
+    left: 50px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px 15px;
+    border-radius: 8px;
+    z-index: 100;
+    text-align: center;
+}
+
+.score-label {
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.score-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f1c40f;
+    text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
+}
+
 .touch-info {
     position: absolute;
     bottom: 100px;

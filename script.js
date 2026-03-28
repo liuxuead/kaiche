@@ -354,14 +354,8 @@ function isNearDrawArea(mirrorX, mirrorY) {
         const dy = mirrorY - area.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        // 计算椭圆内的距离
-        const width = area.width || 100;
-        const height = area.height || 100;
-        const normalizedDx = dx / (width / 2);
-        const normalizedDy = dy / (height / 2);
-        const normalizedDistance = Math.sqrt(normalizedDx * normalizedDx + normalizedDy * normalizedDy);
-        
-        if (distance <= distanceThreshold || normalizedDistance <= 1.5) {
+        // 只有距离在100像素内才返回true
+        if (distance <= distanceThreshold) {
             return true;
         }
     }
@@ -622,11 +616,27 @@ function setupTouchListeners() {
     
     // 触摸开始事件
     gameContainer.addEventListener('touchstart', (e) => {
-        if (e.target.closest('button')) {
+        if (e.target.closest('button') || e.target.closest('.dashboard')) {
             return;
         }
         currentTouch = e.touches[0];
-        updateTouchInfo(currentTouch, touchArea);
+        
+        // 当 completeCount >= 4 时，只有在绘制范围附近才显示白色圆圈
+        if (completeCount >= 4) {
+            const containerHeight = gameContainer.clientHeight;
+            const rect = gameContainer.getBoundingClientRect();
+            const mirrorX = currentTouch.clientX - rect.left;
+            const mirrorY = containerHeight - currentTouch.clientY;
+            
+            if (isNearDrawArea(mirrorX, mirrorY)) {
+                updateTouchInfo(currentTouch, touchArea);
+            } else {
+                // 不在范围内，不显示白色圆圈
+                touchArea.style.opacity = '0';
+            }
+        } else {
+            updateTouchInfo(currentTouch, touchArea);
+        }
         
         // 开始计时
         if (!stopwatchRunning && completeCount < 4) {
@@ -733,7 +743,23 @@ function setupTouchListeners() {
             return;
         }
         currentTouch = e;
-        updateTouchInfo(e, touchArea);
+        
+        // 当 completeCount >= 4 时，只有在绘制范围附近才显示白色圆圈
+        if (completeCount >= 4) {
+            const containerHeight = gameContainer.clientHeight;
+            const rect = gameContainer.getBoundingClientRect();
+            const mirrorX = e.clientX - rect.left;
+            const mirrorY = containerHeight - e.clientY;
+            
+            if (isNearDrawArea(mirrorX, mirrorY)) {
+                updateTouchInfo(e, touchArea);
+            } else {
+                // 不在范围内，不显示白色圆圈
+                touchArea.style.opacity = '0';
+            }
+        } else {
+            updateTouchInfo(e, touchArea);
+        }
         
         // 开始计时
         if (!stopwatchRunning && completeCount < 4) {
@@ -1242,9 +1268,9 @@ function updateDisplayText(position, textTop, textMiddle, textBottom) {
 
 // 清除显示文本
 function clearDisplayText(textTop, textMiddle, textBottom) {
-    textTop.textContent = '';
-    textMiddle.textContent = '';
-    textBottom.textContent = '';
+    if (textTop) textTop.textContent = '';
+    if (textMiddle) textMiddle.textContent = '';
+    if (textBottom) textBottom.textContent = '';
 }
 
 // 显示固定的触摸区域
@@ -1486,9 +1512,16 @@ function setupDashboardListeners() {
     const doubleClickDelay = 300; // 双击间隔时间（毫秒）
     let longPressTimer = null;
     const longPressDuration = 3000; // 长按3秒
+    let longPressTriggered = false; // 标记长按是否已触发
     
     // 鼠标点击事件（双击重置记录）
     dashboard.addEventListener('click', () => {
+        // 如果长按已触发，不进行双击检测
+        if (longPressTriggered) {
+            longPressTriggered = false;
+            return;
+        }
+        
         const now = Date.now();
         if (now - lastClickTime < doubleClickDelay) {
             console.log('双击仪表盘，重置记录数据');
@@ -1501,8 +1534,10 @@ function setupDashboardListeners() {
     
     // 鼠标按下事件（长按）
     dashboard.addEventListener('mousedown', () => {
+        longPressTriggered = false; // 重置标记
         longPressTimer = setTimeout(() => {
             console.log('长按仪表盘超过3秒，恢复初始状态');
+            longPressTriggered = true; // 标记长按已触发
             resetAllData();
         }, longPressDuration);
     });
@@ -1519,18 +1554,30 @@ function setupDashboardListeners() {
     
     // 触摸事件（双击 + 长按）
     let lastTapTime = 0;
+    let touchStartTime = 0;
     dashboard.addEventListener('touchstart', (e) => {
         e.stopPropagation(); // 阻止事件冒泡
+        longPressTriggered = false; // 重置标记
+        touchStartTime = Date.now();
         
         // 长按计时器
         longPressTimer = setTimeout(() => {
             console.log('长按仪表盘超过3秒，恢复初始状态');
+            longPressTriggered = true; // 标记长按已触发
             resetAllData();
         }, longPressDuration);
     });
     
     dashboard.addEventListener('touchend', (e) => {
         e.stopPropagation();
+        const touchDuration = Date.now() - touchStartTime;
+        
+        // 如果持续时间超过3秒，说明长按已触发，不清除计时器
+        if (touchDuration >= longPressDuration) {
+            return;
+        }
+        
+        // 否则清除计时器
         clearTimeout(longPressTimer);
         
         const now = Date.now();
@@ -1646,7 +1693,9 @@ function resetAllData() {
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
-    completeCounter.textContent = completeCount;
+    if (completeCounter) {
+        completeCounter.textContent = completeCount;
+    }
     
     // 重置秒表
     resetStopwatch();

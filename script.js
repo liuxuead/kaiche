@@ -2658,10 +2658,10 @@ function updateScoreDisplay() {
     // 更新成功率显示
     const successRateValue = document.getElementById('success-rate-value');
     if (successRateValue) {
-        const rate = totalEatenBalls > 0 ? (validEatenBalls / totalEatenBalls * 100).toFixed(0) : 100;
+        const rate = totalEatenBalls > 0 ? (validEatenBalls / totalEatenBalls * 100).toFixed(0) : 0;
         successRateValue.textContent = `${rate}%`;
         successRateValue.classList.remove('met', 'not-met');
-        const currentRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 1;
+        const currentRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 0;
         successRateValue.classList.add(currentRate >= config.targetSuccessRate ? 'met' : 'not-met');
     }
 }
@@ -2691,7 +2691,7 @@ function resetRound() {
 // 检查是否升级
 function checkLevelUp() {
     const config = getCurrentLevelConfig();
-    const successRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 1;
+    const successRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 0;
     
     if (roundScore >= config.targetScore && successRate >= config.targetSuccessRate) {
         if (currentLevel < 10) {

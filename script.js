@@ -563,10 +563,10 @@ function initGame() {
         const frame = document.getElementById('dynamic-frame');
         if (!frame) return;
         
-        // 根据窗口宽度设置框的大小，确保不超过屏幕的80%
+        // 根据窗口宽度设置框的大小，确保不超过屏幕的90%
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-        const maxSize = Math.min(windowWidth, windowHeight) * 0.8;
+        const maxSize = Math.min(windowWidth, windowHeight) * 0.9; // 扩大框的大小到90%
         
         frame.style.width = `${maxSize}px`;
         frame.style.height = `${maxSize}px`;
@@ -579,7 +579,7 @@ function initGame() {
     window.addEventListener('resize', updateDynamicFrameSize);
     
     // 控制球相关变量
-    let ballX = 0; // 球的X坐标（相对于框）
+    let ballX = 100; // 球的X坐标（相对于框，避开左侧绘制区域）
     let ballY = 0; // 球的Y坐标（相对于框）
     let ballSpeedX = 0; // 球的X方向速度
     let ballSpeedY = 0; // 球的Y方向速度
@@ -700,8 +700,9 @@ function initGame() {
         let collided = false;
         
         // 左右边界
-        if (newX < 0) {
-            newX = 0;
+        const leftPadding = 100; // 左侧绘制区域的安全距离
+        if (newX < leftPadding) {
+            newX = leftPadding;
             // 沿着边缘运动
             if (Math.abs(ballSpeedY) > 0.1) {
                 // 保持Y方向速度，X方向速度设为0

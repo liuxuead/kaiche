@@ -47,6 +47,7 @@ body {
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
     z-index: 10;
     transform: rotate(270deg);
+    display: none; /* 隐藏次数显示 */
 }
 
 .dashboard {
@@ -84,7 +85,6 @@ body {
     border-radius: 5px;
     font-size: 14px;
     z-index: 10;
-    display: none;
 }
 
 .touch-area {
@@ -98,6 +98,7 @@ body {
     opacity: 0;
     transition: opacity 0.2s ease;
     z-index: 15;
+    display: none;
 }
 
 /* 不同颜色的触摸区域 */
@@ -308,17 +309,18 @@ body {
     100% { transform: translateY(-50%) scale(1); }
 }
 
-/* 中央长方体 */
-.center-box {
+/* 黄色长方形 */
+.yellow-rectangle {
     position: absolute;
-    width: 200px;
-    height: 100px;
-    background-color: rgba(255, 255, 255, 0.8);
-    border: 3px solid #333;
-    border-radius: 10px;
-    left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 5;
-    transition: transform 0.1s ease;
+    left: 50%;
+    width: 200px;
+    height: 60px;
+    background-color: #f1c40f;
+    transform: translate(-50%, -50%) rotate(0deg);
+    border-left: 5px solid #e74c3c;
+    border-radius: 5px;
+    z-index: 20;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }

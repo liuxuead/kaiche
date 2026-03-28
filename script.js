@@ -2218,19 +2218,11 @@ function loadSavedData() {
                     drawPressAreas();
                 }
                 
-                // 处理电量条显示/隐藏
+                // 处理电量条显示/隐藏 - 游戏系统运行时始终隐藏
                 const batteryBar = document.querySelector('.battery-bar');
                 if (batteryBar) {
-                    if (completeCount <= 3) {
-                        // 激活电量条
-                        batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                        batteryBar.style.border = '2px solid #00ff00';
-                        console.log('从localStorage加载数据，completeCount <= 3，激活电量条');
-                    } else {
-                        // 隐藏电量条
-                        batteryBar.classList.add('hidden');
-                        console.log('从localStorage加载数据，completeCount > 3，隐藏电量条');
-                    }
+                    batteryBar.classList.add('hidden');
+                    console.log('从localStorage加载数据，游戏系统运行，保持电量条隐藏');
                 }
                 
                 console.log('从localStorage加载了统计数据，completeCount:', completeCount);
@@ -2370,12 +2362,13 @@ function resetRecordData() {
     updateDataDisplay();
     updateStatsPanel();
     
-    // 恢复电量条显示
+    // 恢复电量条显示 - 游戏系统运行时保持隐藏
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
-        batteryBar.classList.remove('hidden');
+        batteryBar.classList.add('hidden');
         batteryBar.style.boxShadow = 'none';
-        batteryBar.style.border = '2px solid #3498db';
+        batteryBar.style.border = 'none';
+        console.log('重置记录数据，保持电量条隐藏');
     }
     
     // 更新完成计数器
@@ -2430,7 +2423,7 @@ function resetAllData() {
     // 清除按压区域
     clearPressAreas();
     
-    // 恢复电量条边框样式和位置大小
+    // 恢复电量条边框样式和位置大小 - 游戏系统运行时保持隐藏
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
         batteryBar.style.boxShadow = 'none';
@@ -2445,8 +2438,8 @@ function resetAllData() {
         batteryBar.style.height = '30px'; // 恢复原来的高度
         batteryBar.style.pointerEvents = 'auto'; // 恢复事件捕获
         batteryBar.style.backgroundColor = '#333'; // 恢复背景色
-        batteryBar.style.display = 'flex'; // 恢复显示
-        batteryBar.classList.remove('hidden'); // 移除隐藏类
+        batteryBar.classList.add('hidden'); // 保持隐藏
+        console.log('重置所有数据，保持电量条隐藏');
     }
     
     // 更新完成计数器
@@ -2522,6 +2515,68 @@ function drawPressAreas() {
     
     // 绘制上区域（红色）
     createPressArea(gameContainer, reversedTop, '#e74c3c');
+}
+
+// ============================================
+// 电量条监控系统
+// ============================================
+
+function monitorBatteryBar() {
+    const batteryBar = document.querySelector('.battery-bar');
+    if (!batteryBar) {
+        console.log('⚠️ 找不到电量条元素！');
+        return;
+    }
+
+    console.log('🔍 开始监控电量条...');
+    
+    const originalClassListAdd = batteryBar.classList.add.bind(batteryBar.classList);
+    const originalClassListRemove = batteryBar.classList.remove.bind(batteryBar.classList);
+    const originalStyleSetProperty = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').set;
+    
+    batteryBar.classList.add = function(...args) {
+        console.log('📝 电量条添加类:', args, '调用栈:', new Error().stack);
+        return originalClassListAdd.apply(this, args);
+    };
+    
+    batteryBar.classList.remove = function(...args) {
+        console.log('❌ 电量条移除类:', args, '调用栈:', new Error().stack);
+        return originalClassListRemove.apply(this, args);
+    };
+    
+    Object.defineProperty(batteryBar.style, 'display', {
+        set: function(value) {
+            console.log('🎨 电量条display改变为:', value, '调用栈:', new Error().stack);
+            originalStyleSetProperty.call(this, 'display', value);
+        }
+    });
+    
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class') {
+                console.log('🔄 电量条class变化:', mutation.oldValue, '→', batteryBar.className);
+            }
+            if (mutation.attributeName === 'style') {
+                console.log('🎨 电量条style变化');
+            }
+        });
+    });
+    
+    observer.observe(batteryBar, {
+        attributes: true,
+        attributeOldValue: true,
+        attributeFilter: ['class', 'style']
+    });
+    
+    setInterval(() => {
+        console.log('📍 电量条当前状态:', {
+            classList: batteryBar.className,
+            isHidden: batteryBar.classList.contains('hidden'),
+            display: batteryBar.style.display,
+            visibility: batteryBar.style.visibility,
+            opacity: batteryBar.style.opacity
+        });
+    }, 2000);
 }
 
 // ============================================
@@ -2906,6 +2961,16 @@ function updateGreenBalls() {
 function initGameSystem() {
     loadGameData();
     setupLevelLongPress();
+    
+    // 启动电量条监控系统
+    monitorBatteryBar();
+    
+    // 确保电量条在游戏系统初始化时被隐藏
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.classList.add('hidden');
+        console.log('游戏系统初始化，隐藏电量条');
+    }
     
     // 设置按钮事件
     document.getElementById('retry-btn').onclick = hideModals;

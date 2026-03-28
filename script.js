@@ -220,19 +220,19 @@ function updateLaneSpeed(speed) {
         lane.style.animationDuration = `${duration}s`;
         
         // 根据速度添加视觉效果
-        lane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
-        
-        if (speed > 10) {
-            lane.classList.add('high-speed');
-        }
-        
-        if (speed > 18) {
-            lane.classList.add('very-high-speed');
-        }
-        
-        if (speed > 25) {
-            lane.classList.add('extreme-speed');
-        }
+            lane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
+            
+            if (speed > 5) {
+                lane.classList.add('high-speed');
+            }
+            
+            if (speed > 15) {
+                lane.classList.add('very-high-speed');
+            }
+            
+            if (speed > 25) {
+                lane.classList.add('extreme-speed');
+            }
     });
 }
 
@@ -587,10 +587,10 @@ function initGame() {
     let touchDirectionY = 0; // 触摸方向Y
     
     // 球移动参数
-    const BALL_SPEED_FACTOR = 0.5; // 速度因子，调大可以使球移动更快，调小则更慢
-    const MAX_BALL_SPEED = 10; // 球的最大速度
-    const BALL_ACCELERATION = 0.2; // 球的加速度
-    const BALL_DECELERATION = 0.95; // 球的减速系数
+    const BALL_SPEED_FACTOR = 1.5; // 速度因子，调大可以使球移动更快，调小则更慢
+    const MAX_BALL_SPEED = 20; // 球的最大速度
+    const BALL_ACCELERATION = 0.5; // 球的加速度
+    const BALL_DECELERATION = 0.9; // 球的减速系数
     
     // 初始化球的位置（右下角）
     function initBallPosition() {
@@ -617,6 +617,44 @@ function initGame() {
         ball.style.top = `${ballY}px`;
     }
     
+    // 更新激活的箭头
+    function updateActiveArrows(directionX, directionY) {
+        // 获取所有箭头元素
+        const arrowUp = document.getElementById('arrow-up');
+        const arrowDown = document.getElementById('arrow-down');
+        const arrowLeft = document.getElementById('arrow-left');
+        const arrowRight = document.getElementById('arrow-right');
+        
+        if (!arrowUp || !arrowDown || !arrowLeft || !arrowRight) return;
+        
+        // 先移除所有箭头的active类
+        arrowUp.classList.remove('active');
+        arrowDown.classList.remove('active');
+        arrowLeft.classList.remove('active');
+        arrowRight.classList.remove('active');
+        
+        // 根据方向激活对应箭头
+        if (Math.abs(directionY) > Math.abs(directionX)) {
+            // 垂直方向
+            if (directionY < 0) {
+                // 向上
+                arrowUp.classList.add('active');
+            } else {
+                // 向下
+                arrowDown.classList.add('active');
+            }
+        } else {
+            // 水平方向
+            if (directionX < 0) {
+                // 向左
+                arrowLeft.classList.add('active');
+            } else {
+                // 向右
+                arrowRight.classList.add('active');
+            }
+        }
+    }
+    
     // 更新球的移动
     function updateBallMovement() {
         const frame = document.getElementById('dynamic-frame');
@@ -627,6 +665,16 @@ function initGame() {
         
         // 根据仪表盘速度和触摸方向计算球的速度
         const speedFactor = dashboardValue / 30; // 速度因子（0-1）
+        
+        // 当没有方向输入且有速度时，随机选择方向
+        if (Math.abs(touchDirectionX) < 0.1 && Math.abs(touchDirectionY) < 0.1 && speedFactor > 0.1) {
+            // 每100帧随机一次方向
+            if (Math.random() < 0.01) {
+                const angle = Math.random() * Math.PI * 2;
+                touchDirectionX = Math.cos(angle);
+                touchDirectionY = Math.sin(angle);
+            }
+        }
         
         // 应用加速度
         ballSpeedX += touchDirectionX * BALL_ACCELERATION * speedFactor;
@@ -649,22 +697,52 @@ function initGame() {
         let newY = ballY + ballSpeedY * BALL_SPEED_FACTOR;
         
         // 边界碰撞检测和处理
+        let collided = false;
+        
         // 左右边界
         if (newX < 0) {
             newX = 0;
-            ballSpeedX = -ballSpeedX * 0.8; // 反弹
+            // 沿着边缘运动
+            if (Math.abs(ballSpeedY) > 0.1) {
+                // 保持Y方向速度，X方向速度设为0
+                ballSpeedX = 0;
+            } else {
+                ballSpeedX = -ballSpeedX * 0.8; // 反弹
+            }
+            collided = true;
         } else if (newX > frameRect.width - ballSize) {
             newX = frameRect.width - ballSize;
-            ballSpeedX = -ballSpeedX * 0.8; // 反弹
+            // 沿着边缘运动
+            if (Math.abs(ballSpeedY) > 0.1) {
+                // 保持Y方向速度，X方向速度设为0
+                ballSpeedX = 0;
+            } else {
+                ballSpeedX = -ballSpeedX * 0.8; // 反弹
+            }
+            collided = true;
         }
         
         // 上下边界
         if (newY < 0) {
             newY = 0;
-            ballSpeedY = -ballSpeedY * 0.8; // 反弹
+            // 沿着边缘运动
+            if (Math.abs(ballSpeedX) > 0.1) {
+                // 保持X方向速度，Y方向速度设为0
+                ballSpeedY = 0;
+            } else {
+                ballSpeedY = -ballSpeedY * 0.8; // 反弹
+            }
+            collided = true;
         } else if (newY > frameRect.height - ballSize) {
             newY = frameRect.height - ballSize;
-            ballSpeedY = -ballSpeedY * 0.8; // 反弹
+            // 沿着边缘运动
+            if (Math.abs(ballSpeedX) > 0.1) {
+                // 保持X方向速度，Y方向速度设为0
+                ballSpeedY = 0;
+            } else {
+                ballSpeedY = -ballSpeedY * 0.8; // 反弹
+            }
+            collided = true;
         }
         
         // 更新位置
@@ -721,6 +799,9 @@ function initGame() {
                     if (length > 5) { // 避免微小移动
                         touchDirectionX = deltaX / length;
                         touchDirectionY = deltaY / length;
+                        
+                        // 激活对应方向的箭头
+                        updateActiveArrows(touchDirectionX, touchDirectionY);
                     }
                     
                     lastDirectionTouchX = touch.clientX;
@@ -744,8 +825,9 @@ function initGame() {
             
             if (!directionTouchFound) {
                 directionTouchId = null;
-                touchDirectionX = 0;
-                touchDirectionY = 0;
+                // 不重置方向，保持箭头亮着
+                // touchDirectionX = 0;
+                // touchDirectionY = 0;
             }
             
             // 检查控制速度的手指是否离开
@@ -786,6 +868,9 @@ function initGame() {
             if (length > 5) { // 避免微小移动
                 touchDirectionX = deltaX / length;
                 touchDirectionY = deltaY / length;
+                
+                // 激活对应方向的箭头
+                updateActiveArrows(touchDirectionX, touchDirectionY);
             }
             
             lastDirectionTouchX = e.clientX;
@@ -794,8 +879,9 @@ function initGame() {
         
         gameContainer.addEventListener('mouseup', () => {
             isMouseDown = false;
-            touchDirectionX = 0;
-            touchDirectionY = 0;
+            // 不重置方向，保持箭头亮着
+            // touchDirectionX = 0;
+            // touchDirectionY = 0;
         });
     }
     

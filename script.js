@@ -410,25 +410,34 @@ function updateRectangleRotation() {
 function calculateDashboardValue(mirrorY) {
     const stats = getStatsAverage();
     
-    // 获取上、中、下的位置
-    const bottomY = stats.bottom.y;
-    const middleY = stats.middle.y;
-    const topY = stats.top.y;
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
+        return DASHBOARD_MAX_VALUE / 2; // 默认中间值
+    }
     
-    // 确定范围边界
-    const minY = Math.min(bottomY, middleY, topY);
-    const maxY = Math.max(bottomY, middleY, topY);
-    const totalRange = maxY - minY;
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return DASHBOARD_MAX_VALUE / 2;
     
+    const rect = gameContainer.getBoundingClientRect();
+    // 把mirrorY转换成相对于game-container的坐标
+    const relativeY = mirrorY - rect.top;
+    
+    // 计算当前Y在统计范围内的位置 (0-1)
+    let totalRange = Math.abs(stats.bottom.y - stats.top.y);
     if (totalRange <= 0) {
         return DASHBOARD_MAX_VALUE / 2; // 默认中间值
     }
     
-    // 计算触摸位置在整个范围内的比例 (0-1)
-    let position = (mirrorY - minY) / totalRange;
+    // 确定哪个是上，哪个是下
+    const minY = Math.min(stats.top.y, stats.bottom.y);
+    const maxY = Math.max(stats.top.y, stats.bottom.y);
+    
+    let position = (relativeY - minY) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
-    // 映射到 0-300 - 不反转，直接下对应0，上对应300
+    // 反转位置，让上下对应（与电量条保持一致）
+    position = 1 - position;
+    
+    // 映射到 0-300
     return position * DASHBOARD_MAX_VALUE;
 }
 

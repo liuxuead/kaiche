@@ -886,15 +886,17 @@ function recordTouchData(touch) {
     
     // 根据计数决定记录到哪个位置（交换上、下）
     if (touchCount === 1) {
-        // 第一次长按，记录到下位置
+        // 第一次长按，记录到下位置（蓝色）
         touchData.bottom.x = mirrorX;
         touchData.bottom.y = mirrorY;
         touchData.bottom.radius = 50;
         touchData.bottom.width = 100;
         touchData.bottom.height = 100;
         console.log('记录触摸数据到下位置:', touchData.bottom);
+        // 仪表盘闪烁蓝色
+        flashDashboardColor('#3498db');
     } else if (touchCount === 2) {
-        // 第二次长按，记录到中位置
+        // 第二次长按，记录到中位置（绿色）
         if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
             touchData.middle.x = mirrorX;
             touchData.middle.y = mirrorY;
@@ -902,9 +904,11 @@ function recordTouchData(touch) {
             touchData.middle.width = 150;
             touchData.middle.height = 100;
             console.log('记录触摸数据到中位置:', touchData.middle);
+            // 仪表盘闪烁绿色
+            flashDashboardColor('#2ecc71');
         }
     } else if (touchCount === 3) {
-        // 第三次长按，记录到上位置
+        // 第三次长按，记录到上位置（红色）
         if ((touchData.bottom.x !== 0 || touchData.bottom.y !== 0) && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
             touchData.top.x = mirrorX;
             touchData.top.y = mirrorY;
@@ -912,6 +916,8 @@ function recordTouchData(touch) {
             touchData.top.width = 100;
             touchData.top.height = 100;
             console.log('记录触摸数据到上位置:', touchData.top);
+            // 仪表盘闪烁红色
+            flashDashboardColor('#e74c3c');
             
             // 第一次三个数据都记录完，completeCount+1
             completeCount++;
@@ -1185,6 +1191,26 @@ function updateDataDisplay() {
     } else {
         document.getElementById('data-bottom').textContent = '0';
     }
+}
+
+// 仪表盘闪烁颜色
+function flashDashboardColor(color) {
+    const dashboard = document.querySelector('.dashboard');
+    if (!dashboard) return;
+    
+    // 保存原始边框颜色
+    const originalBorder = dashboard.style.border;
+    const originalBoxShadow = dashboard.style.boxShadow;
+    
+    // 设置闪烁颜色
+    dashboard.style.border = `3px solid ${color}`;
+    dashboard.style.boxShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
+    
+    // 500ms后恢复
+    setTimeout(() => {
+        dashboard.style.border = originalBorder || '3px solid #e74c3c';
+        dashboard.style.boxShadow = originalBoxShadow || 'none';
+    }, 500);
 }
 
 // 更新触摸信息和显示触摸区域

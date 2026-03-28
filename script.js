@@ -561,6 +561,12 @@ function initGame() {
         };
     }
     
+    // 尝试加载保存的数据
+    const loaded = loadSavedData();
+    if (loaded) {
+        console.log('已加载保存的数据，跳过初始化');
+    }
+    
     setupTouchListeners();
     setupDashboardListeners();
     startStopwatch();
@@ -1023,9 +1029,6 @@ function saveTouchDataToAll() {
                 console.log('========================================');
                 console.log('统计已达到3次！记录区域停止记录');
                 console.log('========================================');
-                
-                // 保存统计数据到localStorage
-                saveStatsData();
             }
     }
     
@@ -1389,20 +1392,26 @@ function stopStopwatch() {
         completeCounter.textContent = completeCount;
         // 绘制按压区域
         drawPressAreas();
+        // 保存数据到localStorage
+        saveStatsData();
     }
 }
 
 // 保存统计数据到localStorage
 function saveStatsData() {
-    if (allTouchData.length >= 3) {
+    if (completeCount >= 4) {
         const stats = getStatsAverage();
         const savedData = {
             stats: stats,
             allTouchData: allTouchData,
-            completeCount: completeCount
+            completeCount: completeCount,
+            touchData: touchData,
+            middleRangeAdjusted: middleRangeAdjusted,
+            middleRangeStart: middleRangeStart,
+            middleRangeEnd: middleRangeEnd
         };
         localStorage.setItem('gameStats', JSON.stringify(savedData));
-        console.log('统计数据已保存到localStorage');
+        console.log('统计数据已保存到localStorage，completeCount:', completeCount);
     }
 }
 
@@ -1415,7 +1424,19 @@ function loadSavedData() {
             if (parsedData.stats && parsedData.allTouchData) {
                 // 加载统计数据
                 allTouchData = parsedData.allTouchData;
-                completeCount = parsedData.completeCount || 3;
+                completeCount = parsedData.completeCount || 4;
+                
+                // 恢复touchData
+                if (parsedData.touchData) {
+                    touchData.top = parsedData.touchData.top || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+                    touchData.middle = parsedData.touchData.middle || { x: 0, y: 0, radius: 50, width: 150, height: 100 };
+                    touchData.bottom = parsedData.touchData.bottom || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+                }
+                
+                // 恢复"中"范围调整状态
+                middleRangeAdjusted = parsedData.middleRangeAdjusted || false;
+                middleRangeStart = parsedData.middleRangeStart || 0.33;
+                middleRangeEnd = parsedData.middleRangeEnd || 0.66;
                 
                 // 更新UI
                 const completeCounter = document.getElementById('complete-counter');
@@ -1423,6 +1444,7 @@ function loadSavedData() {
                 
                 // 更新统计面板
                 updateStatsPanel();
+                updateDataDisplay();
                 
                 // 如果 completeCount >= 4，绘制按压区域
                 if (completeCount >= 4) {
@@ -1436,12 +1458,14 @@ function loadSavedData() {
                     batteryBar.style.border = '2px solid #00ff00';
                 }
                 
-                console.log('从localStorage加载了统计数据');
+                console.log('从localStorage加载了统计数据，completeCount:', completeCount);
+                return true; // 返回true表示加载成功
             }
         } catch (error) {
             console.error('加载保存数据失败:', error);
         }
     }
+    return false; // 返回false表示没有加载到数据
 }
 
 // 清除保存的统计数据
@@ -1450,58 +1474,135 @@ function clearSavedData() {
     console.log('已清除保存的统计数据');
 }
 
-// 设置仪表盘监听器（长按重置）
+// 设置仪表盘监听器（双击重置记录，长按3秒恢复初始状态）
 function setupDashboardListeners() {
     const dashboard = document.querySelector('.dashboard');
     if (!dashboard) return;
     
-    let dashboardLongPressTimer = null;
-    const dashboardLongPressDuration = 3000; // 3秒
+    let lastClickTime = 0;
+    const doubleClickDelay = 300; // 双击间隔时间（毫秒）
+    let longPressTimer = null;
+    const longPressDuration = 3000; // 长按3秒
     
-    // 鼠标按下事件
+    // 鼠标点击事件（双击重置记录）
+    dashboard.addEventListener('click', () => {
+        const now = Date.now();
+        if (now - lastClickTime < doubleClickDelay) {
+            console.log('双击仪表盘，重置记录数据');
+            resetRecordData();
+            lastClickTime = 0;
+        } else {
+            lastClickTime = now;
+        }
+    });
+    
+    // 鼠标按下事件（长按）
     dashboard.addEventListener('mousedown', () => {
-        console.log('仪表盘被按下');
-        dashboardLongPressTimer = setTimeout(() => {
-            console.log('长按仪表盘超过3秒，重置所有数据');
+        longPressTimer = setTimeout(() => {
+            console.log('长按仪表盘超过3秒，恢复初始状态');
             resetAllData();
-        }, dashboardLongPressDuration);
+        }, longPressDuration);
     });
     
     // 鼠标释放事件
     dashboard.addEventListener('mouseup', () => {
-        clearTimeout(dashboardLongPressTimer);
+        clearTimeout(longPressTimer);
     });
     
     // 鼠标离开事件
     dashboard.addEventListener('mouseleave', () => {
-        clearTimeout(dashboardLongPressTimer);
+        clearTimeout(longPressTimer);
     });
     
-    // 触摸开始事件
+    // 触摸事件（双击 + 长按）
+    let lastTapTime = 0;
     dashboard.addEventListener('touchstart', (e) => {
         e.stopPropagation(); // 阻止事件冒泡
-        console.log('仪表盘被触摸');
-        dashboardLongPressTimer = setTimeout(() => {
-            console.log('长按仪表盘超过3秒，重置所有数据');
+        
+        // 长按计时器
+        longPressTimer = setTimeout(() => {
+            console.log('长按仪表盘超过3秒，恢复初始状态');
             resetAllData();
-        }, dashboardLongPressDuration);
+        }, longPressDuration);
     });
     
-    // 触摸结束事件
-    dashboard.addEventListener('touchend', () => {
-        clearTimeout(dashboardLongPressTimer);
+    dashboard.addEventListener('touchend', (e) => {
+        e.stopPropagation();
+        clearTimeout(longPressTimer);
+        
+        const now = Date.now();
+        if (now - lastTapTime < doubleClickDelay) {
+            console.log('双击仪表盘，重置记录数据');
+            resetRecordData();
+            lastTapTime = 0;
+        } else {
+            lastTapTime = now;
+        }
     });
+}
+
+// 重置记录数据（双击仪表盘）
+function resetRecordData() {
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    const textTop = document.getElementById('text-top');
+    const textMiddle = document.getElementById('text-middle');
+    const textBottom = document.getElementById('text-bottom');
+    
+    // 重置所有数据
+    touchData.top = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+    touchData.middle = { x: 0, y: 0, radius: 50, width: 150, height: 100 };
+    touchData.bottom = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+    touchCount = 0;
+    lastBottomX = 0;
+    lastBottomY = 0;
+    allTouchData.length = 0;
+    completeCount = 0;
+    
+    // 重置"中"范围调整状态
+    middleRangeAdjusted = false;
+    middleRangeStart = 0.33;
+    middleRangeEnd = 0.66;
+    
+    // 清除保存的统计数据
+    clearSavedData();
+    
+    // 清除显示
+    clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
+    clearDisplayText(textTop, textMiddle, textBottom);
+    updateDataDisplay();
+    updateStatsPanel();
+    initBatteryBar();
+    
+    // 恢复电量条边框样式
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.style.boxShadow = 'none';
+        batteryBar.style.border = 'none';
+    }
+    
+    // 更新完成计数器
+    const completeCounter = document.getElementById('complete-counter');
+    completeCounter.textContent = completeCount;
+    
+    // 重置仪表盘显示
+    dashboardValue = 0;
+    targetDashboardValue = 0;
+    const dashboardEl = document.querySelector('.dashboard-value');
+    if (dashboardEl) {
+        dashboardEl.textContent = '0';
+    }
+    
+    console.log('记录数据已重置');
 }
 
 // 重置所有数据
 function resetAllData() {
     // 重置所有数据
-    touchData.top.x = 0;
-    touchData.top.y = 0;
-    touchData.middle.x = 0;
-    touchData.middle.y = 0;
-    touchData.bottom.x = 0;
-    touchData.bottom.y = 0;
+    touchData.top = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+    touchData.middle = { x: 0, y: 0, radius: 50, width: 150, height: 100 };
+    touchData.bottom = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
     touchCount = 0;
     completeCount = 0;
     lastBottomX = 0;
@@ -1546,6 +1647,14 @@ function resetAllData() {
     
     // 重置秒表
     resetStopwatch();
+    
+    // 重置仪表盘显示
+    dashboardValue = 0;
+    targetDashboardValue = 0;
+    const dashboardEl = document.querySelector('.dashboard-value');
+    if (dashboardEl) {
+        dashboardEl.textContent = '0';
+    }
     
     console.log('所有数据已重置，可以重新开始记录');
 }

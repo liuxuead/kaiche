@@ -520,13 +520,13 @@ function updateCarPosition() {
     
     // 根据旋转角度和速度调整小车垂直位置（变道）
     // 夹角为正（向上）时向下变道，夹角为负（向下）时向上变道
-    const maxLaneChangeOffset = 55; // 最大变道偏移量（车道间距）
-    const rotationEffect = -rectangleRotation; // 反转旋转效果
-    const speedEffect = Math.min(dashboardValue / 300, 1);
-    const laneChangeYOffset = Math.max(-maxLaneChangeOffset, Math.min(maxLaneChangeOffset, rotationEffect * speedEffect * maxLaneChangeOffset));
+    const maxLaneChangeOffset = 60; // 增加车道间距
+    const rotationEffect = -rectangleRotation * 0.8; // 调整旋转效果
+    const speedEffect = Math.min(dashboardValue / 200, 1); // 降低速度阈值，使变道更敏感
+    const laneChangeYOffset = Math.max(-maxLaneChangeOffset, Math.min(maxLaneChangeOffset, rotationEffect * speedEffect * 2)); // 增加变道幅度
     
     // 检测是否需要切换车道
-    if (Math.abs(rectangleRotation) > 15) { // 旋转角度超过15度时切换车道
+    if (Math.abs(rectangleRotation) > 8) { // 降低旋转角度阈值
         if (rectangleRotation > 0) {
             // 向上倾斜，向下变道
             currentLane = 1;
@@ -534,8 +534,8 @@ function updateCarPosition() {
             // 向下倾斜，向上变道
             currentLane = -1;
         }
-    } else if (Math.abs(rectangleRotation) < 5 && Math.abs(laneChangeYOffset) < 10) {
-        // 旋转角度很小且变道偏移很小，回到中间车道
+    } else if (Math.abs(rectangleRotation) < 2 && Math.abs(laneChangeYOffset) < 5 && Math.abs(carY) < 20) {
+        // 旋转角度很小且变道偏移很小且位置接近中间，回到中间车道
         currentLane = 0;
     }
     
@@ -560,8 +560,8 @@ function updateCarPosition() {
     // 总的垂直偏移 = 速度变化偏移 + 变道偏移 + 车道中心偏移
     const targetY = speedYOffset + laneChangeYOffset + laneCenterOffset;
     
-    // 平滑过渡到目标位置
-    carY += (targetY - carY) * 0.1;
+    // 平滑过渡到目标位置（增加平滑系数，提高响应速度）
+    carY += (targetY - carY) * 0.2;
     
     // 应用变换
     car.style.transform = `translate(calc(-50% + ${carX}px), calc(-50% + ${carY}px)) rotate(${rectangleRotation}deg)`;

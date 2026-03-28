@@ -434,10 +434,8 @@ function calculateDashboardValue(mirrorY) {
     let position = (relativeY - minY) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
-    // 反转位置，让上下对应（与电量条保持一致）
-    position = 1 - position;
-    
-    // 映射到 0-300
+    // 电量条下方亮 = 仪表盘0，电量条上方亮 = 仪表盘300
+    // 直接返回计算值：下方position=0时返回0，上方position=1时返回300
     return position * DASHBOARD_MAX_VALUE;
 }
 

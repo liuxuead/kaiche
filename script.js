@@ -563,13 +563,16 @@ function initGame() {
         const frame = document.getElementById('dynamic-frame');
         if (!frame) return;
         
-        // 根据窗口宽度设置框的大小，确保不超过屏幕的90%
+        // 根据窗口大小设置长方形框的大小
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-        const maxSize = Math.min(windowWidth, windowHeight) * 0.9; // 扩大框的大小到90%
         
-        frame.style.width = `${maxSize}px`;
-        frame.style.height = `${maxSize}px`;
+        // 宽度占屏幕的90%，高度占屏幕的75%，创建长方形
+        const frameWidth = windowWidth * 0.9;
+        const frameHeight = windowHeight * 0.75;
+        
+        frame.style.width = `${frameWidth}px`;
+        frame.style.height = `${frameHeight}px`;
     }
     
     // 初始化框大小
@@ -699,10 +702,12 @@ function initGame() {
         // 边界碰撞检测和处理
         let collided = false;
         
-        // 左右边界
-        const leftPadding = 100; // 左侧绘制区域的安全距离
-        if (newX < leftPadding) {
-            newX = leftPadding;
+        // 仪表盘的安全距离（仪表盘在左上角，需要避开）
+        const dashboardPadding = 160; // 仪表盘占据的右边界和下边界
+        
+        // 左右边界 - 移除左侧限制，让小球可以扩展到靠仪表盘那边
+        if (newX < 0) {
+            newX = 0;
             // 沿着边缘运动
             if (Math.abs(ballSpeedY) > 0.1) {
                 // 保持Y方向速度，X方向速度设为0
@@ -723,7 +728,7 @@ function initGame() {
             collided = true;
         }
         
-        // 上下边界
+        // 上下边界 - 移除上边界限制，让小球可以扩展到靠仪表盘那边
         if (newY < 0) {
             newY = 0;
             // 沿着边缘运动

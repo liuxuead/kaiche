@@ -379,10 +379,38 @@ body {
 .lane-line.high-speed {
     filter: blur(1px);
     opacity: 0.8;
+    background: repeating-linear-gradient(
+        90deg,
+        #66d9ff 0px,
+        #66d9ff 20px,
+        transparent 20px,
+        transparent 40px
+    );
 }
 
 .lane-line.very-high-speed {
     filter: blur(2px);
     opacity: 1;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    background: repeating-linear-gradient(
+        90deg,
+        #3399ff 0px,
+        #3399ff 20px,
+        transparent 20px,
+        transparent 40px
+    );
+    box-shadow: 0 0 10px rgba(51, 153, 255, 0.8);
+}
+
+/* 极限速度时的视觉效果 */
+.lane-line.extreme-speed {
+    filter: blur(3px);
+    opacity: 1;
+    background: repeating-linear-gradient(
+        90deg,
+        #ff6666 0px,
+        #ff6666 20px,
+        transparent 20px,
+        transparent 40px
+    );
+    box-shadow: 0 0 15px rgba(255, 102, 102, 0.9);
 }

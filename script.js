@@ -189,8 +189,10 @@ function updateBatteryBar(clientY) {
             
             bar.style.background = `rgb(${r}, ${g}, ${b})`;
         } else {
-            // completeCount >= 3时，不显示记录状态，只显示默认灰色
-            if (completeCount >= 3) {
+            // completeCount >= 4时，未点亮的格子保持透明
+            if (completeCount >= 4) {
+                bar.style.background = 'transparent';
+            } else if (completeCount >= 3) {
                 bar.style.background = '#555';
             } else {
                 // 恢复记录状态显示
@@ -423,28 +425,77 @@ function updateLaneSpeed(speed) {
     bottomLane.style.animationDuration = `${duration}s`;
     
     // 根据速度添加视觉效果
-    topLane.classList.remove('high-speed', 'very-high-speed');
-    bottomLane.classList.remove('high-speed', 'very-high-speed');
+    topLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
+    bottomLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
     
-    if (speed > 150) {
+    if (speed > 100) {
         topLane.classList.add('high-speed');
         bottomLane.classList.add('high-speed');
     }
     
-    if (speed > 220) {
+    if (speed > 180) {
         topLane.classList.add('very-high-speed');
         bottomLane.classList.add('very-high-speed');
+    }
+    
+    if (speed > 250) {
+        topLane.classList.add('extreme-speed');
+        bottomLane.classList.add('extreme-speed');
+    }
+}
+
+// 使用指定的持续时间更新车道线
+function updateLaneSpeedWithDuration(duration, speed) {
+    const topLane = document.getElementById('top-lane');
+    const bottomLane = document.getElementById('bottom-lane');
+    
+    if (!topLane || !bottomLane) return;
+    
+    topLane.style.animationDuration = `${duration}s`;
+    bottomLane.style.animationDuration = `${duration}s`;
+    
+    // 根据速度添加视觉效果
+    topLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
+    bottomLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
+    
+    if (speed > 100) {
+        topLane.classList.add('high-speed');
+        bottomLane.classList.add('high-speed');
+    }
+    
+    if (speed > 180) {
+        topLane.classList.add('very-high-speed');
+        bottomLane.classList.add('very-high-speed');
+    }
+    
+    if (speed > 250) {
+        topLane.classList.add('extreme-speed');
+        bottomLane.classList.add('extreme-speed');
     }
 }
 
 // 持续更新车道线（即使速度稳定时也能保持运动）
 let lastSpeed = 0;
+let currentDuration = 2; // 当前动画持续时间
+let targetDuration = 2; // 目标动画持续时间
+
 function continuousLaneUpdate() {
     // 只在速度真正变化时才更新车道线动画
     if (Math.abs(dashboardValue - lastSpeed) > 0.1) {
-        updateLaneSpeed(dashboardValue);
+        // 计算目标动画持续时间
+        const maxSpeed = 300;
+        const minDuration = 0.2;
+        const maxDuration = 2;
+        targetDuration = maxDuration - (dashboardValue / maxSpeed) * (maxDuration - minDuration);
         lastSpeed = dashboardValue;
     }
+    
+    // 平滑过渡动画持续时间
+    if (Math.abs(currentDuration - targetDuration) > 0.01) {
+        currentDuration += (targetDuration - currentDuration) * 0.1;
+        updateLaneSpeedWithDuration(currentDuration, dashboardValue);
+    }
+    
     requestAnimationFrame(continuousLaneUpdate);
 }
 
@@ -967,10 +1018,10 @@ function setupTouchListeners() {
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
-            // 清空电量条
+            // 清空电量条，恢复透明
             const bars = document.querySelectorAll('.battery-bar-item');
             bars.forEach(bar => {
-                bar.style.background = '#555';
+                bar.style.background = 'transparent';
             });
         }
     });
@@ -1085,10 +1136,10 @@ function setupTouchListeners() {
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
-            // 清空电量条
+            // 清空电量条，恢复透明
             const bars = document.querySelectorAll('.battery-bar-item');
             bars.forEach(bar => {
-                bar.style.background = '#555';
+                bar.style.background = 'transparent';
             });
         }
     });
@@ -1976,6 +2027,7 @@ function resetAllData() {
         batteryBar.style.width = '320px'; // 恢复原来的宽度
         batteryBar.style.height = '30px'; // 恢复原来的高度
         batteryBar.style.pointerEvents = 'auto'; // 恢复事件捕获
+        batteryBar.style.backgroundColor = '#333'; // 恢复背景色
     }
     
     // 更新完成计数器
@@ -2018,6 +2070,13 @@ function drawPressAreas() {
             batteryBar.style.width = '320px'; // 水平长度恢复到原来的 320px
             batteryBar.style.height = '160px'; // 垂直高度延伸两个自身宽度 (80px + 80px)
             batteryBar.style.pointerEvents = 'none'; // 添加事件穿透
+            batteryBar.style.backgroundColor = 'transparent'; // 背景透明
+            
+            // 让所有格子默认透明
+            const bars = batteryBar.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = 'transparent';
+            });
         }
         
         return;

@@ -312,12 +312,12 @@ body {
 /* 黄色长方形 */
 .yellow-rectangle {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 45%;
+    left: 60%; /* 向右移动，初始位置更靠右 */
     width: 100px;
     height: 30px;
     background-color: #f1c40f;
-    transform: translate(-50%, -65%) rotate(0deg);
+    transform: translate(-50%, -50%) rotate(0deg);
     border-left: 5px solid #e74c3c;
     border-radius: 5px;
     z-index: 20;
@@ -328,10 +328,10 @@ body {
 /* 车道线容器 */
 .road-lanes {
     position: absolute;
-    top: 50%;
+    top: 45%; /* 整体往上移动一个车道的宽度 */
     left: 50%;
     width: 100vw;
-    height: 100px;
+    height: 200px; /* 增加高度以容纳 4 个车道 */
     transform: translate(-50%, -50%);
     z-index: 15;
     pointer-events: none;
@@ -353,15 +353,27 @@ body {
     opacity: 0.6;
 }
 
+/* 上上方车道线 */
+.top-top-lane {
+    top: 20px;
+    animation: laneMove 2s linear infinite;
+}
+
 /* 上方车道线 */
 .top-lane {
-    top: 20px;
+    top: 70px;
     animation: laneMove 2s linear infinite;
 }
 
 /* 下方车道线 */
 .bottom-lane {
-    bottom: 20px;
+    top: 130px;
+    animation: laneMove 2s linear infinite;
+}
+
+/* 下下方车道线 */
+.bottom-bottom-lane {
+    top: 180px;
     animation: laneMove 2s linear infinite;
 }
 

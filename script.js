@@ -408,10 +408,14 @@ function updateDashboardValue() {
 
 // 更新车道线速度
 function updateLaneSpeed(speed) {
+    const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
     const bottomLane = document.getElementById('bottom-lane');
+    const bottomBottomLane = document.getElementById('bottom-bottom-lane');
     
-    if (!topLane || !bottomLane) return;
+    const lanes = [topTopLane, topLane, bottomLane, bottomBottomLane];
+    
+    if (lanes.every(lane => !lane)) return;
     
     // 根据速度计算动画持续时间（速度越快，持续时间越短）
     // 速度0-300，对应持续时间2s-0.2s
@@ -421,57 +425,56 @@ function updateLaneSpeed(speed) {
     
     const duration = maxDuration - (speed / maxSpeed) * (maxDuration - minDuration);
     
-    topLane.style.animationDuration = `${duration}s`;
-    bottomLane.style.animationDuration = `${duration}s`;
-    
-    // 根据速度添加视觉效果
-    topLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
-    bottomLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
-    
-    if (speed > 100) {
-        topLane.classList.add('high-speed');
-        bottomLane.classList.add('high-speed');
-    }
-    
-    if (speed > 180) {
-        topLane.classList.add('very-high-speed');
-        bottomLane.classList.add('very-high-speed');
-    }
-    
-    if (speed > 250) {
-        topLane.classList.add('extreme-speed');
-        bottomLane.classList.add('extreme-speed');
-    }
+    lanes.forEach(lane => {
+        if (!lane) return;
+        lane.style.animationDuration = `${duration}s`;
+        
+        // 根据速度添加视觉效果
+        lane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
+        
+        if (speed > 100) {
+            lane.classList.add('high-speed');
+        }
+        
+        if (speed > 180) {
+            lane.classList.add('very-high-speed');
+        }
+        
+        if (speed > 250) {
+            lane.classList.add('extreme-speed');
+        }
+    });
 }
 
 // 使用指定的持续时间更新车道线
 function updateLaneSpeedWithDuration(duration, speed) {
+    const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
     const bottomLane = document.getElementById('bottom-lane');
+    const bottomBottomLane = document.getElementById('bottom-bottom-lane');
     
-    if (!topLane || !bottomLane) return;
+    const lanes = [topTopLane, topLane, bottomLane, bottomBottomLane];
     
-    topLane.style.animationDuration = `${duration}s`;
-    bottomLane.style.animationDuration = `${duration}s`;
-    
-    // 根据速度添加视觉效果
-    topLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
-    bottomLane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
-    
-    if (speed > 100) {
-        topLane.classList.add('high-speed');
-        bottomLane.classList.add('high-speed');
-    }
-    
-    if (speed > 180) {
-        topLane.classList.add('very-high-speed');
-        bottomLane.classList.add('very-high-speed');
-    }
-    
-    if (speed > 250) {
-        topLane.classList.add('extreme-speed');
-        bottomLane.classList.add('extreme-speed');
-    }
+    lanes.forEach(lane => {
+        if (!lane) return;
+        
+        lane.style.animationDuration = `${duration}s`;
+        
+        // 根据速度添加视觉效果
+        lane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
+        
+        if (speed > 100) {
+            lane.classList.add('high-speed');
+        }
+        
+        if (speed > 180) {
+            lane.classList.add('very-high-speed');
+        }
+        
+        if (speed > 250) {
+            lane.classList.add('extreme-speed');
+        }
+    });
 }
 
 // 持续更新车道线（即使速度稳定时也能保持运动）
@@ -499,7 +502,11 @@ function continuousLaneUpdate() {
     requestAnimationFrame(continuousLaneUpdate);
 }
 
-// 更新小车位置（加速向上，降速向下）
+// 小车位置和变道相关变量
+let carX = 0; // 小车水平位置偏移
+let carY = 0; // 小车垂直位置偏移
+
+// 更新小车位置（加速向上，降速向下，根据旋转角度变道）
 function updateCarPosition() {
     const car = document.getElementById('yellow-rectangle');
     if (!car) return;
@@ -507,13 +514,24 @@ function updateCarPosition() {
     // 计算速度变化
     const speedDiff = targetDashboardValue - dashboardValue;
     
-    // 根据速度变化调整小车垂直位置
-    // 加速（speedDiff > 0）时向上移动，降速（speedDiff < 0）时向下移动
-    const maxOffset = 15; // 最大偏移量
-    const offset = Math.max(-maxOffset, Math.min(maxOffset, speedDiff * 0.3));
+    // 根据速度变化调整小车垂直位置（加速时向上，降速时向下）
+    const speedYOffset = Math.max(-15, Math.min(15, speedDiff * 0.3));
     
-    // 保持旋转角度
-    car.style.transform = `translate(-50%, calc(-65% + ${offset}px)) rotate(${rectangleRotation}deg)`;
+    // 根据旋转角度和速度调整小车垂直位置（变道）
+    // 夹角为正（向上）时向上变道，夹角为负（向下）时向下变道
+    const maxLaneChangeOffset = 55; // 最大变道偏移量（车道间距）
+    const rotationEffect = rectangleRotation; // 旋转角度对变道的影响
+    const speedEffect = Math.min(dashboardValue / 300, 1); // 速度对变道的影响（0-1）
+    const laneChangeYOffset = Math.max(-maxLaneChangeOffset, Math.min(maxLaneChangeOffset, rotationEffect * speedEffect * maxLaneChangeOffset));
+    
+    // 总的垂直偏移 = 速度变化偏移 + 变道偏移
+    const targetY = speedYOffset + laneChangeYOffset;
+    
+    // 平滑过渡到目标位置
+    carY += (targetY - carY) * 0.1;
+    
+    // 应用变换
+    car.style.transform = `translate(calc(-50% + ${carX}px), calc(-50% + ${carY}px)) rotate(${rectangleRotation}deg)`;
     
     requestAnimationFrame(updateCarPosition);
 }
@@ -523,7 +541,7 @@ function updateRectangleRotation() {
     const yellowRectangle = document.getElementById('yellow-rectangle');
     if (!yellowRectangle) return;
     
-    yellowRectangle.style.transform = `translate(-50%, -50%) rotate(${rectangleRotation}deg)`;
+    yellowRectangle.style.transform = `translate(calc(-50% + ${carX}px), calc(-50% + ${carY}px)) rotate(${rectangleRotation}deg)`;
 }
 
 // 根据触摸位置计算仪表盘数值
@@ -784,7 +802,7 @@ const DASHBOARD_MAX_VALUE = 300; // 仪表盘最大值
 // 长方形旋转相关
 let rectangleRotation = 0; // 长方形当前旋转角度
 let secondTouchY = 0; // 第二个手指的Y坐标
-const PIXELS_TO_DEGREES = 90 / 200; // 200像素对应90度
+const PIXELS_TO_DEGREES = 90 / 100; // 100像素对应90度
 
 // 设置触摸事件监听器
 function setupTouchListeners() {

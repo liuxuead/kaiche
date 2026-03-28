@@ -52,8 +52,9 @@ body {
 
 .dashboard {
     position: absolute;
-    top: 40px;
+    top: 50%;
     left: 20px;
+    transform: translateY(-50%);
     width: 120px;
     height: 120px;
     background-color: transparent; /* 完全透明背景 */
@@ -63,7 +64,6 @@ body {
     align-items: center;
     box-shadow: none; /* 移除阴影 */
     border: 3px solid #3498db;
-    transform: rotate(90deg);
     touch-action: none;
     z-index: 100;
 }
@@ -73,7 +73,7 @@ body {
     font-weight: bold;
     color: #e74c3c;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
-    transform: rotate(-180deg);
+    transform: rotate(-90deg);
 }
 
 /* 仪表盘闪烁动画 */
@@ -93,13 +93,14 @@ body {
 /* 记分显示 */
 .score-display {
     position: absolute;
-    top: 170px;
-    left: 50px;
-    background-color: rgba(0, 0, 0, 0.7);
+    top: 20px;
+    left: 20px;
+    background-color: transparent;
     padding: 10px 15px;
     border-radius: 8px;
     z-index: 100;
     text-align: center;
+    transform: rotate(-90deg);
 }
 
 .score-label {

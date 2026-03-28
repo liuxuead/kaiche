@@ -957,9 +957,9 @@ function initGame() {
     
     // 小绿球速度等级配置
     const GREEN_BALL_SPEEDS = [
-        { min: 2, max: 4, probability: 0.5 }, // 慢速
-        { min: 5, max: 7, probability: 0.3 }, // 中速
-        { min: 8, max: 10, probability: 0.2 }  // 快速
+        { min: 1, max: 10, probability: 0.2 }, // 慢速
+        { min: 11, max: 20, probability: 0.5 }, // 中速
+        { min: 21, max: 30, probability: 0.3 }  // 快速
     ];
     
     // 生成小绿球
@@ -1095,7 +1095,10 @@ function initGame() {
                     const speedDiff = Math.abs(yellowBallSpeed - greenBallSpeed);
                     
                     let points = 0;
-                    if (speedDiff === 0) {
+                    // 黄球速度为0时不得分
+                    if (yellowBallSpeed === 0) {
+                        points = 0;
+                    } else if (speedDiff === 0) {
                         points = 10; // 相同速度，得10分
                     } else if (speedDiff < 10) {
                         points = 10 - speedDiff; // 速度差1-9，得9-1分

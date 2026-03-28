@@ -676,39 +676,94 @@ function initGame() {
         requestAnimationFrame(updateBallMovement);
     }
     
-    // 监听触摸事件来控制球的方向
+    // 监听触摸事件来控制球的方向（支持多指触摸）
     const gameContainer = document.querySelector('.game-container');
     if (gameContainer) {
-        let lastTouchX = 0;
-        let lastTouchY = 0;
+        let speedTouchId = null; // 控制速度的手指ID
+        let directionTouchId = null; // 控制方向的手指ID
+        let lastDirectionTouchX = 0;
+        let lastDirectionTouchY = 0;
         
         gameContainer.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            lastTouchX = touch.clientX;
-            lastTouchY = touch.clientY;
+            const touches = e.touches;
+            
+            // 第一个手指默认用于控制速度
+            if (touches.length === 1 && !speedTouchId) {
+                speedTouchId = touches[0].identifier;
+            }
+            
+            // 第二个手指用于控制方向
+            if (touches.length === 2 && !directionTouchId) {
+                for (let i = 0; i < touches.length; i++) {
+                    if (touches[i].identifier !== speedTouchId) {
+                        directionTouchId = touches[i].identifier;
+                        lastDirectionTouchX = touches[i].clientX;
+                        lastDirectionTouchY = touches[i].clientY;
+                        break;
+                    }
+                }
+            }
         });
         
         gameContainer.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - lastTouchX;
-            const deltaY = touch.clientY - lastTouchY;
+            const touches = e.touches;
             
-            // 计算触摸方向
-            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            if (length > 5) { // 避免微小移动
-                touchDirectionX = deltaX / length;
-                touchDirectionY = deltaY / length;
+            // 查找控制方向的手指
+            for (let i = 0; i < touches.length; i++) {
+                if (touches[i].identifier === directionTouchId) {
+                    const touch = touches[i];
+                    const deltaX = touch.clientX - lastDirectionTouchX;
+                    const deltaY = touch.clientY - lastDirectionTouchY;
+                    
+                    // 计算触摸方向
+                    const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    if (length > 5) { // 避免微小移动
+                        touchDirectionX = deltaX / length;
+                        touchDirectionY = deltaY / length;
+                    }
+                    
+                    lastDirectionTouchX = touch.clientX;
+                    lastDirectionTouchY = touch.clientY;
+                    break;
+                }
             }
-            
-            lastTouchX = touch.clientX;
-            lastTouchY = touch.clientY;
         });
         
-        gameContainer.addEventListener('touchend', () => {
-            // 触摸结束后，方向重置为0
-            touchDirectionX = 0;
-            touchDirectionY = 0;
+        gameContainer.addEventListener('touchend', (e) => {
+            const touches = e.touches;
+            
+            // 检查控制方向的手指是否离开
+            let directionTouchFound = false;
+            for (let i = 0; i < touches.length; i++) {
+                if (touches[i].identifier === directionTouchId) {
+                    directionTouchFound = true;
+                    break;
+                }
+            }
+            
+            if (!directionTouchFound) {
+                directionTouchId = null;
+                touchDirectionX = 0;
+                touchDirectionY = 0;
+            }
+            
+            // 检查控制速度的手指是否离开
+            let speedTouchFound = false;
+            for (let i = 0; i < touches.length; i++) {
+                if (touches[i].identifier === speedTouchId) {
+                    speedTouchFound = true;
+                    break;
+                }
+            }
+            
+            if (!speedTouchFound) {
+                speedTouchId = null;
+                // 如果控制速度的手指离开，重新分配
+                if (touches.length > 0) {
+                    speedTouchId = touches[0].identifier;
+                }
+            }
         });
         
         // 鼠标事件（用于桌面测试）
@@ -716,15 +771,15 @@ function initGame() {
         
         gameContainer.addEventListener('mousedown', (e) => {
             isMouseDown = true;
-            lastTouchX = e.clientX;
-            lastTouchY = e.clientY;
+            lastDirectionTouchX = e.clientX;
+            lastDirectionTouchY = e.clientY;
         });
         
         gameContainer.addEventListener('mousemove', (e) => {
             if (!isMouseDown) return;
             
-            const deltaX = e.clientX - lastTouchX;
-            const deltaY = e.clientY - lastTouchY;
+            const deltaX = e.clientX - lastDirectionTouchX;
+            const deltaY = e.clientY - lastDirectionTouchY;
             
             // 计算触摸方向
             const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -733,8 +788,8 @@ function initGame() {
                 touchDirectionY = deltaY / length;
             }
             
-            lastTouchX = e.clientX;
-            lastTouchY = e.clientY;
+            lastDirectionTouchX = e.clientX;
+            lastDirectionTouchY = e.clientY;
         });
         
         gameContainer.addEventListener('mouseup', () => {

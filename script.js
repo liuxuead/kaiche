@@ -1,214 +1,4 @@
-// 电量条分区配置
-const BATTERY_BAR_CONFIG = {
-    top: { count: 6, color: '#e74c3c' },      // 上：6格，红色
-    middle: { count: 9, color: '#2ecc71' },   // 中：9格，绿色
-    bottom: { count: 5, color: '#3498db' }    // 下：5格，蓝色
-};
 
-// 初始化电量条
-function initBatteryBar() {
-    const batteryBars = document.getElementById('battery-bars');
-    if (!batteryBars) return;
-    
-    batteryBars.innerHTML = '';
-    
-    // 创建上部分（6格，蓝色）
-    for (let i = 0; i < BATTERY_BAR_CONFIG.top.count; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'battery-bar-item';
-        bar.dataset.section = 'top';
-        bar.dataset.index = i;
-        bar.style.cssText = `
-            flex: 1;
-            height: 70%;
-            margin: 0 2px;
-            background: #555;
-            border-radius: 2px;
-            transition: background 0.1s;
-        `;
-        batteryBars.appendChild(bar);
-    }
-    
-    // 创建中部分（9格，绿色）
-    for (let i = 0; i < BATTERY_BAR_CONFIG.middle.count; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'battery-bar-item';
-        bar.dataset.section = 'middle';
-        bar.dataset.index = i;
-        bar.style.cssText = `
-            flex: 1;
-            height: 70%;
-            margin: 0 2px;
-            background: #555;
-            border-radius: 2px;
-            transition: background 0.1s;
-        `;
-        batteryBars.appendChild(bar);
-    }
-    
-    // 创建下部分（5格，红色）
-    for (let i = 0; i < BATTERY_BAR_CONFIG.bottom.count; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'battery-bar-item';
-        bar.dataset.section = 'bottom';
-        bar.dataset.index = i;
-        bar.style.cssText = `
-            flex: 1;
-            height: 70%;
-            margin: 0 2px;
-            background: #555;
-            border-radius: 2px;
-            transition: background 0.1s;
-        `;
-        batteryBars.appendChild(bar);
-    }
-}
-
-// 更新电量条记录状态显示
-function updateBatteryBarRecordStatus() {
-    const bars = document.querySelectorAll('.battery-bar-item');
-    
-    bars.forEach(bar => {
-        const section = bar.dataset.section;
-        
-        if (section === 'top' && touchData.top.x !== 0) {
-            // 上有数据，亮起蓝色
-            bar.style.background = BATTERY_BAR_CONFIG.top.color;
-        } else if (section === 'middle' && touchData.middle.x !== 0) {
-            // 中有数据，亮起绿色
-            bar.style.background = BATTERY_BAR_CONFIG.middle.color;
-        } else if (section === 'bottom' && touchData.bottom.x !== 0) {
-            // 下有数据，亮起红色
-            bar.style.background = BATTERY_BAR_CONFIG.bottom.color;
-        } else {
-            // 无数据，灰色
-            bar.style.background = '#555';
-        }
-    });
-}
-
-// 更新电量条显示（实时追踪手指位置）
-function updateBatteryBar(clientY) {
-    const stats = getStatsAverage();
-    if (stats.top.y === 0 || stats.bottom.y === 0) {
-        return;
-    }
-    
-    const gameContainer = document.querySelector('.game-container');
-    if (!gameContainer) return;
-    
-    const rect = gameContainer.getBoundingClientRect();
-    // 把clientY转换成相对于game-container的坐标
-    const relativeY = clientY - rect.top;
-    
-    // 计算当前Y在统计范围内的位置 (0-1)
-    let totalRange = Math.abs(stats.bottom.y - stats.top.y);
-    if (totalRange <= 0) {
-        console.log('updateBatteryBar: totalRange <= 0，使用默认范围 100');
-        totalRange = 100;
-    }
-    
-    // 确定哪个是上，哪个是下
-    const minY = Math.min(stats.top.y, stats.bottom.y);
-    const maxY = Math.max(stats.top.y, stats.bottom.y);
-    
-    let position;
-    if (totalRange === 100) {
-        position = 0.5;
-    } else {
-        position = (relativeY - minY) / totalRange;
-        position = Math.max(0, Math.min(1, position));
-    }
-    
-    // 反转位置，让上下对应
-    position = 1 - position;
-    
-    // 根据位置确定在哪个区域
-    // 上区域：0-0.3 (6格)
-    // 中区域：0.3-0.8 (9格)
-    // 下区域：0.8-1 (5格) - 偏下一些，方便指尖操作
-    let targetSection, sectionIndex, sectionPosition;
-    const topThreshold = 0.3;
-    const bottomThreshold = 0.8;
-    
-    if (position < topThreshold) {
-        // 上区域
-        targetSection = 'top';
-        sectionPosition = position / topThreshold;
-        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.top.count - 1));
-    } else if (position > bottomThreshold) {
-        // 下区域
-        targetSection = 'bottom';
-        sectionPosition = (position - bottomThreshold) / (1 - bottomThreshold);
-        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.bottom.count - 1));
-    } else {
-        // 中区域
-        targetSection = 'middle';
-        sectionPosition = (position - topThreshold) / (bottomThreshold - topThreshold);
-        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.middle.count - 1));
-    }
-    
-    // 计算在总格子中的索引
-    let centerIndex;
-    if (targetSection === 'top') {
-        centerIndex = sectionIndex;
-    } else if (targetSection === 'middle') {
-        centerIndex = BATTERY_BAR_CONFIG.top.count + sectionIndex;
-    } else {
-        centerIndex = BATTERY_BAR_CONFIG.top.count + BATTERY_BAR_CONFIG.middle.count + sectionIndex;
-    }
-    
-    const spread = 2; // 向两边扩散的范围
-    
-    const bars = document.querySelectorAll('.battery-bar-item');
-    bars.forEach((bar, i) => {
-        const distance = Math.abs(i - centerIndex);
-        const section = bar.dataset.section;
-        
-        if (distance <= spread) {
-            const intensity = 1 - (distance / (spread + 1));
-            
-            // 根据区域使用不同颜色
-            let r, g, b;
-            if (section === 'top') {
-                // 红色（对应记录的上）
-                r = Math.round(231 * intensity + 50 * (1 - intensity));
-                g = Math.round(76 * intensity);
-                b = Math.round(60 * intensity);
-            } else if (section === 'middle') {
-                // 绿色
-                r = Math.round(46 * intensity);
-                g = Math.round(204 * intensity + 50 * (1 - intensity));
-                b = Math.round(113 * intensity);
-            } else {
-                // 蓝色（对应记录的下）
-                r = Math.round(52 * intensity);
-                g = Math.round(152 * intensity);
-                b = Math.round(219 * intensity + 100 * (1 - intensity));
-            }
-            
-            bar.style.background = `rgb(${r}, ${g}, ${b})`;
-        } else {
-            // completeCount >= 4时，未点亮的格子保持透明
-            if (completeCount >= 4) {
-                bar.style.background = 'transparent';
-            } else if (completeCount >= 3) {
-                bar.style.background = '#555';
-            } else {
-                // 恢复记录状态显示
-                if (section === 'top' && touchData.top.x !== 0) {
-                    bar.style.background = BATTERY_BAR_CONFIG.top.color;
-                } else if (section === 'middle' && touchData.middle.x !== 0) {
-                    bar.style.background = BATTERY_BAR_CONFIG.middle.color;
-                } else if (section === 'bottom' && touchData.bottom.x !== 0) {
-                    bar.style.background = BATTERY_BAR_CONFIG.bottom.color;
-                } else {
-                    bar.style.background = '#555';
-                }
-            }
-        }
-    });
-}
 
 // 调整"中"的范围（长按压超过3秒后调用）
 function adjustMiddleRange(touch) {
@@ -418,10 +208,10 @@ function updateLaneSpeed(speed) {
     if (lanes.every(lane => !lane)) return;
     
     // 根据速度计算动画持续时间（速度越快，持续时间越短）
-    // 速度0-300，对应持续时间2s-0.2s
-    const maxSpeed = 300;
-    const minDuration = 0.2;
-    const maxDuration = 2;
+    // 速度0-30，对应持续时间0.2s-0.02s
+    const maxSpeed = 30;
+    const minDuration = 0.02;
+    const maxDuration = 0.2;
     
     const duration = maxDuration - (speed / maxSpeed) * (maxDuration - minDuration);
     
@@ -432,15 +222,15 @@ function updateLaneSpeed(speed) {
         // 根据速度添加视觉效果
         lane.classList.remove('high-speed', 'very-high-speed', 'extreme-speed');
         
-        if (speed > 100) {
+        if (speed > 10) {
             lane.classList.add('high-speed');
         }
         
-        if (speed > 180) {
+        if (speed > 18) {
             lane.classList.add('very-high-speed');
         }
         
-        if (speed > 250) {
+        if (speed > 25) {
             lane.classList.add('extreme-speed');
         }
     });
@@ -479,16 +269,16 @@ function updateLaneSpeedWithDuration(duration, speed) {
 
 // 持续更新车道线（即使速度稳定时也能保持运动）
 let lastSpeed = 0;
-let currentDuration = 2; // 当前动画持续时间
-let targetDuration = 2; // 目标动画持续时间
+let currentDuration = 0.2; // 当前动画持续时间
+let targetDuration = 0.2; // 目标动画持续时间
 
 function continuousLaneUpdate() {
     // 只在速度真正变化时才更新车道线动画
     if (Math.abs(dashboardValue - lastSpeed) > 0.1) {
         // 计算目标动画持续时间
-        const maxSpeed = 300;
-        const minDuration = 0.2;
-        const maxDuration = 2;
+        const maxSpeed = 30;
+        const minDuration = 0.02;
+        const maxDuration = 0.2;
         targetDuration = maxDuration - (dashboardValue / maxSpeed) * (maxDuration - minDuration);
         lastSpeed = dashboardValue;
     }
@@ -559,51 +349,7 @@ function logLaneAndCarPositions() {
     }
 }
 
-// 小车位置和变道相关变量
-let carX = 0; // 小车水平位置偏移
-let carY = 0; // 小车垂直位置偏移
-let currentLane = 0; // 当前车道：-1（上）、0（中）、1（下）
 
-// 更新小车位置（只保留中间车道，移除变道功能）
-function updateCarPosition() {
-    const car = document.getElementById('yellow-rectangle');
-    if (!car) return;
-    
-    // 计算速度变化
-    const speedDiff = targetDashboardValue - dashboardValue;
-    
-    // 根据速度变化调整小车垂直位置（加速时向上，降速时向下）
-    const speedYOffset = Math.max(-15, Math.min(15, speedDiff * 0.3));
-    
-    // 重置旋转角度到水平状态
-    if (Math.abs(rectangleRotation) > 1) {
-        // 平滑回到水平
-        rectangleRotation *= 0.95;
-        if (Math.abs(rectangleRotation) < 0.1) {
-            rectangleRotation = 0;
-        }
-        updateRectangleRotation();
-    }
-    
-    // 只保留速度变化带来的垂直偏移，固定在中间车道
-    const targetY = speedYOffset;
-    
-    // 平滑过渡到目标位置（增加平滑系数，提高响应速度）
-    carY += (targetY - carY) * 0.2;
-    
-    // 应用变换 - 小车水平位置向右偏移，居于中间车道靠右
-    car.style.transform = `translate(calc(-50% + 50px + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
-    
-    requestAnimationFrame(updateCarPosition);
-}
-
-// 更新长方形旋转
-function updateRectangleRotation() {
-    const yellowRectangle = document.getElementById('yellow-rectangle');
-    if (!yellowRectangle) return;
-    
-    yellowRectangle.style.transform = `translate(calc(-50% + 50px + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
-}
 
 // 根据触摸位置计算仪表盘数值
 function calculateDashboardValue(mirrorY) {
@@ -660,7 +406,7 @@ function lockToStablePoints(value) {
 // 游戏初始化
 function initGame() {
     console.log('游戏初始化完成');
-    initBatteryBar();
+    
     
     // 初始化仪表盘显示0
     dashboardValue = 0;
@@ -723,7 +469,7 @@ function initGame() {
             
             // 更新统计面板为0
             updateStatsPanel();
-            initBatteryBar(); // 重置电量条
+             // 重置电量条
             
             // 恢复电量条边框样式
             const batteryBar = document.querySelector('.battery-bar');
@@ -775,7 +521,7 @@ function initGame() {
             clearDisplayText(textTop, textMiddle, textBottom);
             updateDataDisplay();
             updateStatsPanel();
-            initBatteryBar(); // 重置电量条
+             // 重置电量条
             
             // 恢复电量条边框样式
             const batteryBar = document.querySelector('.battery-bar');
@@ -812,17 +558,26 @@ function initGame() {
     // 初始化数据显示
     updateDataDisplay();
     
-    // 启动持续更新函数
-    continuousLaneUpdate();
-    updateCarPosition();
+    // 自适应正方形框 - 大小随浏览器窗口变化，位置固定
+    function updateDynamicFrameSize() {
+        const frame = document.getElementById('dynamic-frame');
+        if (!frame) return;
+        
+        // 根据窗口宽度设置框的大小，确保不超过屏幕的80%
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const maxSize = Math.min(windowWidth, windowHeight) * 0.8;
+        
+        frame.style.width = `${maxSize}px`;
+        frame.style.height = `${maxSize}px`;
+    }
     
-    // 输出车道线和小车位置日志
-    setTimeout(() => {
-        logLaneAndCarPositions();
-    }, 1000);
+    // 初始化框大小
+    updateDynamicFrameSize();
     
-    // 初始化车道线动画
-    updateLaneSpeed(0);
+    // 监听窗口大小变化，更新框的大小
+    window.addEventListener('resize', updateDynamicFrameSize);
+
 }
 
 
@@ -839,8 +594,7 @@ const allTouchData = [];
 // 记录上一次"下"的数据，用来检测变化
 let lastBottomX = 0;
 let lastBottomY = 0;
-// 电量条竖杠数量
-const BATTERY_BAR_COUNT = 20;
+
 // 是否已调整过"中"的范围
 let middleRangeAdjusted = false;
 // 调整后的阈值（默认是0.33-0.66，调整后是0.2-0.8）
@@ -863,12 +617,9 @@ let completeCount = 0;
 let dashboardValue = 0; // 当前仪表盘显示的数值
 let targetDashboardValue = 0; // 目标数值
 let dashboardAnimationId = null; // 动画requestId
-const DASHBOARD_MAX_VALUE = 300; // 仪表盘最大值
+const DASHBOARD_MAX_VALUE = 30; // 仪表盘最大值
 
-// 长方形旋转相关
-let rectangleRotation = 0; // 长方形当前旋转角度
-let secondTouchY = 0; // 第二个手指的Y坐标
-const PIXELS_TO_DEGREES = 90 / 100; // 100像素对应90度
+// 圆球不需要旋转，移除相关变量
 
 // 设置触摸事件监听器
 function setupTouchListeners() {
@@ -886,68 +637,19 @@ function setupTouchListeners() {
         }
         currentTouch = e.touches[0];
         
-        // 当 completeCount >= 4 时，处理双指触控
+        // 当 completeCount >= 4 时，处理触摸
         if (completeCount >= 4) {
             const containerHeight = gameContainer.clientHeight;
             const rect = gameContainer.getBoundingClientRect();
             
-            console.log('容器信息:');
-            console.log('containerHeight:', containerHeight);
-            console.log('rect.left:', rect.left);
-            console.log('rect.top:', rect.top);
-            console.log('rect.width:', rect.width);
-            console.log('rect.height:', rect.height);
+            // 只有一个手指，保持原有逻辑
+            const mirrorX = currentTouch.clientX - rect.left;
+            const mirrorY = containerHeight - currentTouch.clientY;
             
-            // 检测是否有两个手指
-            if (e.touches.length >= 2) {
-                // 第一个手指
-                const touch1 = e.touches[0];
-                const mirrorX1 = touch1.clientX - rect.left;
-                const mirrorY1 = containerHeight - touch1.clientY;
-                
-                // 第二个手指
-                const touch2 = e.touches[1];
-                const mirrorX2 = touch2.clientX - rect.left;
-                const mirrorY2 = containerHeight - touch2.clientY;
-                
-                console.log('双指触控检测:');
-                console.log('touch1坐标:', touch1.clientX, touch1.clientY);
-                console.log('touch1镜像坐标:', mirrorX1, mirrorY1);
-                console.log('touch2坐标:', touch2.clientX, touch2.clientY);
-                console.log('touch2镜像坐标:', mirrorX2, mirrorY2);
-                
-                // 判断第一个手指是否在绘制区域内
-                const touch1InArea = isNearDrawArea(mirrorX1, mirrorY1);
-                const touch2InArea = isNearDrawArea(mirrorX2, mirrorY2);
-                
-                console.log('touch1在区域内:', touch1InArea);
-                console.log('touch2在区域内:', touch2InArea);
-                
-                // 如果第一个手指在区域内，第二个手指在区域外
-                if (touch1InArea && !touch2InArea) {
-                    // 第一个手指控制电量条和仪表盘
-                    updateTouchInfo(touch1, touchArea);
-                    // 第二个手指控制长方形旋转
-                    secondTouchY = touch2.clientY;
-                } else if (touch2InArea && !touch1InArea) {
-                    // 第二个手指在区域内，第一个手指在区域外
-                    updateTouchInfo(touch2, touchArea);
-                    // 第一个手指控制长方形旋转
-                    secondTouchY = touch1.clientY;
-                } else {
-                    // 不符合双指条件，不显示白色圆圈
-                    touchArea.style.opacity = '0';
-                }
+            if (isNearDrawArea(mirrorX, mirrorY)) {
+                updateTouchInfo(currentTouch, touchArea);
             } else {
-                // 只有一个手指，保持原有逻辑
-                const mirrorX = currentTouch.clientX - rect.left;
-                const mirrorY = containerHeight - currentTouch.clientY;
-                
-                if (isNearDrawArea(mirrorX, mirrorY)) {
-                    updateTouchInfo(currentTouch, touchArea);
-                } else {
-                    touchArea.style.opacity = '0';
-                }
+                touchArea.style.opacity = '0';
             }
         } else {
             updateTouchInfo(currentTouch, touchArea);
@@ -1013,69 +715,18 @@ function setupTouchListeners() {
             const containerHeight = gameContainer.clientHeight;
             const rect = gameContainer.getBoundingClientRect();
             
-            // 检测是否有两个手指
-            if (e.touches.length >= 2) {
-                // 第一个手指
-                const touch1 = e.touches[0];
-                const mirrorX1 = touch1.clientX - rect.left;
-                const mirrorY1 = containerHeight - touch1.clientY;
+            // 只有一个手指，保持原有逻辑
+            const mirrorX = currentTouch.clientX - rect.left;
+            const mirrorY = containerHeight - currentTouch.clientY;
+            
+            // 只有在绘制范围附近100像素内才更新
+            if (isNearDrawArea(mirrorX, mirrorY)) {
                 
-                // 第二个手指
-                const touch2 = e.touches[1];
-                const mirrorX2 = touch2.clientX - rect.left;
-                const mirrorY2 = containerHeight - touch2.clientY;
                 
-                // 判断第一个手指是否在绘制区域内
-                const touch1InArea = isNearDrawArea(mirrorX1, mirrorY1);
-                const touch2InArea = isNearDrawArea(mirrorX2, mirrorY2);
-                
-                // 如果第一个手指在区域内，第二个手指在区域外
-                if (touch1InArea && !touch2InArea) {
-                    // 第一个手指控制电量条和仪表盘
-                    if (isNearDrawArea(mirrorX1, mirrorY1)) {
-                        updateBatteryBar(mirrorY1);
-                        targetDashboardValue = calculateDashboardValue(mirrorY1);
-                        if (!dashboardAnimationId) {
-                            updateDashboardValue();
-                        }
-                    }
-                    // 第二个手指控制长方形旋转
-                    const deltaY = touch2.clientY - secondTouchY;
-                    // 向上滑动（deltaY < 0）顺时针旋转，向下滑动（deltaY > 0）逆时针旋转
-                    rectangleRotation -= deltaY * PIXELS_TO_DEGREES;
-                    secondTouchY = touch2.clientY;
-                    updateRectangleRotation();
-                } else if (touch2InArea && !touch1InArea) {
-                    // 第二个手指在区域内，第一个手指在区域外
-                    // 第二个手指控制电量条和仪表盘
-                    if (isNearDrawArea(mirrorX2, mirrorY2)) {
-                        updateBatteryBar(mirrorY2);
-                        targetDashboardValue = calculateDashboardValue(mirrorY2);
-                        if (!dashboardAnimationId) {
-                            updateDashboardValue();
-                        }
-                    }
-                    // 第一个手指控制长方形旋转
-                    const deltaY = touch1.clientY - secondTouchY;
-                    // 向上滑动（deltaY < 0）顺时针旋转，向下滑动（deltaY > 0）逆时针旋转
-                    rectangleRotation -= deltaY * PIXELS_TO_DEGREES;
-                    secondTouchY = touch1.clientY;
-                    updateRectangleRotation();
-                }
-            } else {
-                // 只有一个手指，保持原有逻辑
-                const mirrorX = currentTouch.clientX - rect.left;
-                const mirrorY = containerHeight - currentTouch.clientY;
-                
-                // 只有在绘制范围附近100像素内才更新
-                if (isNearDrawArea(mirrorX, mirrorY)) {
-                    updateBatteryBar(mirrorY);
-                    
-                    // 更新仪表盘数值
-                    targetDashboardValue = calculateDashboardValue(mirrorY);
-                    if (!dashboardAnimationId) {
-                        updateDashboardValue();
-                    }
+                // 更新仪表盘数值
+                targetDashboardValue = calculateDashboardValue(mirrorY);
+                if (!dashboardAnimationId) {
+                    updateDashboardValue();
                 }
             }
         }
@@ -1200,7 +851,7 @@ function setupTouchListeners() {
             
             // 只有在绘制范围附近100像素内才更新
             if (isNearDrawArea(mirrorX, mirrorY)) {
-                updateBatteryBar(mirrorY);
+                
                 
                 // 更新仪表盘数值
                 targetDashboardValue = calculateDashboardValue(mirrorY);
@@ -1407,7 +1058,7 @@ function recordTouchData(touch) {
     }
     
     updateDataDisplay();
-    updateBatteryBarRecordStatus(); // 更新电量条记录状态
+     // 更新电量条记录状态
 }
 
 // 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）
@@ -2045,7 +1696,7 @@ function resetRecordData() {
     clearDisplayText(textTop, textMiddle, textBottom);
     updateDataDisplay();
     updateStatsPanel();
-    initBatteryBar();
+    
     
     // 恢复电量条边框样式
     const batteryBar = document.querySelector('.battery-bar');
@@ -2101,7 +1752,7 @@ function resetAllData() {
     clearDisplayText(textTop, textMiddle, textBottom);
     updateDataDisplay();
     updateStatsPanel();
-    initBatteryBar(); // 重置电量条
+     // 重置电量条
     
     // 清除按压区域
     clearPressAreas();
@@ -2145,35 +1796,8 @@ function resetAllData() {
 
 // 绘制按压区域
 function drawPressAreas() {
-    // 当 completeCount >= 4 时，不绘制触摸区域，只调整电量条位置
-    if (completeCount >= 4) {
-        console.log('completeCount >= 4，隐藏触摸区域，调整电量条位置');
-        
-        // 清除现有按压区域
-        clearPressAreas();
-        
-        // 调整电量条位置，让它覆盖原来的触摸区域
-        const batteryBar = document.querySelector('.battery-bar');
-        if (batteryBar) {
-            batteryBar.style.position = 'fixed';
-            batteryBar.style.bottom = '90px'; // 向下延伸，bottom减少80px
-            batteryBar.style.right = '20px';
-            batteryBar.style.transform = 'none';
-            batteryBar.style.zIndex = '99999';
-            batteryBar.style.width = '320px'; // 水平长度恢复到原来的 320px
-            batteryBar.style.height = '160px'; // 垂直高度延伸两个自身宽度 (80px + 80px)
-            batteryBar.style.pointerEvents = 'none'; // 添加事件穿透
-            batteryBar.style.backgroundColor = 'transparent'; // 背景透明
-            
-            // 让所有格子默认透明
-            const bars = batteryBar.querySelectorAll('.battery-bar-item');
-            bars.forEach(bar => {
-                bar.style.background = 'transparent';
-            });
-        }
-        
-        return;
-    }
+    // 清除现有按压区域
+    clearPressAreas();
     
     const stats = getStatsAverage();
     if (stats.top.y === 0 || stats.bottom.y === 0 || stats.middle.y === 0) {

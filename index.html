@@ -11,13 +11,7 @@
     <button class="clear-button" id="clear-btn" style="position: fixed; bottom: 20px; left: 20px; z-index: 99999; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">统</button>
     <button class="clear-button" id="reset-record-btn" style="position: fixed; bottom: 55px; left: 20px; z-index: 99999; background: #ff6600; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">记</button>
     
-    <!-- 电量条 - 移到触摸位置附近 -->
-    <div class="battery-bar" id="battery-bar" style="position: fixed; bottom: 170px; right: 20px; width: 320px; height: 30px; background: #333; border-radius: 5px; z-index: 99999; overflow: hidden;">
-        <!-- 竖杠显示区 -->
-        <div class="battery-bars" id="battery-bars" style="display: flex; height: 100%; align-items: center; padding: 0 5px;">
-            <!-- 动态生成竖杠 -->
-        </div>
-    </div>
+
     
     <div class="game-container">
         <div class="complete-counter" id="complete-counter">0</div>
@@ -30,16 +24,8 @@
         <div class="touch-area-middle"></div>
         <div class="touch-area-bottom"></div>
         
-        <!-- 车道线容器 -->
-        <div class="road-lanes" id="road-lanes">
-            <div class="lane-line top-top-lane" id="top-top-lane"></div>
-            <div class="lane-line top-lane" id="top-lane"></div>
-            <div class="lane-line bottom-lane" id="bottom-lane"></div>
-            <div class="lane-line bottom-bottom-lane" id="bottom-bottom-lane"></div>
-        </div>
-        
-        <!-- 黄色长方形 -->
-        <div class="yellow-rectangle" id="yellow-rectangle"></div>
+        <!-- 可随页面动的正方形框 -->
+        <div class="dynamic-frame" id="dynamic-frame"></div>
         
         <!-- 数据显示区域 -->
         <div class="data-container" style="display: none;">

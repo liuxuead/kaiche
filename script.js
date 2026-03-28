@@ -1422,8 +1422,11 @@ function loadSavedData() {
         try {
             const parsedData = JSON.parse(savedData);
             if (parsedData.stats && parsedData.allTouchData) {
-                // 加载统计数据
-                allTouchData = parsedData.allTouchData;
+                // 加载统计数据 - 使用push方式，避免const赋值错误
+                allTouchData.length = 0; // 清空现有数据
+                parsedData.allTouchData.forEach(record => {
+                    allTouchData.push(record);
+                });
                 completeCount = parsedData.completeCount || 4;
                 
                 // 恢复touchData

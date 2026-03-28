@@ -597,12 +597,6 @@ let longPressStartTime = 0;
 // 触摸计时器
 let touchTimer = null;
 let currentTouch = null;
-
-// 多手指跟踪
-let drawFingerId = null; // 绘制区域内的手指ID
-let otherFingerId = null; // 其他区域的手指ID
-let otherFingerStartY = 0; // 其他区域手指的起始Y坐标
-let boxRotation = 0; // 长方体旋转角度
 // 长按计数器，用于记录第几次长按
 let touchCount = 0;
 // 记录完成次数（上中下都有值）
@@ -625,66 +619,57 @@ function setupTouchListeners() {
         if (e.target.closest('button') || e.target.closest('.dashboard')) {
             return;
         }
+        currentTouch = e.touches[0];
         
-        // 遍历所有触摸点
-        for (let i = 0; i < e.touches.length; i++) {
-            const touch = e.touches[i];
+        // 当 completeCount >= 4 时，只有在绘制范围附近才显示白色圆圈
+        if (completeCount >= 4) {
             const containerHeight = gameContainer.clientHeight;
             const rect = gameContainer.getBoundingClientRect();
-            const mirrorX = touch.clientX - rect.left;
-            const mirrorY = containerHeight - touch.clientY;
+            const mirrorX = currentTouch.clientX - rect.left;
+            const mirrorY = containerHeight - currentTouch.clientY;
             
-            // 判断是否在绘制区域附近
             if (isNearDrawArea(mirrorX, mirrorY)) {
-                // 这是绘制区域的手指
-                drawFingerId = touch.identifier;
-                currentTouch = touch;
-                
-                // 当 completeCount >= 4 时，显示白色圆圈
-                if (completeCount >= 4) {
-                    updateTouchInfo(touch, touchArea);
-                } else {
-                    updateTouchInfo(touch, touchArea);
-                }
-                
-                // 开始计时（绘制区域内的逻辑）
-                if (!stopwatchRunning && completeCount < 4) {
-                    resetStopwatch();
-                    stopwatchRunning = true;
-                    stopwatchInterval = setInterval(() => {
-                        stopwatchMilliseconds += 10;
-                        if (stopwatchMilliseconds >= 1000) {
-                            stopwatchMilliseconds = 0;
-                            stopwatchSeconds += 1;
-                        }
-                        
-                        const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
-                        // 只有 completeCount <4 时才显示秒数
-                        if (completeCount < 4) {
-                            document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
-                        }
-                    }, 10);
-                }
-                
-                // 开始计时（1秒记录数据）
-                if (completeCount < 3) {
-                    touchTimer = setTimeout(() => {
-                        // 超过1秒，记录数据
-                        recordTouchData(touch);
-                        // 记录完成后停止计时
-                        stopStopwatch();
-                    }, 1000);
-                } else if (completeCount === 3) {
-                    // 当completeCount=3时，3秒后自动停止计时
-                    longPressTimer = setTimeout(() => {
-                        stopStopwatch();
-                    }, 3000);
-                }
+                updateTouchInfo(currentTouch, touchArea);
             } else {
-                // 这是其他区域的手指
-                otherFingerId = touch.identifier;
-                otherFingerStartY = touch.clientY;
+                // 不在范围内，不显示白色圆圈
+                touchArea.style.opacity = '0';
             }
+        } else {
+            updateTouchInfo(currentTouch, touchArea);
+        }
+        
+        // 开始计时
+        if (!stopwatchRunning && completeCount < 4) {
+            resetStopwatch();
+            stopwatchRunning = true;
+            stopwatchInterval = setInterval(() => {
+                stopwatchMilliseconds += 10;
+                if (stopwatchMilliseconds >= 1000) {
+                    stopwatchMilliseconds = 0;
+                    stopwatchSeconds += 1;
+                }
+                
+                const totalSeconds = stopwatchSeconds + (stopwatchMilliseconds / 1000);
+                // 只有 completeCount <4 时才显示秒数
+                if (completeCount < 4) {
+                    document.querySelector('.dashboard-value').textContent = totalSeconds.toFixed(2);
+                }
+            }, 10);
+        }
+        
+        // 开始计时（1秒记录数据）
+        if (completeCount < 3) {
+            touchTimer = setTimeout(() => {
+                // 超过1秒，记录数据
+                recordTouchData(currentTouch);
+                // 记录完成后停止计时
+                stopStopwatch();
+            }, 1000);
+        } else if (completeCount === 3) {
+            // 当completeCount=3时，3秒后自动停止计时
+            longPressTimer = setTimeout(() => {
+                stopStopwatch();
+            }, 3000);
         }
     });
     
@@ -701,107 +686,54 @@ function setupTouchListeners() {
         }
         lastUpdateTime = now;
         
-        // 遍历所有触摸点
-        for (let i = 0; i < e.touches.length; i++) {
-            const touch = e.touches[i];
+        currentTouch = e.touches[0];
+        updateTouchInfo(currentTouch, touchArea);
+        
+        // 实时更新电量条（completeCount达到4后才启用）
+        if (completeCount >= 4) {
+            const gameContainer = document.querySelector('.game-container');
+            const containerHeight = gameContainer.clientHeight;
+            const rect = gameContainer.getBoundingClientRect();
+            const mirrorX = currentTouch.clientX - rect.left;
+            const mirrorY = containerHeight - currentTouch.clientY;
             
-            if (touch.identifier === drawFingerId) {
-                // 绘制区域内的手指
-                currentTouch = touch;
+            // 只有在绘制范围附近100像素内才更新
+            if (isNearDrawArea(mirrorX, mirrorY)) {
+                updateBatteryBar(mirrorY);
                 
-                // 当 completeCount >= 4 时，只有在绘制范围附近才显示白色圆圈
-                if (completeCount >= 4) {
-                    const containerHeight = gameContainer.clientHeight;
-                    const rect = gameContainer.getBoundingClientRect();
-                    const mirrorX = touch.clientX - rect.left;
-                    const mirrorY = containerHeight - touch.clientY;
-                    
-                    if (isNearDrawArea(mirrorX, mirrorY)) {
-                        updateTouchInfo(touch, touchArea);
-                    } else {
-                        touchArea.style.opacity = '0';
-                    }
-                } else {
-                    updateTouchInfo(touch, touchArea);
+                // 更新仪表盘数值
+                targetDashboardValue = calculateDashboardValue(mirrorY);
+                if (!dashboardAnimationId) {
+                    updateDashboardValue();
                 }
-                
-                // 实时更新电量条（completeCount达到4后才启用）
-                if (completeCount >= 4) {
-                    const containerHeight = gameContainer.clientHeight;
-                    const rect = gameContainer.getBoundingClientRect();
-                    const mirrorX = touch.clientX - rect.left;
-                    const mirrorY = containerHeight - touch.clientY;
-                    
-                    // 只有在绘制范围附近100像素内才更新
-                    if (isNearDrawArea(mirrorX, mirrorY)) {
-                        updateBatteryBar(mirrorY);
-                        
-                        // 更新仪表盘数值
-                        targetDashboardValue = calculateDashboardValue(mirrorY);
-                        if (!dashboardAnimationId) {
-                            updateDashboardValue();
-                        }
-                    }
-                }
-            } else if (touch.identifier === otherFingerId) {
-                // 其他区域的手指（控制长方体旋转）
-                const deltaY = touch.clientY - otherFingerStartY;
-                
-                // 根据上下滑动调整长方体旋转角度
-                // 上滑：顺时针旋转，下滑：逆时针旋转
-                boxRotation -= deltaY * 0.5; // 调整灵敏度
-                
-                // 更新长方体旋转
-                const centerBox = document.querySelector('.center-box');
-                if (centerBox) {
-                    centerBox.style.transform = `translate(-50%, -50%) rotate(${boxRotation}deg)`;
-                }
-                
-                // 更新起始位置
-                otherFingerStartY = touch.clientY;
             }
         }
     });
     
     // 触摸结束事件
-    gameContainer.addEventListener('touchend', (e) => {
+    gameContainer.addEventListener('touchend', () => {
         touchInfo.textContent = '触摸位置: (0, 0)';
         touchArea.style.opacity = '0';
         
-        // 检查哪些手指离开了
-        const remainingTouchIds = new Set();
-        for (let i = 0; i < e.touches.length; i++) {
-            remainingTouchIds.add(e.touches[i].identifier);
-        }
+        // 停止计时并显示最终时间
+        stopStopwatch();
         
-        // 如果绘制区域的手指离开了
-        if (drawFingerId && !remainingTouchIds.has(drawFingerId)) {
-            // 停止计时并显示最终时间
-            stopStopwatch();
-            
-            // 清除计时器
-            clearTimeout(touchTimer);
-            clearTimeout(longPressTimer);
-            currentTouch = null;
-            drawFingerId = null;
-            
-            // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
-            if (completeCount >= 4) {
-                targetDashboardValue = 0;
-                if (!dashboardAnimationId) {
-                    updateDashboardValue();
-                }
-                // 清空电量条
-                const bars = document.querySelectorAll('.battery-bar-item');
-                bars.forEach(bar => {
-                    bar.style.background = '#555';
-                });
+        // 清除计时器
+        clearTimeout(touchTimer);
+        clearTimeout(longPressTimer);
+        currentTouch = null;
+        
+        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
+        if (completeCount >= 4) {
+            targetDashboardValue = 0;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
             }
-        }
-        
-        // 如果其他区域的手指离开了
-        if (otherFingerId && !remainingTouchIds.has(otherFingerId)) {
-            otherFingerId = null;
+            // 清空电量条
+            const bars = document.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = '#555';
+            });
         }
     });
     

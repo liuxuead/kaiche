@@ -11,8 +11,8 @@
     <button class="clear-button" id="clear-btn" style="position: fixed; bottom: 20px; left: 20px; z-index: 99999; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">统</button>
     <button class="clear-button" id="reset-record-btn" style="position: fixed; bottom: 55px; left: 20px; z-index: 99999; background: #ff6600; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">记</button>
     
-    <!-- 电量条 - 横着的长条 -->
-    <div class="battery-bar" style="position: fixed; bottom: 140px; left: 0px; width: 320px; height: 30px; background: #333; border-radius: 5px; z-index: 99999; overflow: hidden;">
+    <!-- 电量条 - 移到触摸位置附近 -->
+    <div class="battery-bar" id="battery-bar" style="position: fixed; bottom: 20px; right: 20px; width: 320px; height: 30px; background: #333; border-radius: 5px; z-index: 99999; overflow: hidden;">
         <!-- 竖杠显示区 -->
         <div class="battery-bars" id="battery-bars" style="display: flex; height: 100%; align-items: center; padding: 0 5px;">
             <!-- 动态生成竖杠 -->
@@ -24,7 +24,7 @@
         <div class="dashboard">
             <div class="dashboard-value">0</div>
         </div>
-        <div class="touch-info">触摸位置: (0, 0)</div>
+        <div class="touch-info" style="display: none;">触摸位置: (0, 0)</div>
         <div class="touch-area"></div>
         <div class="touch-area-top"></div>
         <div class="touch-area-middle"></div>

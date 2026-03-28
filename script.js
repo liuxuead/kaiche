@@ -715,6 +715,14 @@ function setupTouchListeners() {
         touchInfo.textContent = '触摸位置: (0, 0)';
         touchArea.style.opacity = '0';
         
+        // 隐藏触摸区域（白色圆圈）
+        const touchAreaTop = document.querySelector('.touch-area-top');
+        const touchAreaMiddle = document.querySelector('.touch-area-middle');
+        const touchAreaBottom = document.querySelector('.touch-area-bottom');
+        if (touchAreaTop) touchAreaTop.style.opacity = '0';
+        if (touchAreaMiddle) touchAreaMiddle.style.opacity = '0';
+        if (touchAreaBottom) touchAreaBottom.style.opacity = '0';
+        
         // 停止计时并显示最终时间
         stopStopwatch();
         

@@ -97,6 +97,7 @@ body {
     opacity: 0;
     transition: opacity 0.2s ease;
     z-index: 15;
+    display: none;
 }
 
 /* 不同颜色的触摸区域 */

@@ -321,5 +321,21 @@ body {
     pointer-events: none;
     box-sizing: border-box;
     background-color: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+/* 40像素的控制球 */
+.control-ball {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-color: #3498db;
+    border-radius: 50%;
+    z-index: 20;
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    /* 初始位置：右下角 */
+    bottom: 10px;
+    right: 10px;
 }
 

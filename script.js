@@ -577,6 +577,176 @@ function initGame() {
     
     // 监听窗口大小变化，更新框的大小
     window.addEventListener('resize', updateDynamicFrameSize);
+    
+    // 控制球相关变量
+    let ballX = 0; // 球的X坐标（相对于框）
+    let ballY = 0; // 球的Y坐标（相对于框）
+    let ballSpeedX = 0; // 球的X方向速度
+    let ballSpeedY = 0; // 球的Y方向速度
+    let touchDirectionX = 0; // 触摸方向X
+    let touchDirectionY = 0; // 触摸方向Y
+    
+    // 球移动参数
+    const BALL_SPEED_FACTOR = 0.5; // 速度因子，调大可以使球移动更快，调小则更慢
+    const MAX_BALL_SPEED = 10; // 球的最大速度
+    const BALL_ACCELERATION = 0.2; // 球的加速度
+    const BALL_DECELERATION = 0.95; // 球的减速系数
+    
+    // 初始化球的位置（右下角）
+    function initBallPosition() {
+        const frame = document.getElementById('dynamic-frame');
+        const ball = document.getElementById('control-ball');
+        if (!frame || !ball) return;
+        
+        const frameRect = frame.getBoundingClientRect();
+        const ballSize = 40; // 球的大小
+        
+        // 初始位置：右下角
+        ballX = frameRect.width - ballSize - 10;
+        ballY = frameRect.height - ballSize - 10;
+        
+        updateBallPosition();
+    }
+    
+    // 更新球的位置
+    function updateBallPosition() {
+        const ball = document.getElementById('control-ball');
+        if (!ball) return;
+        
+        ball.style.left = `${ballX}px`;
+        ball.style.top = `${ballY}px`;
+    }
+    
+    // 更新球的移动
+    function updateBallMovement() {
+        const frame = document.getElementById('dynamic-frame');
+        if (!frame) return;
+        
+        const frameRect = frame.getBoundingClientRect();
+        const ballSize = 40; // 球的大小
+        
+        // 根据仪表盘速度和触摸方向计算球的速度
+        const speedFactor = dashboardValue / 30; // 速度因子（0-1）
+        
+        // 应用加速度
+        ballSpeedX += touchDirectionX * BALL_ACCELERATION * speedFactor;
+        ballSpeedY += touchDirectionY * BALL_ACCELERATION * speedFactor;
+        
+        // 限制最大速度
+        const currentSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+        if (currentSpeed > MAX_BALL_SPEED * speedFactor) {
+            const ratio = (MAX_BALL_SPEED * speedFactor) / currentSpeed;
+            ballSpeedX *= ratio;
+            ballSpeedY *= ratio;
+        }
+        
+        // 应用减速
+        ballSpeedX *= BALL_DECELERATION;
+        ballSpeedY *= BALL_DECELERATION;
+        
+        // 计算新位置
+        let newX = ballX + ballSpeedX * BALL_SPEED_FACTOR;
+        let newY = ballY + ballSpeedY * BALL_SPEED_FACTOR;
+        
+        // 边界碰撞检测和处理
+        // 左右边界
+        if (newX < 0) {
+            newX = 0;
+            ballSpeedX = -ballSpeedX * 0.8; // 反弹
+        } else if (newX > frameRect.width - ballSize) {
+            newX = frameRect.width - ballSize;
+            ballSpeedX = -ballSpeedX * 0.8; // 反弹
+        }
+        
+        // 上下边界
+        if (newY < 0) {
+            newY = 0;
+            ballSpeedY = -ballSpeedY * 0.8; // 反弹
+        } else if (newY > frameRect.height - ballSize) {
+            newY = frameRect.height - ballSize;
+            ballSpeedY = -ballSpeedY * 0.8; // 反弹
+        }
+        
+        // 更新位置
+        ballX = newX;
+        ballY = newY;
+        
+        updateBallPosition();
+        
+        requestAnimationFrame(updateBallMovement);
+    }
+    
+    // 监听触摸事件来控制球的方向
+    const gameContainer = document.querySelector('.game-container');
+    if (gameContainer) {
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+        
+        gameContainer.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+        });
+        
+        gameContainer.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - lastTouchX;
+            const deltaY = touch.clientY - lastTouchY;
+            
+            // 计算触摸方向
+            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (length > 5) { // 避免微小移动
+                touchDirectionX = deltaX / length;
+                touchDirectionY = deltaY / length;
+            }
+            
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+        });
+        
+        gameContainer.addEventListener('touchend', () => {
+            // 触摸结束后，方向重置为0
+            touchDirectionX = 0;
+            touchDirectionY = 0;
+        });
+        
+        // 鼠标事件（用于桌面测试）
+        let isMouseDown = false;
+        
+        gameContainer.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            lastTouchX = e.clientX;
+            lastTouchY = e.clientY;
+        });
+        
+        gameContainer.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            
+            const deltaX = e.clientX - lastTouchX;
+            const deltaY = e.clientY - lastTouchY;
+            
+            // 计算触摸方向
+            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (length > 5) { // 避免微小移动
+                touchDirectionX = deltaX / length;
+                touchDirectionY = deltaY / length;
+            }
+            
+            lastTouchX = e.clientX;
+            lastTouchY = e.clientY;
+        });
+        
+        gameContainer.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            touchDirectionX = 0;
+            touchDirectionY = 0;
+        });
+    }
+    
+    // 初始化球的位置和启动移动
+    initBallPosition();
+    updateBallMovement();
 
 }
 

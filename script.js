@@ -809,7 +809,7 @@ function initGame() {
                 
                 // 计算触摸方向
                 const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                if (length > 5) { // 避免微小移动
+                if (length > 2) { // 提高灵敏度，避免微小移动
                     touchDirectionX = deltaX / length;
                     touchDirectionY = deltaY / length;
                     
@@ -830,7 +830,7 @@ function initGame() {
                     
                     // 计算触摸方向
                     const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                    if (length > 5) { // 避免微小移动
+                    if (length > 2) { // 提高灵敏度，避免微小移动
                         touchDirectionX = deltaX / length;
                         touchDirectionY = deltaY / length;
                         

@@ -315,8 +315,11 @@ body {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    border: 3px solid #e74c3c;
-    border-radius: 10px;
+    border-left: 3px solid #e74c3c;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    border-radius: 0;
     z-index: 15;
     pointer-events: none;
     box-sizing: border-box;

@@ -520,9 +520,19 @@ function updateCarPosition() {
     // 根据旋转角度和速度调整小车垂直位置（变道）
     // 夹角为正（向上）时向上变道，夹角为负（向下）时向下变道
     const maxLaneChangeOffset = 55; // 最大变道偏移量（车道间距）
-    const rotationEffect = rectangleRotation; // 旋转角度对变道的影响
-    const speedEffect = Math.min(dashboardValue / 300, 1); // 速度对变道的影响（0-1）
+    const rotationEffect = rectangleRotation;
+    const speedEffect = Math.min(dashboardValue / 300, 1);
     const laneChangeYOffset = Math.max(-maxLaneChangeOffset, Math.min(maxLaneChangeOffset, rotationEffect * speedEffect * maxLaneChangeOffset));
+    
+    // 变道后重置旋转角度到水平状态
+    if (Math.abs(rectangleRotation) > 1) {
+        // 平滑回到水平
+        rectangleRotation *= 0.95;
+        if (Math.abs(rectangleRotation) < 0.1) {
+            rectangleRotation = 0;
+        }
+        updateRectangleRotation();
+    }
     
     // 总的垂直偏移 = 速度变化偏移 + 变道偏移
     const targetY = speedYOffset + laneChangeYOffset;

@@ -62,7 +62,7 @@ body {
     justify-content: center;
     align-items: center;
     box-shadow: none; /* 移除阴影 */
-    border: 3px solid #3498db;
+    border: 3px solid #e74c3c;
     transform: rotate(90deg);
     touch-action: none;
     z-index: 100;
@@ -71,7 +71,7 @@ body {
 .dashboard-value {
     font-size: 2rem;
     font-weight: bold;
-    color: #3498db;
+    color: #e74c3c;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
     transform: rotate(-180deg);
 }

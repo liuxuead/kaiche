@@ -502,9 +502,67 @@ function continuousLaneUpdate() {
     requestAnimationFrame(continuousLaneUpdate);
 }
 
+// 输出车道线和小车位置日志
+function logLaneAndCarPositions() {
+    const gameContainer = document.querySelector('.game-container');
+    const yellowRectangle = document.getElementById('yellow-rectangle');
+    const topTopLane = document.getElementById('top-top-lane');
+    const topLane = document.getElementById('top-lane');
+    const bottomLane = document.getElementById('bottom-lane');
+    const bottomBottomLane = document.getElementById('bottom-bottom-lane');
+    
+    if (gameContainer && yellowRectangle) {
+        const containerRect = gameContainer.getBoundingClientRect();
+        const carRect = yellowRectangle.getBoundingClientRect();
+        
+        console.log('=== 位置信息日志 ===');
+        console.log('游戏容器高度:', containerRect.height);
+        console.log('游戏容器顶部:', containerRect.top);
+        console.log('游戏容器底部:', containerRect.bottom);
+        console.log('');
+        
+        // 计算小车位置
+        const carY = carRect.top - containerRect.top;
+        const carCenterY = carY + (carRect.height / 2);
+        console.log('小车位置:');
+        console.log('  顶部 Y:', Math.round(carY));
+        console.log('  中心 Y:', Math.round(carCenterY));
+        console.log('  底部 Y:', Math.round(carY + carRect.height));
+        console.log('');
+        
+        // 计算车道线位置
+        if (topTopLane) {
+            const topTopLaneRect = topTopLane.getBoundingClientRect();
+            const topTopLaneY = topTopLaneRect.top - containerRect.top;
+            console.log('上方车道线 (top-top-lane):', Math.round(topTopLaneY));
+        }
+        
+        if (topLane) {
+            const topLaneRect = topLane.getBoundingClientRect();
+            const topLaneY = topLaneRect.top - containerRect.top;
+            console.log('上方车道线 (top-lane):', Math.round(topLaneY));
+        }
+        
+        if (bottomLane) {
+            const bottomLaneRect = bottomLane.getBoundingClientRect();
+            const bottomLaneY = bottomLaneRect.top - containerRect.top;
+            console.log('下方车道线 (bottom-lane):', Math.round(bottomLaneY));
+        }
+        
+        if (bottomBottomLane) {
+            const bottomBottomLaneRect = bottomBottomLane.getBoundingClientRect();
+            const bottomBottomLaneY = bottomBottomLaneRect.top - containerRect.top;
+            console.log('下方车道线 (bottom-bottom-lane):', Math.round(bottomBottomLaneY));
+        }
+        
+        console.log('====================');
+    }
+}
+
 // 小车位置和变道相关变量
 let carX = 0; // 小车水平位置偏移
 let carY = 0; // 小车垂直位置偏移
+let currentLane = 0; // 当前车道：-1（上）、0（中）、1（下）
 
 // 更新小车位置（加速向上，降速向下，根据旋转角度变道）
 function updateCarPosition() {
@@ -514,24 +572,56 @@ function updateCarPosition() {
     // 计算速度变化
     const speedDiff = targetDashboardValue - dashboardValue;
     
-    // 根据速度变化调整小车垂直位置
-    // 加速（speedDiff > 0）时向上移动，降速（speedDiff < 0）时向下移动
-    const maxYOffset = 15; // 最大垂直偏移量
-    const yOffset = Math.max(-maxYOffset, Math.min(maxYOffset, speedDiff * 0.3));
+    // 根据速度变化调整小车垂直位置（加速时向上，降速时向下）
+    const speedYOffset = Math.max(-15, Math.min(15, speedDiff * 0.3));
     
-    // 根据旋转角度和速度调整小车水平位置（变道）
-    // 旋转角度为正（向上）时向左变道，为负（向下）时向右变道
-    const maxXOffset = 100; // 最大水平偏移量
-    const rotationEffect = rectangleRotation * 0.5; // 旋转角度对变道的影响
-    const speedEffect = dashboardValue * 0.1; // 速度对变道的影响
-    const xOffset = Math.max(-maxXOffset, Math.min(maxXOffset, rotationEffect * speedEffect * 0.1));
+    // 根据旋转角度和速度调整小车垂直位置（变道）
+    // 夹角为正（向上）时向下变道，夹角为负（向下）时向上变道
+    const maxLaneChangeOffset = 60; // 增加车道间距
+    const rotationEffect = -rectangleRotation * 0.8; // 调整旋转效果
+    const speedEffect = Math.min(dashboardValue / 200, 1); // 降低速度阈值，使变道更敏感
+    const laneChangeYOffset = Math.max(-maxLaneChangeOffset, Math.min(maxLaneChangeOffset, rotationEffect * speedEffect * 2)); // 增加变道幅度
     
-    // 平滑过渡到目标位置
-    carX += (xOffset - carX) * 0.1;
-    carY += (yOffset - carY) * 0.1;
+    // 检测是否需要切换车道
+    if (Math.abs(rectangleRotation) > 8) { // 降低旋转角度阈值
+        if (rectangleRotation > 0) {
+            // 向上倾斜，向下变道
+            currentLane = 1;
+        } else {
+            // 向下倾斜，向上变道
+            currentLane = -1;
+        }
+    } else if (Math.abs(rectangleRotation) < 2 && Math.abs(laneChangeYOffset) < 5 && Math.abs(carY) < 20) {
+        // 旋转角度很小且变道偏移很小且位置接近中间，回到中间车道
+        currentLane = 0;
+    }
+    
+    // 计算车道中心位置
+    let laneCenterOffset = 0;
+    if (currentLane === -1) {
+        laneCenterOffset = -maxLaneChangeOffset; // 上车道
+    } else if (currentLane === 1) {
+        laneCenterOffset = maxLaneChangeOffset; // 下车道
+    }
+    
+    // 变道后重置旋转角度到水平状态
+    if (Math.abs(rectangleRotation) > 1) {
+        // 平滑回到水平
+        rectangleRotation *= 0.95;
+        if (Math.abs(rectangleRotation) < 0.1) {
+            rectangleRotation = 0;
+        }
+        updateRectangleRotation();
+    }
+    
+    // 总的垂直偏移 = 速度变化偏移 + 变道偏移 + 车道中心偏移
+    const targetY = speedYOffset + laneChangeYOffset + laneCenterOffset;
+    
+    // 平滑过渡到目标位置（增加平滑系数，提高响应速度）
+    carY += (targetY - carY) * 0.2;
     
     // 应用变换
-    car.style.transform = `translate(calc(-50% + ${carX}px), calc(-65% + ${carY}px)) rotate(${rectangleRotation}deg)`;
+    car.style.transform = `translate(calc(-50% + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
     
     requestAnimationFrame(updateCarPosition);
 }
@@ -541,7 +631,7 @@ function updateRectangleRotation() {
     const yellowRectangle = document.getElementById('yellow-rectangle');
     if (!yellowRectangle) return;
     
-    yellowRectangle.style.transform = `translate(calc(-50% + ${carX}px), calc(-65% + ${carY}px)) rotate(${rectangleRotation}deg)`;
+    yellowRectangle.style.transform = `translate(calc(-50% + ${carX}px), calc(-100px + ${carY}px)) rotate(${rectangleRotation}deg)`;
 }
 
 // 根据触摸位置计算仪表盘数值
@@ -755,6 +845,11 @@ function initGame() {
     continuousLaneUpdate();
     updateCarPosition();
     
+    // 输出车道线和小车位置日志
+    setTimeout(() => {
+        logLaneAndCarPositions();
+    }, 1000);
+    
     // 初始化车道线动画
     updateLaneSpeed(0);
 }
@@ -812,6 +907,9 @@ function setupTouchListeners() {
     
     // 触摸开始事件
     gameContainer.addEventListener('touchstart', (e) => {
+        // 阻止默认的滑动行为，防止页面滚动
+        e.preventDefault();
+        
         if (e.target.closest('button') || e.target.closest('.dashboard')) {
             return;
         }
@@ -922,6 +1020,9 @@ function setupTouchListeners() {
     // 触摸移动事件（添加节流，减少更新频率）
     let lastUpdateTime = 0;
     gameContainer.addEventListener('touchmove', (e) => {
+        // 阻止默认的滑动行为，防止页面滚动
+        e.preventDefault();
+        
         if (e.target.closest('button')) {
             return;
         }
@@ -1010,7 +1111,10 @@ function setupTouchListeners() {
     });
     
     // 触摸结束事件
-    gameContainer.addEventListener('touchend', () => {
+    gameContainer.addEventListener('touchend', (e) => {
+        // 阻止默认的滑动行为，防止页面滚动
+        e.preventDefault();
+        
         touchInfo.textContent = '触摸位置: (0, 0)';
         touchArea.style.opacity = '0';
         
@@ -1524,7 +1628,7 @@ function flashDashboardColor(color) {
     
     // 500ms后恢复
     setTimeout(() => {
-        dashboard.style.border = originalBorder || '3px solid #e74c3c';
+        dashboard.style.border = originalBorder || '3px solid #3498db';
         dashboard.style.boxShadow = originalBoxShadow || 'none';
     }, 500);
 }

@@ -1422,7 +1422,31 @@ function recordTouchData(touch) {
                 // 隐藏电量条
                 const batteryBar = document.querySelector('.battery-bar');
                 if (batteryBar) {
+                    console.log('找到电量条元素，添加hidden类');
                     batteryBar.classList.add('hidden');
+                    console.log('电量条类列表:', batteryBar.className);
+                    console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
+                } else {
+                    console.log('未找到电量条元素');
+                }
+            }
+            
+            // 当completeCount > 3时，确保电量条保持隐藏
+            if (completeCount > 3) {
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    if (!batteryBar.classList.contains('hidden')) {
+                        console.log('completeCount > 3，确保电量条保持隐藏');
+                        batteryBar.classList.add('hidden');
+                        console.log('电量条类列表:', batteryBar.className);
+                        console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
+                    } else {
+                        console.log('completeCount > 3，电量条已经隐藏，无需操作');
+                        console.log('电量条类列表:', batteryBar.className);
+                        console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
+                    }
+                } else {
+                    console.log('completeCount > 3，未找到电量条元素');
                 }
             }
             
@@ -1440,9 +1464,9 @@ function recordTouchData(touch) {
             
             // 检查是否达到3次
             if (completeCount >= 3) {
-                // 电量条边框变亮，表示统计完成
+                // 电量条边框变亮，表示统计完成（仅在电量条未隐藏时）
                 const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
+                if (batteryBar && !batteryBar.classList.contains('hidden')) {
                     batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
                     batteryBar.style.border = '2px solid #00ff00';
                 }
@@ -1468,22 +1492,22 @@ function recordTouchData(touch) {
             touchData.top.y = 0;
             
             // 检查是否达到3次，如果是就不再记录
-            if (completeCount >= 3) {
-                // 电量条边框变亮，表示统计完成
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
-                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                    batteryBar.style.border = '2px solid #00ff00';
+                if (completeCount >= 3) {
+                    // 电量条边框变亮，表示统计完成（仅在电量条未隐藏时）
+                    const batteryBar = document.querySelector('.battery-bar');
+                    if (batteryBar && !batteryBar.classList.contains('hidden')) {
+                        batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                        batteryBar.style.border = '2px solid #00ff00';
+                    }
+                    
+                    console.log('========================================');
+                    console.log('统计完成！completeCount = 3');
+                    console.log('请长按压3秒调整"中"的范围');
+                    console.log('========================================');
+                    
+                    // 不再记录
+                    return;
                 }
-                
-                console.log('========================================');
-                console.log('统计完成！completeCount = 3');
-                console.log('请长按压3秒调整"中"的范围');
-                console.log('========================================');
-                
-                // 不再记录
-                return;
-            }
             
             // 记录到下
             touchData.bottom.x = mirrorX;
@@ -1562,9 +1586,9 @@ function saveTouchDataToAll() {
         
         // 检查是否达到3次
             if (allTouchData.length >= 3) {
-                // 电量条边框变亮，表示已锁定
+                // 电量条边框变亮，表示已锁定（仅在电量条未隐藏时）
                 const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
+                if (batteryBar && !batteryBar.classList.contains('hidden')) {
                     batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
                     batteryBar.style.border = '2px solid #00ff00';
                 }
@@ -2035,11 +2059,19 @@ function loadSavedData() {
                     drawPressAreas();
                 }
                 
-                // 激活电量条
+                // 处理电量条显示/隐藏
                 const batteryBar = document.querySelector('.battery-bar');
                 if (batteryBar) {
-                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                    batteryBar.style.border = '2px solid #00ff00';
+                    if (completeCount <= 3) {
+                        // 激活电量条
+                        batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                        batteryBar.style.border = '2px solid #00ff00';
+                        console.log('从localStorage加载数据，completeCount <= 3，激活电量条');
+                    } else {
+                        // 隐藏电量条
+                        batteryBar.classList.add('hidden');
+                        console.log('从localStorage加载数据，completeCount > 3，隐藏电量条');
+                    }
                 }
                 
                 console.log('从localStorage加载了统计数据，completeCount:', completeCount);
@@ -2254,6 +2286,8 @@ function resetAllData() {
         batteryBar.style.height = '30px'; // 恢复原来的高度
         batteryBar.style.pointerEvents = 'auto'; // 恢复事件捕获
         batteryBar.style.backgroundColor = '#333'; // 恢复背景色
+        batteryBar.style.display = 'flex'; // 恢复显示
+        batteryBar.classList.remove('hidden'); // 移除隐藏类
     }
     
     // 更新完成计数器
@@ -2430,6 +2464,12 @@ function initBatteryBar() {
 
 // 更新电量条显示
 function updateBatteryBar(value) {
+    // 检查电量条是否被隐藏，如果是则不更新
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar && batteryBar.classList.contains('hidden')) {
+        return;
+    }
+    
     // value: 0-30，映射到0-20个格子（6+9+5）
     const stats = getStatsAverage();
     if (stats.top.y === 0 || stats.bottom.y === 0) {

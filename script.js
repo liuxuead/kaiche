@@ -1139,6 +1139,9 @@ function initGame() {
     updateBallMovement();
     updateGreenBalls();
     startGreenBallGeneration();
+    
+    // 初始化游戏系统（等级挑战系统）
+    initGameSystem();
 
 }
 
@@ -2518,66 +2521,66 @@ function drawPressAreas() {
 }
 
 // ============================================
-// 电量条监控系统
+// 电量条监控系统（已禁用）
 // ============================================
 
-function monitorBatteryBar() {
-    const batteryBar = document.querySelector('.battery-bar');
-    if (!batteryBar) {
-        console.log('⚠️ 找不到电量条元素！');
-        return;
-    }
+// function monitorBatteryBar() {
+//     const batteryBar = document.querySelector('.battery-bar');
+//     if (!batteryBar) {
+//         console.log('⚠️ 找不到电量条元素！');
+//         return;
+//     }
 
-    console.log('🔍 开始监控电量条...');
-    
-    const originalClassListAdd = batteryBar.classList.add.bind(batteryBar.classList);
-    const originalClassListRemove = batteryBar.classList.remove.bind(batteryBar.classList);
-    const originalStyleSetProperty = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').set;
-    
-    batteryBar.classList.add = function(...args) {
-        console.log('📝 电量条添加类:', args, '调用栈:', new Error().stack);
-        return originalClassListAdd.apply(this, args);
-    };
-    
-    batteryBar.classList.remove = function(...args) {
-        console.log('❌ 电量条移除类:', args, '调用栈:', new Error().stack);
-        return originalClassListRemove.apply(this, args);
-    };
-    
-    Object.defineProperty(batteryBar.style, 'display', {
-        set: function(value) {
-            console.log('🎨 电量条display改变为:', value, '调用栈:', new Error().stack);
-            originalStyleSetProperty.call(this, 'display', value);
-        }
-    });
-    
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.attributeName === 'class') {
-                console.log('🔄 电量条class变化:', mutation.oldValue, '→', batteryBar.className);
-            }
-            if (mutation.attributeName === 'style') {
-                console.log('🎨 电量条style变化');
-            }
-        });
-    });
-    
-    observer.observe(batteryBar, {
-        attributes: true,
-        attributeOldValue: true,
-        attributeFilter: ['class', 'style']
-    });
-    
-    setInterval(() => {
-        console.log('📍 电量条当前状态:', {
-            classList: batteryBar.className,
-            isHidden: batteryBar.classList.contains('hidden'),
-            display: batteryBar.style.display,
-            visibility: batteryBar.style.visibility,
-            opacity: batteryBar.style.opacity
-        });
-    }, 2000);
-}
+//     console.log('🔍 开始监控电量条...');
+//     
+//     const originalClassListAdd = batteryBar.classList.add.bind(batteryBar.classList);
+//     const originalClassListRemove = batteryBar.classList.remove.bind(batteryBar.classList);
+//     const originalStyleSetProperty = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').set;
+//     
+//     batteryBar.classList.add = function(...args) {
+//         console.log('📝 电量条添加类:', args, '调用栈:', new Error().stack);
+//         return originalClassListAdd.apply(this, args);
+//     };
+//     
+//     batteryBar.classList.remove = function(...args) {
+//         console.log('❌ 电量条移除类:', args, '调用栈:', new Error().stack);
+//         return originalClassListRemove.apply(this, args);
+//     };
+//     
+//     Object.defineProperty(batteryBar.style, 'display', {
+//         set: function(value) {
+//             console.log('🎨 电量条display改变为:', value, '调用栈:', new Error().stack);
+//             originalStyleSetProperty.call(this, 'display', value);
+//         }
+//     });
+//     
+//     const observer = new MutationObserver((mutations) => {
+//         mutations.forEach((mutation) => {
+//             if (mutation.attributeName === 'class') {
+//                 console.log('🔄 电量条class变化:', mutation.oldValue, '→', batteryBar.className);
+//             }
+//             if (mutation.attributeName === 'style') {
+//                 console.log('🎨 电量条style变化');
+//             }
+//         });
+//     });
+//     
+//     observer.observe(batteryBar, {
+//         attributes: true,
+//         attributeOldValue: true,
+//         attributeFilter: ['class', 'style']
+//     });
+//     
+//     setInterval(() => {
+//         console.log('📍 电量条当前状态:', {
+//             classList: batteryBar.className,
+//             isHidden: batteryBar.classList.contains('hidden'),
+//             display: batteryBar.style.display,
+//             visibility: batteryBar.style.visibility,
+//             opacity: batteryBar.style.opacity
+//         });
+//     }, 2000);
+// }
 
 // ============================================
 // 游戏系统 - 等级挑战系统
@@ -2605,7 +2608,6 @@ let totalEatenBalls = 0; // 本局吃到的球数
 let validEatenBalls = 0; // 本局有效得分的球数
 let ballsInRound = 0; // 本局已生成的球数
 let isLevelSelectOpen = false; // 等级选择面板是否打开
-let longPressTimer = null; // 长按计时器
 
 // 保存游戏数据
 function saveGameData() {
@@ -2962,9 +2964,6 @@ function initGameSystem() {
     loadGameData();
     setupLevelLongPress();
     
-    // 启动电量条监控系统
-    monitorBatteryBar();
-    
     // 确保电量条在游戏系统初始化时被隐藏
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
@@ -2986,13 +2985,6 @@ function initGameSystem() {
     resetRound();
     updateScoreDisplay();
     console.log('游戏系统初始化完成');
-}
-
-// 在initGame函数末尾添加游戏系统初始化
-const originalInitGame = initGame;
-function initGame() {
-    originalInitGame();
-    initGameSystem();
 }
 
 // 创建单个按压区域

@@ -336,6 +336,12 @@ function adjustMiddleRange(touch) {
 // 判断触摸位置是否在绘制范围附近
 function isNearDrawArea(mirrorX, mirrorY) {
     const stats = getStatsAverage();
+    
+    console.log('isNearDrawArea 统计数据:');
+    console.log('top:', stats.top);
+    console.log('middle:', stats.middle);
+    console.log('bottom:', stats.bottom);
+    
     const areas = [
         stats.top,
         stats.middle,
@@ -354,12 +360,18 @@ function isNearDrawArea(mirrorX, mirrorY) {
         const dy = mirrorY - area.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
+        console.log('检测区域:', area);
+        console.log('触摸坐标:', mirrorX, mirrorY);
+        console.log('距离:', distance);
+        
         // 只有距离在100像素内才返回true
         if (distance <= distanceThreshold) {
+            console.log('在区域内!');
             return true;
         }
     }
     
+    console.log('不在任何区域内');
     return false;
 }
 
@@ -384,6 +396,14 @@ function updateDashboardValue() {
     
     // 继续动画
     dashboardAnimationId = requestAnimationFrame(updateDashboardValue);
+}
+
+// 更新长方形旋转
+function updateRectangleRotation() {
+    const yellowRectangle = document.getElementById('yellow-rectangle');
+    if (!yellowRectangle) return;
+    
+    yellowRectangle.style.transform = `translate(-50%, -50%) rotate(${rectangleRotation}deg)`;
 }
 
 // 根据触摸位置计算仪表盘数值
@@ -608,6 +628,11 @@ let targetDashboardValue = 0; // 目标数值
 let dashboardAnimationId = null; // 动画requestId
 const DASHBOARD_MAX_VALUE = 300; // 仪表盘最大值
 
+// 长方形旋转相关
+let rectangleRotation = 0; // 长方形当前旋转角度
+let secondTouchY = 0; // 第二个手指的Y坐标
+const PIXELS_TO_DEGREES = 90 / 200; // 200像素对应90度
+
 // 设置触摸事件监听器
 function setupTouchListeners() {
     const gameContainer = document.querySelector('.game-container');
@@ -621,18 +646,78 @@ function setupTouchListeners() {
         }
         currentTouch = e.touches[0];
         
-        // 当 completeCount >= 4 时，只有在绘制范围附近才显示白色圆圈
+        // 当 completeCount >= 4 时，处理双指触控
         if (completeCount >= 4) {
             const containerHeight = gameContainer.clientHeight;
             const rect = gameContainer.getBoundingClientRect();
-            const mirrorX = currentTouch.clientX - rect.left;
-            const mirrorY = containerHeight - currentTouch.clientY;
             
-            if (isNearDrawArea(mirrorX, mirrorY)) {
-                updateTouchInfo(currentTouch, touchArea);
+            console.log('容器信息:');
+            console.log('containerHeight:', containerHeight);
+            console.log('rect.left:', rect.left);
+            console.log('rect.top:', rect.top);
+            console.log('rect.width:', rect.width);
+            console.log('rect.height:', rect.height);
+            
+            // 检测是否有两个手指
+            if (e.touches.length >= 2) {
+                // 第一个手指
+                const touch1 = e.touches[0];
+                const mirrorX1 = touch1.clientX - rect.left;
+                const mirrorY1 = containerHeight - touch1.clientY;
+                
+                // 第二个手指
+                const touch2 = e.touches[1];
+                const mirrorX2 = touch2.clientX - rect.left;
+                const mirrorY2 = containerHeight - touch2.clientY;
+                
+                console.log('双指触控检测:');
+                console.log('touch1坐标:', touch1.clientX, touch1.clientY);
+                console.log('touch1镜像坐标:', mirrorX1, mirrorY1);
+                console.log('touch2坐标:', touch2.clientX, touch2.clientY);
+                console.log('touch2镜像坐标:', mirrorX2, mirrorY2);
+                
+                // 判断第一个手指是否在绘制区域内
+                const touch1InArea = isNearDrawArea(mirrorX1, mirrorY1);
+                const touch2InArea = isNearDrawArea(mirrorX2, mirrorY2);
+                
+                console.log('touch1在区域内:', touch1InArea);
+                console.log('touch2在区域内:', touch2InArea);
+                
+                // 如果第一个手指在区域内，第二个手指在区域外
+                if (touch1InArea && !touch2InArea) {
+                    // 第一个手指控制电量条和仪表盘
+                    updateTouchInfo(touch1, touchArea);
+                    // 第二个手指控制长方形旋转
+                    secondTouchY = touch2.clientY;
+                    // 显示长方形
+                    const yellowRectangle = document.getElementById('yellow-rectangle');
+                    if (yellowRectangle) {
+                        yellowRectangle.style.display = 'block';
+                    }
+                } else if (touch2InArea && !touch1InArea) {
+                    // 第二个手指在区域内，第一个手指在区域外
+                    updateTouchInfo(touch2, touchArea);
+                    // 第一个手指控制长方形旋转
+                    secondTouchY = touch1.clientY;
+                    // 显示长方形
+                    const yellowRectangle = document.getElementById('yellow-rectangle');
+                    if (yellowRectangle) {
+                        yellowRectangle.style.display = 'block';
+                    }
+                } else {
+                    // 不符合双指条件，不显示白色圆圈
+                    touchArea.style.opacity = '0';
+                }
             } else {
-                // 不在范围内，不显示白色圆圈
-                touchArea.style.opacity = '0';
+                // 只有一个手指，保持原有逻辑
+                const mirrorX = currentTouch.clientX - rect.left;
+                const mirrorY = containerHeight - currentTouch.clientY;
+                
+                if (isNearDrawArea(mirrorX, mirrorY)) {
+                    updateTouchInfo(currentTouch, touchArea);
+                } else {
+                    touchArea.style.opacity = '0';
+                }
             }
         } else {
             updateTouchInfo(currentTouch, touchArea);
@@ -694,17 +779,70 @@ function setupTouchListeners() {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
             const rect = gameContainer.getBoundingClientRect();
-            const mirrorX = currentTouch.clientX - rect.left;
-            const mirrorY = containerHeight - currentTouch.clientY;
             
-            // 只有在绘制范围附近100像素内才更新
-            if (isNearDrawArea(mirrorX, mirrorY)) {
-                updateBatteryBar(mirrorY);
+            // 检测是否有两个手指
+            if (e.touches.length >= 2) {
+                // 第一个手指
+                const touch1 = e.touches[0];
+                const mirrorX1 = touch1.clientX - rect.left;
+                const mirrorY1 = containerHeight - touch1.clientY;
                 
-                // 更新仪表盘数值
-                targetDashboardValue = calculateDashboardValue(mirrorY);
-                if (!dashboardAnimationId) {
-                    updateDashboardValue();
+                // 第二个手指
+                const touch2 = e.touches[1];
+                const mirrorX2 = touch2.clientX - rect.left;
+                const mirrorY2 = containerHeight - touch2.clientY;
+                
+                // 判断第一个手指是否在绘制区域内
+                const touch1InArea = isNearDrawArea(mirrorX1, mirrorY1);
+                const touch2InArea = isNearDrawArea(mirrorX2, mirrorY2);
+                
+                // 如果第一个手指在区域内，第二个手指在区域外
+                if (touch1InArea && !touch2InArea) {
+                    // 第一个手指控制电量条和仪表盘
+                    if (isNearDrawArea(mirrorX1, mirrorY1)) {
+                        updateBatteryBar(mirrorY1);
+                        targetDashboardValue = calculateDashboardValue(mirrorY1);
+                        if (!dashboardAnimationId) {
+                            updateDashboardValue();
+                        }
+                    }
+                    // 第二个手指控制长方形旋转
+                    const deltaY = touch2.clientY - secondTouchY;
+                    // 向上滑动（deltaY < 0）顺时针旋转，向下滑动（deltaY > 0）逆时针旋转
+                    rectangleRotation -= deltaY * PIXELS_TO_DEGREES;
+                    secondTouchY = touch2.clientY;
+                    updateRectangleRotation();
+                } else if (touch2InArea && !touch1InArea) {
+                    // 第二个手指在区域内，第一个手指在区域外
+                    // 第二个手指控制电量条和仪表盘
+                    if (isNearDrawArea(mirrorX2, mirrorY2)) {
+                        updateBatteryBar(mirrorY2);
+                        targetDashboardValue = calculateDashboardValue(mirrorY2);
+                        if (!dashboardAnimationId) {
+                            updateDashboardValue();
+                        }
+                    }
+                    // 第一个手指控制长方形旋转
+                    const deltaY = touch1.clientY - secondTouchY;
+                    // 向上滑动（deltaY < 0）顺时针旋转，向下滑动（deltaY > 0）逆时针旋转
+                    rectangleRotation -= deltaY * PIXELS_TO_DEGREES;
+                    secondTouchY = touch1.clientY;
+                    updateRectangleRotation();
+                }
+            } else {
+                // 只有一个手指，保持原有逻辑
+                const mirrorX = currentTouch.clientX - rect.left;
+                const mirrorY = containerHeight - currentTouch.clientY;
+                
+                // 只有在绘制范围附近100像素内才更新
+                if (isNearDrawArea(mirrorX, mirrorY)) {
+                    updateBatteryBar(mirrorY);
+                    
+                    // 更新仪表盘数值
+                    targetDashboardValue = calculateDashboardValue(mirrorY);
+                    if (!dashboardAnimationId) {
+                        updateDashboardValue();
+                    }
                 }
             }
         }
@@ -722,6 +860,12 @@ function setupTouchListeners() {
         if (touchAreaTop) touchAreaTop.style.opacity = '0';
         if (touchAreaMiddle) touchAreaMiddle.style.opacity = '0';
         if (touchAreaBottom) touchAreaBottom.style.opacity = '0';
+        
+        // 隐藏长方形
+        const yellowRectangle = document.getElementById('yellow-rectangle');
+        if (yellowRectangle) {
+            yellowRectangle.style.display = 'none';
+        }
         
         // 停止计时并显示最终时间
         stopStopwatch();
@@ -932,6 +1076,15 @@ function recordTouchData(touch) {
             const completeCounter = document.getElementById('complete-counter');
             completeCounter.textContent = completeCount;
             console.log('第一次录入完成，completeCount:', completeCount);
+            
+            // 测试：当 completeCount 变为4时显示长方形
+            if (completeCount === 4) {
+                console.log('completeCount 变为4，测试显示长方形');
+                const yellowRectangle = document.getElementById('yellow-rectangle');
+                if (yellowRectangle) {
+                    yellowRectangle.style.display = 'block';
+                }
+            }
             
             // 存到数组
             saveTouchDataToAll();
@@ -1450,6 +1603,11 @@ function stopStopwatch() {
         completeCount = 4;
         const completeCounter = document.getElementById('complete-counter');
         completeCounter.textContent = completeCount;
+        // 显示长方形
+        const yellowRectangle = document.getElementById('yellow-rectangle');
+        if (yellowRectangle) {
+            yellowRectangle.style.display = 'block';
+        }
         // 绘制按压区域
         drawPressAreas();
         // 保存数据到localStorage

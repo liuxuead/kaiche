@@ -307,3 +307,19 @@ body {
     50% { transform: translateY(-50%) scale(1.2); }
     100% { transform: translateY(-50%) scale(1); }
 }
+
+/* 黄色长方形 */
+.yellow-rectangle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 60px;
+    background-color: #f1c40f;
+    transform: translate(-50%, -50%) rotate(0deg);
+    border-left: 5px solid #e74c3c;
+    border-radius: 5px;
+    z-index: 20;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}

@@ -312,12 +312,12 @@ body {
 /* 黄色长方形 */
 .yellow-rectangle {
     position: absolute;
-    top: 45%;
+    top: 50%;
     left: 60%; /* 向右移动，初始位置更靠右 */
     width: 100px;
     height: 30px;
     background-color: #f1c40f;
-    transform: translate(-50%, -50%) rotate(0deg);
+    transform: translate(-50%, -65%) rotate(0deg);
     border-left: 5px solid #e74c3c;
     border-radius: 5px;
     z-index: 20;

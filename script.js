@@ -387,6 +387,9 @@ function updateDashboardValue() {
         dashboardValue = targetDashboardValue;
         dashboardEl.textContent = Math.round(dashboardValue);
         dashboardAnimationId = null;
+        
+        // 更新车道线速度
+        updateLaneSpeed(dashboardValue);
         return;
     }
     
@@ -394,8 +397,44 @@ function updateDashboardValue() {
     dashboardValue += diff * 0.2;
     dashboardEl.textContent = Math.round(dashboardValue);
     
+    // 更新车道线速度
+    updateLaneSpeed(dashboardValue);
+    
     // 继续动画
     dashboardAnimationId = requestAnimationFrame(updateDashboardValue);
+}
+
+// 更新车道线速度
+function updateLaneSpeed(speed) {
+    const topLane = document.getElementById('top-lane');
+    const bottomLane = document.getElementById('bottom-lane');
+    
+    if (!topLane || !bottomLane) return;
+    
+    // 根据速度计算动画持续时间（速度越快，持续时间越短）
+    // 速度0-300，对应持续时间2s-0.2s
+    const maxSpeed = 300;
+    const minDuration = 0.2;
+    const maxDuration = 2;
+    
+    const duration = maxDuration - (speed / maxSpeed) * (maxDuration - minDuration);
+    
+    topLane.style.animationDuration = `${duration}s`;
+    bottomLane.style.animationDuration = `${duration}s`;
+    
+    // 根据速度添加视觉效果
+    topLane.classList.remove('high-speed', 'very-high-speed');
+    bottomLane.classList.remove('high-speed', 'very-high-speed');
+    
+    if (speed > 150) {
+        topLane.classList.add('high-speed');
+        bottomLane.classList.add('high-speed');
+    }
+    
+    if (speed > 220) {
+        topLane.classList.add('very-high-speed');
+        bottomLane.classList.add('very-high-speed');
+    }
 }
 
 // 更新长方形旋转

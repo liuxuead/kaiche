@@ -977,9 +977,168 @@ function initGame() {
         });
     }
     
+    // 小绿球相关变量
+    const greenBalls = []; // 存储小绿球信息
+    const MAX_GREEN_BALLS = 5; // 最大小绿球数量
+    const GREEN_BALL_SIZE = 30; // 小绿球大小
+    
+    // 小绿球速度等级配置
+    const GREEN_BALL_SPEEDS = [
+        { min: 2, max: 4, probability: 0.5 }, // 慢速
+        { min: 5, max: 7, probability: 0.3 }, // 中速
+        { min: 8, max: 10, probability: 0.2 }  // 快速
+    ];
+    
+    // 生成小绿球
+    function createGreenBall() {
+        // 检查当前小绿球数量是否达到上限
+        if (greenBalls.length >= MAX_GREEN_BALLS) {
+            return;
+        }
+        
+        // 随机选择速度等级
+        let speedConfig = GREEN_BALL_SPEEDS[0];
+        let random = Math.random();
+        let cumulativeProbability = 0;
+        
+        for (const config of GREEN_BALL_SPEEDS) {
+            cumulativeProbability += config.probability;
+            if (random <= cumulativeProbability) {
+                speedConfig = config;
+                break;
+            }
+        }
+        
+        // 生成随机速度
+        const speed = Math.floor(Math.random() * (speedConfig.max - speedConfig.min + 1)) + speedConfig.min;
+        
+        // 生成随机方向
+        const angle = Math.random() * Math.PI * 2;
+        const speedX = Math.cos(angle) * speed;
+        const speedY = Math.sin(angle) * speed;
+        
+        // 创建小绿球元素
+        const ball = document.createElement('div');
+        ball.className = 'green-ball';
+        
+        // 创建速度文本元素
+        const speedText = document.createElement('span');
+        speedText.className = 'speed-text';
+        speedText.textContent = speed;
+        
+        // 将文本元素添加到小球中
+        ball.appendChild(speedText);
+        
+        // 设置随机位置（避开仪表盘）
+        const frame = document.getElementById('dynamic-frame');
+        const frameRect = frame.getBoundingClientRect();
+        
+        let ballX, ballY;
+        let validPosition = false;
+        
+        // 确保小球不会生成在仪表盘中
+        while (!validPosition) {
+            ballX = Math.random() * (frameRect.width - GREEN_BALL_SIZE);
+            ballY = Math.random() * (frameRect.height - GREEN_BALL_SIZE);
+            
+            // 仪表盘区域
+            const dashboardLeft = 20;
+            const dashboardTop = 40;
+            const dashboardSize = 120;
+            
+            if (!(ballX < dashboardLeft + dashboardSize && ballY < dashboardTop + dashboardSize)) {
+                validPosition = true;
+            }
+        }
+        
+        ball.style.left = `${ballX}px`;
+        ball.style.top = `${ballY}px`;
+        
+        // 添加到容器中
+        frame.appendChild(ball);
+        
+        // 保存小球信息
+        greenBalls.push({
+            element: ball,
+            x: ballX,
+            y: ballY,
+            speedX: speedX,
+            speedY: speedY,
+            speed: speed
+        });
+        
+        console.log('生成小绿球，速度:', speed);
+    }
+    
+    // 更新小绿球运动
+    function updateGreenBalls() {
+        const frame = document.getElementById('dynamic-frame');
+        if (!frame) return;
+        
+        const frameRect = frame.getBoundingClientRect();
+        
+        for (let i = greenBalls.length - 1; i >= 0; i--) {
+            const ball = greenBalls[i];
+            
+            // 计算新位置
+            let newX = ball.x + ball.speedX * 0.5;
+            let newY = ball.y + ball.speedY * 0.5;
+            
+            // 边界碰撞检测
+            if (newX < 0 || newX > frameRect.width - GREEN_BALL_SIZE) {
+                ball.speedX = -ball.speedX;
+                newX = Math.max(0, Math.min(frameRect.width - GREEN_BALL_SIZE, newX));
+            }
+            
+            if (newY < 0 || newY > frameRect.height - GREEN_BALL_SIZE) {
+                ball.speedY = -ball.speedY;
+                newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
+            }
+            
+            // 更新位置
+            ball.x = newX;
+            ball.y = newY;
+            ball.element.style.left = `${newX}px`;
+            ball.element.style.top = `${newY}px`;
+            
+            // 检测与小黄球的碰撞
+            const yellowBall = document.getElementById('control-ball');
+            if (yellowBall) {
+                const yellowBallRect = yellowBall.getBoundingClientRect();
+                const yellowBallX = parseFloat(yellowBall.style.left || '0');
+                const yellowBallY = parseFloat(yellowBall.style.top || '0');
+                const yellowBallSize = 40;
+                
+                // 计算两球中心距离
+                const dx = (ball.x + GREEN_BALL_SIZE / 2) - (yellowBallX + yellowBallSize / 2);
+                const dy = (ball.y + GREEN_BALL_SIZE / 2) - (yellowBallY + yellowBallSize / 2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 碰撞检测
+                if (distance < (GREEN_BALL_SIZE + yellowBallSize) / 2) {
+                    // 移除小绿球
+                    frame.removeChild(ball.element);
+                    greenBalls.splice(i, 1);
+                    console.log('碰撞小绿球，已移除');
+                }
+            }
+        }
+        
+        requestAnimationFrame(updateGreenBalls);
+    }
+    
+    // 定时生成小绿球
+    function startGreenBallGeneration() {
+        setInterval(() => {
+            createGreenBall();
+        }, 3000); // 每3秒生成一个
+    }
+    
     // 初始化球的位置和启动移动
     initBallPosition();
     updateBallMovement();
+    updateGreenBalls();
+    startGreenBallGeneration();
 
 }
 

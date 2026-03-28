@@ -1145,7 +1145,32 @@ function initGame() {
 
 }
 
-
+// 默认游戏数据（新用户打开即可玩）
+const DEFAULT_GAME_DATA = {
+    completeCount: 4,
+    allTouchData: [
+        {
+            timestamp: 1774685517973,
+            top: { x: 962, y: 137, radius: 50, width: 100, height: 100 },
+            middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
+            bottom: { x: 1217, y: 137, radius: 50, width: 100, height: 100 }
+        },
+        {
+            timestamp: 1774685526704,
+            top: { x: 963, y: 137, radius: 50, width: 100, height: 100 },
+            middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
+            bottom: { x: 1204, y: 145, radius: 50, width: 100, height: 100 }
+        }
+    ],
+    touchData: {
+        bottom: { x: 1202, y: 137, radius: 50, width: 100, height: 100 },
+        middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
+        top: { x: 982, y: 145, radius: 50, width: 100, height: 100 }
+    },
+    middleRangeAdjusted: false,
+    middleRangeStart: 0.1,
+    middleRangeEnd: 0.6
+};
 
 // 存储触摸位置数据
 const touchData = {
@@ -2185,57 +2210,110 @@ function saveStatsData() {
 // 从localStorage加载统计数据
 function loadSavedData() {
     const savedData = localStorage.getItem('gameStats');
-    if (savedData) {
-        try {
-            const parsedData = JSON.parse(savedData);
-            if (parsedData.stats && parsedData.allTouchData) {
-                // 加载统计数据 - 使用push方式，避免const赋值错误
-                allTouchData.length = 0; // 清空现有数据
-                parsedData.allTouchData.forEach(record => {
-                    allTouchData.push(record);
-                });
-                completeCount = parsedData.completeCount || 4;
-                
-                // 恢复touchData
-                if (parsedData.touchData) {
-                    touchData.top = parsedData.touchData.top || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
-                    touchData.middle = parsedData.touchData.middle || { x: 0, y: 0, radius: 50, width: 150, height: 100 };
-                    touchData.bottom = parsedData.touchData.bottom || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
-                }
-                
-                // 恢复"中"范围调整状态
-                middleRangeAdjusted = parsedData.middleRangeAdjusted || false;
-                middleRangeStart = parsedData.middleRangeStart || 0.33;
-                middleRangeEnd = parsedData.middleRangeEnd || 0.66;
-                
-                // 更新UI
-                const completeCounter = document.getElementById('complete-counter');
-                completeCounter.textContent = completeCount;
-                
-                // 更新统计面板
-                updateStatsPanel();
-                updateDataDisplay();
-                
-                // 如果 completeCount >= 4，绘制按压区域
-                if (completeCount >= 4) {
-                    drawPressAreas();
-                }
-                
-                // 处理电量条显示/隐藏 - 游戏系统运行时始终隐藏
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
-                    batteryBar.classList.add('hidden');
-                    console.log('从localStorage加载数据，游戏系统运行，保持电量条隐藏');
-                }
-                
-                console.log('从localStorage加载了统计数据，completeCount:', completeCount);
-                return true; // 返回true表示加载成功
-            }
-        } catch (error) {
-            console.error('加载保存数据失败:', error);
-        }
+    
+    // 如果没有保存的数据，使用默认数据
+    if (!savedData) {
+        console.log('没有找到保存的数据，使用默认数据');
+        loadDefaultData();
+        return true;
     }
+    
+    try {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.stats && parsedData.allTouchData) {
+            // 加载统计数据 - 使用push方式，避免const赋值错误
+            allTouchData.length = 0; // 清空现有数据
+            parsedData.allTouchData.forEach(record => {
+                allTouchData.push(record);
+            });
+            completeCount = parsedData.completeCount || 4;
+            
+            // 恢复touchData
+            if (parsedData.touchData) {
+                touchData.top = parsedData.touchData.top || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+                touchData.middle = parsedData.touchData.middle || { x: 0, y: 0, radius: 50, width: 150, height: 100 };
+                touchData.bottom = parsedData.touchData.bottom || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+            }
+            
+            // 恢复"中"范围调整状态
+            middleRangeAdjusted = parsedData.middleRangeAdjusted || false;
+            middleRangeStart = parsedData.middleRangeStart || 0.33;
+            middleRangeEnd = parsedData.middleRangeEnd || 0.66;
+            
+            // 更新UI
+            const completeCounter = document.getElementById('complete-counter');
+            completeCounter.textContent = completeCount;
+            
+            // 更新统计面板
+            updateStatsPanel();
+            updateDataDisplay();
+            
+            // 如果 completeCount >= 4，绘制按压区域
+            if (completeCount >= 4) {
+                drawPressAreas();
+            }
+            
+            // 处理电量条显示/隐藏 - 游戏系统运行时始终隐藏
+            const batteryBar = document.querySelector('.battery-bar');
+            if (batteryBar) {
+                batteryBar.classList.add('hidden');
+                console.log('从localStorage加载数据，游戏系统运行，保持电量条隐藏');
+            }
+            
+            console.log('从localStorage加载了统计数据，completeCount:', completeCount);
+            return true; // 返回true表示加载成功
+        }
+    } catch (error) {
+        console.error('加载保存数据失败:', error);
+        console.log('加载失败，使用默认数据');
+        loadDefaultData();
+        return true;
+    }
+    
     return false; // 返回false表示没有加载到数据
+}
+
+// 加载默认游戏数据
+function loadDefaultData() {
+    console.log('加载默认游戏数据...');
+    
+    // 加载allTouchData
+    allTouchData.length = 0;
+    DEFAULT_GAME_DATA.allTouchData.forEach(record => {
+        allTouchData.push(record);
+    });
+    
+    // 设置completeCount
+    completeCount = DEFAULT_GAME_DATA.completeCount;
+    
+    // 设置touchData
+    touchData.top = DEFAULT_GAME_DATA.touchData.top;
+    touchData.middle = DEFAULT_GAME_DATA.touchData.middle;
+    touchData.bottom = DEFAULT_GAME_DATA.touchData.bottom;
+    
+    // 设置"中"范围调整状态
+    middleRangeAdjusted = DEFAULT_GAME_DATA.middleRangeAdjusted;
+    middleRangeStart = DEFAULT_GAME_DATA.middleRangeStart;
+    middleRangeEnd = DEFAULT_GAME_DATA.middleRangeEnd;
+    
+    // 更新UI
+    const completeCounter = document.getElementById('complete-counter');
+    completeCounter.textContent = completeCount;
+    
+    // 更新统计面板
+    updateStatsPanel();
+    updateDataDisplay();
+    
+    // 绘制按压区域
+    drawPressAreas();
+    
+    // 隐藏电量条
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.classList.add('hidden');
+    }
+    
+    console.log('默认游戏数据加载完成，completeCount:', completeCount);
 }
 
 // 清除保存的统计数据
@@ -2421,12 +2499,11 @@ function resetAllData() {
     clearDisplayText(textTop, textMiddle, textBottom);
     updateDataDisplay();
     updateStatsPanel();
-     // 重置电量条
     
     // 清除按压区域
     clearPressAreas();
     
-    // 恢复电量条边框样式和位置大小 - 游戏系统运行时保持隐藏
+    // 重置电量条 - 游戏系统运行时保持隐藏
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
         batteryBar.style.boxShadow = 'none';
@@ -2437,11 +2514,11 @@ function resetAllData() {
         batteryBar.style.right = '20px';
         batteryBar.style.transform = 'none';
         batteryBar.style.zIndex = '99999';
-        batteryBar.style.width = '320px'; // 恢复原来的宽度
-        batteryBar.style.height = '30px'; // 恢复原来的高度
-        batteryBar.style.pointerEvents = 'auto'; // 恢复事件捕获
-        batteryBar.style.backgroundColor = '#333'; // 恢复背景色
-        batteryBar.classList.add('hidden'); // 保持隐藏
+        batteryBar.style.width = '320px';
+        batteryBar.style.height = '30px';
+        batteryBar.style.pointerEvents = 'auto';
+        batteryBar.style.backgroundColor = '#333';
+        batteryBar.classList.add('hidden');
         console.log('重置所有数据，保持电量条隐藏');
     }
     

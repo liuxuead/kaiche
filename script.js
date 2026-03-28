@@ -333,6 +333,42 @@ function adjustMiddleRange(touch) {
     }
 }
 
+// 判断触摸位置是否在绘制范围附近
+function isNearDrawArea(mirrorX, mirrorY) {
+    const stats = getStatsAverage();
+    const areas = [
+        stats.top,
+        stats.middle,
+        stats.bottom
+    ];
+    
+    const distanceThreshold = 100; // 100像素范围内
+    
+    for (const area of areas) {
+        if (area.x === 0 && area.y === 0) {
+            continue; // 跳过未记录的区域
+        }
+        
+        // 计算到区域中心的距离
+        const dx = mirrorX - area.x;
+        const dy = mirrorY - area.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // 计算椭圆内的距离
+        const width = area.width || 100;
+        const height = area.height || 100;
+        const normalizedDx = dx / (width / 2);
+        const normalizedDy = dy / (height / 2);
+        const normalizedDistance = Math.sqrt(normalizedDx * normalizedDx + normalizedDy * normalizedDy);
+        
+        if (distance <= distanceThreshold || normalizedDistance <= 1.5) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 // 更新仪表盘数值（平滑动画）
 function updateDashboardValue() {
     const dashboardEl = document.querySelector('.dashboard-value');
@@ -378,10 +414,7 @@ function calculateDashboardValue(mirrorY) {
     let position = (mirrorY - minY) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
-    // 反转位置，让下对应0，上对应300
-    position = 1 - position;
-    
-    // 映射到 0-300
+    // 映射到 0-300 - 不反转，直接下对应0，上对应300
     return position * DASHBOARD_MAX_VALUE;
 }
 
@@ -644,13 +677,19 @@ function setupTouchListeners() {
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
+            const rect = gameContainer.getBoundingClientRect();
+            const mirrorX = currentTouch.clientX - rect.left;
             const mirrorY = containerHeight - currentTouch.clientY;
-            updateBatteryBar(mirrorY);
             
-            // 更新仪表盘数值
-            targetDashboardValue = calculateDashboardValue(mirrorY);
-            if (!dashboardAnimationId) {
-                updateDashboardValue();
+            // 只有在绘制范围附近100像素内才更新
+            if (isNearDrawArea(mirrorX, mirrorY)) {
+                updateBatteryBar(mirrorY);
+                
+                // 更新仪表盘数值
+                targetDashboardValue = calculateDashboardValue(mirrorY);
+                if (!dashboardAnimationId) {
+                    updateDashboardValue();
+                }
             }
         }
     });
@@ -668,12 +707,17 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // completeCount >=4 时，仪表盘数值回落到0
+        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
         if (completeCount >= 4) {
             targetDashboardValue = 0;
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
+            // 清空电量条
+            const bars = document.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = '#555';
+            });
         }
     });
     
@@ -736,13 +780,19 @@ function setupTouchListeners() {
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
+            const rect = gameContainer.getBoundingClientRect();
+            const mirrorX = e.clientX - rect.left;
             const mirrorY = containerHeight - e.clientY;
-            updateBatteryBar(mirrorY);
             
-            // 更新仪表盘数值
-            targetDashboardValue = calculateDashboardValue(mirrorY);
-            if (!dashboardAnimationId) {
-                updateDashboardValue();
+            // 只有在绘制范围附近100像素内才更新
+            if (isNearDrawArea(mirrorX, mirrorY)) {
+                updateBatteryBar(mirrorY);
+                
+                // 更新仪表盘数值
+                targetDashboardValue = calculateDashboardValue(mirrorY);
+                if (!dashboardAnimationId) {
+                    updateDashboardValue();
+                }
             }
         }
     });
@@ -759,12 +809,17 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // completeCount >=4 时，仪表盘数值回落到0
+        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
         if (completeCount >= 4) {
             targetDashboardValue = 0;
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
+            // 清空电量条
+            const bars = document.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = '#555';
+            });
         }
     });
 }

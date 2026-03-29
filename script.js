@@ -2907,14 +2907,29 @@ function updateGreenBalls() {
                     points = 10 - speedDiff;
                 }
                 
-                totalEatenBalls++;
-                if (points > 0) {
-                    validEatenBalls++;
-                    roundScore += points;
-                    console.log(`碰撞得分: ${points}分 (黄球:${yellowBallSpeed}, 绿球:${greenBallSpeed}, 差:${speedDiff})`);
-                } else {
-                    console.log(`碰撞无得分 (黄球:${yellowBallSpeed}, 绿球:${greenBallSpeed}, 差:${speedDiff})`);
+                // 如果不能得分，让小球反弹而不是吃掉
+                if (points === 0) {
+                    console.log(`碰撞无得分，小球反弹 (黄球:${yellowBallSpeed}, 绿球:${greenBallSpeed}, 差:${speedDiff})`);
+                    // 计算反弹方向
+                    const angle = Math.atan2(dy, dx);
+                    ball.speedX = Math.cos(angle) * Math.abs(ball.speedX);
+                    ball.speedY = Math.sin(angle) * Math.abs(ball.speedY);
+                    // 稍微推开小球避免重复碰撞
+                    ball.x += ball.speedX * 2;
+                    ball.y += ball.speedY * 2;
+                    ball.element.style.left = `${ball.x}px`;
+                    ball.element.style.top = `${ball.y}px`;
+                    continue;
                 }
+                
+                // 能得分，吃掉小球
+                totalEatenBalls++;
+                validEatenBalls++;
+                roundScore += points;
+                console.log(`碰撞得分: ${points}分 (黄球:${yellowBallSpeed}, 绿球:${greenBallSpeed}, 差:${speedDiff})`);
+                
+                // 震动效果
+                triggerVibration();
                 
                 updateScoreDisplay();
                 frame.removeChild(ball.element);
@@ -2926,6 +2941,23 @@ function updateGreenBalls() {
     }
     
     requestAnimationFrame(updateGreenBalls);
+}
+
+// 触发震动效果
+function triggerVibration() {
+    // 设备震动（如果支持）
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+    
+    // 视觉震动效果
+    const gameContainer = document.querySelector('.game-container');
+    if (gameContainer) {
+        gameContainer.style.animation = 'shake 0.3s ease-in-out';
+        setTimeout(() => {
+            gameContainer.style.animation = '';
+        }, 300);
+    }
 }
 
 // 初始化游戏系统

@@ -621,6 +621,20 @@ body {
     100% { transform: translateY(-50%) scale(1); }
 }
 
+/* 震动动画 */
+@keyframes shake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5px, -5px); }
+    20% { transform: translate(5px, 5px); }
+    30% { transform: translate(-5px, 5px); }
+    40% { transform: translate(5px, -5px); }
+    50% { transform: translate(-5px, -5px); }
+    60% { transform: translate(5px, 5px); }
+    70% { transform: translate(-5px, 5px); }
+    80% { transform: translate(5px, -5px); }
+    90% { transform: translate(-5px, -5px); }
+}
+
 /* 可随页面动的长方形框 */
 .dynamic-frame {
     position: absolute;

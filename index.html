@@ -63,10 +63,10 @@
             </div>
         </div>
         
-        <!-- 电量条 -->
-        <div class="battery-bar hidden" id="battery-bar">
-            <div class="battery-bar-container" id="battery-bar-container">
-                <!-- 电量条格子将通过JavaScript动态生成 -->
+        <!-- 录制模式标尺 - 动态生成竖杠 -->
+        <div id="record-battery-bar" style="position: fixed; bottom: 170px; right: 20px; width: 320px; height: 30px; background: #333; border-radius: 5px; z-index: 99999; overflow: hidden; display: none;">
+            <div id="record-battery-bars" style="display: flex; height: 100%; align-items: center; padding: 0 5px;">
+                <!-- 动态生成竖杠 -->
             </div>
         </div>
         
@@ -125,6 +125,6 @@
             </div>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script src="script.js?v=3"></script>
 </body>
 </html>

@@ -172,6 +172,11 @@ function updateDashboardValue() {
     const dashboardEl = document.querySelector('.dashboard-value');
     if (!dashboardEl) return;
     
+    // completeCount < 4 时不更新速度显示（显示秒表）
+    if (completeCount < 4) {
+        return;
+    }
+    
     // 计算差值，平滑过渡
     const diff = targetDashboardValue - dashboardValue;
     if (Math.abs(diff) < 0.1) {
@@ -179,9 +184,6 @@ function updateDashboardValue() {
         dashboardValue = targetDashboardValue;
         dashboardEl.textContent = Math.round(dashboardValue);
         dashboardAnimationId = null;
-        
-        // 更新车道线速度
-        updateLaneSpeed(dashboardValue);
         return;
     }
     
@@ -189,14 +191,12 @@ function updateDashboardValue() {
     dashboardValue += diff * 0.2;
     dashboardEl.textContent = Math.round(dashboardValue);
     
-    // 更新车道线速度
-    updateLaneSpeed(dashboardValue);
-    
     // 继续动画
     dashboardAnimationId = requestAnimationFrame(updateDashboardValue);
 }
 
-// 更新车道线速度
+// 更新车道线速度（旧代码已注释）
+/*
 function updateLaneSpeed(speed) {
     const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
@@ -235,8 +235,10 @@ function updateLaneSpeed(speed) {
             }
     });
 }
+*/
 
-// 使用指定的持续时间更新车道线
+// 使用指定的持续时间更新车道线（旧代码已注释）
+/*
 function updateLaneSpeedWithDuration(duration, speed) {
     const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
@@ -266,8 +268,10 @@ function updateLaneSpeedWithDuration(duration, speed) {
         }
     });
 }
+*/
 
-// 持续更新车道线（即使速度稳定时也能保持运动）
+// 持续更新车道线（即使速度稳定时也能保持运动）（旧代码已注释）
+/*
 let lastSpeed = 0;
 let currentDuration = 0.2; // 当前动画持续时间
 let targetDuration = 0.2; // 目标动画持续时间
@@ -291,8 +295,10 @@ function continuousLaneUpdate() {
     
     requestAnimationFrame(continuousLaneUpdate);
 }
+*/
 
-// 输出车道线和小车位置日志
+// 输出车道线和小车位置日志（旧代码已注释）
+/*
 function logLaneAndCarPositions() {
     const gameContainer = document.querySelector('.game-container');
     const yellowRectangle = document.getElementById('yellow-rectangle');
@@ -348,21 +354,23 @@ function logLaneAndCarPositions() {
         console.log('====================');
     }
 }
-
-
+*/
 
 // 根据触摸位置计算仪表盘数值
 function calculateDashboardValue(mirrorY) {
     const stats = getStatsAverage();
-    
-    if (stats.top.y === 0 || stats.bottom.y === 0) {
-        return DASHBOARD_MAX_VALUE / 2; // 默认中间值
-    }
-    
     const gameContainer = document.querySelector('.game-container');
     if (!gameContainer) return DASHBOARD_MAX_VALUE / 2;
     
     const rect = gameContainer.getBoundingClientRect();
+    
+    // 录制模式（completeCount < 4）：根据手指Y位置直接计算
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
+        // 根据手指在屏幕上的Y位置计算（0-30）
+        const relativeY = mirrorY;
+        const position = relativeY / rect.height;
+        return Math.round(position * DASHBOARD_MAX_VALUE);
+    }
     // 把mirrorY转换成相对于game-container的坐标
     const relativeY = mirrorY - rect.top;
     
@@ -662,6 +670,12 @@ function initGame() {
     
     // 更新球的移动
     function updateBallMovement() {
+        // completeCount < 4 时不移动小黄球
+        if (completeCount < 4) {
+            requestAnimationFrame(updateBallMovement);
+            return;
+        }
+        
         const frame = document.getElementById('dynamic-frame');
         if (!frame) return;
         
@@ -1311,12 +1325,17 @@ function setupTouchListeners() {
             
             // 更新仪表盘数值
             targetDashboardValue = calculateDashboardValue(mirrorY);
+            console.log('录制模式 - mirrorY:', mirrorY, 'targetDashboardValue:', targetDashboardValue);
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
             
             // 更新电量条
+            console.log('调用updateBatteryBar, value:', targetDashboardValue);
             updateBatteryBar(targetDashboardValue);
+            
+            // 更新新的录制模式电量条
+            updateRecordBatteryBar(targetDashboardValue);
         }
         
         // 实时更新电量条（completeCount达到4后才启用）
@@ -1638,7 +1657,8 @@ function recordTouchData(touch) {
                 }
             }
             
-            // 测试：当 completeCount 变为4时显示长方形
+            // 测试：当 completeCount 变为4时显示长方形（旧代码已注释）
+            /*
             if (completeCount === 4) {
                 console.log('completeCount 变为4，测试显示长方形');
                 const yellowRectangle = document.getElementById('yellow-rectangle');
@@ -1646,6 +1666,7 @@ function recordTouchData(touch) {
                     yellowRectangle.style.display = 'block';
                 }
             }
+            */
             
             // 存到数组
             saveTouchDataToAll();
@@ -2178,11 +2199,13 @@ function stopStopwatch() {
         completeCount = 4;
         const completeCounter = document.getElementById('complete-counter');
         completeCounter.textContent = completeCount;
-        // 显示长方形
+        // 显示长方形（旧代码已注释）
+        /*
         const yellowRectangle = document.getElementById('yellow-rectangle');
         if (yellowRectangle) {
             yellowRectangle.style.display = 'block';
         }
+        */
         // 绘制按压区域
         drawPressAreas();
         // 保存数据到localStorage
@@ -2254,11 +2277,16 @@ function loadSavedData() {
                 drawPressAreas();
             }
             
-            // 处理电量条显示/隐藏 - 游戏系统运行时始终隐藏
+            // 处理电量条显示/隐藏 - 根据completeCount决定
             const batteryBar = document.querySelector('.battery-bar');
             if (batteryBar) {
-                batteryBar.classList.add('hidden');
-                console.log('从localStorage加载数据，游戏系统运行，保持电量条隐藏');
+                if (completeCount >= 4) {
+                    batteryBar.classList.add('hidden');
+                    console.log('从localStorage加载数据，completeCount >= 4，隐藏电量条');
+                } else {
+                    batteryBar.classList.remove('hidden');
+                    console.log('从localStorage加载数据，completeCount < 4，显示电量条');
+                }
             }
             
             console.log('从localStorage加载了统计数据，completeCount:', completeCount);
@@ -2448,13 +2476,13 @@ function resetRecordData() {
     updateDataDisplay();
     updateStatsPanel();
     
-    // 恢复电量条显示 - 游戏系统运行时保持隐藏
+    // 恢复电量条显示 - completeCount < 4 时显示
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
-        batteryBar.classList.add('hidden');
+        batteryBar.classList.remove('hidden'); // 显示电量条
         batteryBar.style.boxShadow = 'none';
         batteryBar.style.border = 'none';
-        console.log('重置记录数据，保持电量条隐藏');
+        console.log('重置记录数据，completeCount = 0，显示电量条');
     }
     
     // 更新完成计数器
@@ -2508,24 +2536,15 @@ function resetAllData() {
     // 清除按压区域
     clearPressAreas();
     
-    // 重置电量条 - 游戏系统运行时保持隐藏
+    // 重置电量条 - completeCount < 4 时显示出来
     const batteryBar = document.querySelector('.battery-bar');
     if (batteryBar) {
-        batteryBar.style.boxShadow = 'none';
-        batteryBar.style.border = 'none';
-        // 重置电量条位置和大小
-        batteryBar.style.position = 'fixed';
-        batteryBar.style.bottom = '170px';
-        batteryBar.style.right = '20px';
-        batteryBar.style.transform = 'none';
-        batteryBar.style.zIndex = '99999';
-        batteryBar.style.width = '320px';
-        batteryBar.style.height = '30px';
-        batteryBar.style.pointerEvents = 'auto';
-        batteryBar.style.backgroundColor = '#333';
-        batteryBar.classList.add('hidden');
-        console.log('重置所有数据，保持电量条隐藏');
+        batteryBar.classList.add('hidden'); // 隐藏旧电量条
     }
+    
+    // 显示新的录制模式电量条
+    toggleRecordBatteryBar(true);
+    console.log('重置所有数据，显示新的录制模式电量条（completeCount < 4）');
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
@@ -2723,10 +2742,6 @@ function getCurrentLevelConfig() {
 function updateScoreDisplay() {
     const config = getCurrentLevelConfig();
     
-    console.log('=== updateScoreDisplay 日志 ===');
-    console.log('totalEatenBalls:', totalEatenBalls);
-    console.log('validEatenBalls:', validEatenBalls);
-    
     // 更新等级显示
     const levelValue = document.getElementById('level-value');
     if (levelValue) {
@@ -2745,13 +2760,11 @@ function updateScoreDisplay() {
     const successRateValue = document.getElementById('success-rate-value');
     if (successRateValue) {
         const rate = totalEatenBalls > 0 ? (validEatenBalls / totalEatenBalls * 100).toFixed(0) : 0;
-        console.log('计算的成功率:', rate + '%');
         successRateValue.textContent = `${rate}%`;
         successRateValue.classList.remove('met', 'not-met');
         const currentRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 0;
         successRateValue.classList.add(currentRate >= config.targetSuccessRate ? 'met' : 'not-met');
     }
-    console.log('=== updateScoreDisplay 结束 ===');
 }
 
 // 重置本局
@@ -2919,6 +2932,9 @@ function getLevelBasedSpeedConfig() {
 // 重写createGreenBall函数，使用等级配置
 const originalCreateGreenBall = createGreenBall;
 function createGreenBall() {
+    // completeCount < 4 时不生成小绿球
+    if (completeCount < 4) return;
+    
     if (ballsInRound >= 5) return;
     if (greenBalls.length >= MAX_GREEN_BALLS) return;
     
@@ -3052,11 +3068,17 @@ function initGameSystem() {
     loadGameData();
     setupLevelLongPress();
     
-    // 确保电量条在游戏系统初始化时被隐藏
-    const batteryBar = document.querySelector('.battery-bar');
-    if (batteryBar) {
-        batteryBar.classList.add('hidden');
-        console.log('游戏系统初始化，隐藏电量条');
+    // 初始化录制模式电量条
+    initRecordBatteryBar();
+    
+    // 根据completeCount决定电量条显示/隐藏
+    // 控制新的录制模式电量条显示/隐藏
+    if (completeCount >= 4) {
+        toggleRecordBatteryBar(false);
+        console.log('游戏系统初始化，completeCount >= 4，隐藏录制模式电量条');
+    } else {
+        toggleRecordBatteryBar(true);
+        console.log('游戏系统初始化，completeCount < 4，显示录制模式电量条');
     }
     
     // 设置按钮事件
@@ -3168,19 +3190,63 @@ function initBatteryBar() {
         bar.dataset.index = i;
         batteryBarContainer.appendChild(bar);
     }
+    
+    // 测试：点亮前3个格子
+    console.log('initBatteryBar: 尝试点亮前3个格子');
+    const segments = batteryBarContainer.querySelectorAll('.battery-bar-item');
+    console.log('initBatteryBar: 找到格子数量', segments.length);
+    for (let i = 0; i < 3 && i < segments.length; i++) {
+        const section = segments[i].dataset.section;
+        const color = BATTERY_BAR_CONFIG[section].color;
+        segments[i].style.cssText = `background-color: ${color} !important; opacity: 1 !important; flex: 1; margin: 1px; border-radius: 2px;`;
+        console.log(`initBatteryBar: 格子${i}设置颜色${color}`);
+    }
 }
 
 // 更新电量条显示
 function updateBatteryBar(value) {
+    console.log('updateBatteryBar被调用, value:', value);
+    
     // 检查电量条是否被隐藏，如果是则不更新
     const batteryBar = document.querySelector('.battery-bar');
+    console.log('电量条元素:', batteryBar);
+    console.log('电量条classList:', batteryBar ? batteryBar.classList.toString() : 'null');
+    console.log('电量条是否hidden:', batteryBar ? batteryBar.classList.contains('hidden') : 'null');
     if (batteryBar && batteryBar.classList.contains('hidden')) {
+        console.log('电量条被隐藏，不更新');
         return;
     }
     
     // value: 0-30，映射到0-20个格子（6+9+5）
     const stats = getStatsAverage();
+    console.log('stats:', stats);
+    
+    // 录制模式（completeCount < 4）：根据value直接点亮
     if (stats.top.y === 0 || stats.bottom.y === 0) {
+        console.log('进入录制模式，点亮电量条');
+        // 录制模式：根据value值点亮对应区域
+        const totalSegments = BATTERY_BAR_CONFIG.top.count + BATTERY_BAR_CONFIG.middle.count + BATTERY_BAR_CONFIG.bottom.count;
+        const litCount = Math.round((value / 30) * totalSegments);
+        console.log('totalSegments:', totalSegments, 'litCount:', litCount);
+        
+        const segments = document.querySelectorAll('.battery-bar-item');
+        console.log('找到电量条格子数量:', segments.length, 'litCount:', litCount);
+        segments.forEach((segment, index) => {
+            const section = segment.dataset.section;
+            const color = BATTERY_BAR_CONFIG[section].color;
+            if (index < litCount) {
+                segment.style.cssText = `background-color: ${color} !important; opacity: 1 !important; flex: 1; margin: 1px; border-radius: 2px;`;
+            } else {
+                segment.style.cssText = `background-color: transparent !important; opacity: 0.2 !important; flex: 1; margin: 1px; border-radius: 2px;`;
+            }
+        });
+        // 强制重绘
+        const batteryBarContainer = document.getElementById('battery-bar-container');
+        if (batteryBarContainer) {
+            batteryBarContainer.style.display = 'none';
+            batteryBarContainer.offsetHeight; // 触发重排
+            batteryBarContainer.style.display = 'flex';
+        }
         return;
     }
     
@@ -3281,6 +3347,113 @@ function updateBatteryBar(value) {
             bar.style.backgroundColor = 'transparent';
         }
     });
+}
+
+// 录制模式电量条配置
+const RECORD_BATTERY_CONFIG = {
+    left: { count: 5, color: '#3498db' },    // 左：5格，蓝色（对应低速）
+    middle: { count: 9, color: '#2ecc71' },  // 中：9格，绿色
+    right: { count: 6, color: '#e74c3c' }    // 右：6格，红色（对应高速）
+};
+
+// 初始化录制模式电量条
+function initRecordBatteryBar() {
+    const container = document.getElementById('record-battery-bars');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    // 创建左部分（5格，蓝色）
+    for (let i = 0; i < RECORD_BATTERY_CONFIG.left.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'record-battery-item';
+        bar.dataset.section = 'left';
+        bar.dataset.index = i;
+        bar.style.cssText = `
+            flex: 1;
+            height: 70%;
+            margin: 0 2px;
+            background: #555;
+            border-radius: 2px;
+            transition: background 0.1s;
+        `;
+        container.appendChild(bar);
+    }
+    
+    // 创建中部分（9格，绿色）
+    for (let i = 0; i < RECORD_BATTERY_CONFIG.middle.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'record-battery-item';
+        bar.dataset.section = 'middle';
+        bar.dataset.index = i;
+        bar.style.cssText = `
+            flex: 1;
+            height: 70%;
+            margin: 0 2px;
+            background: #555;
+            border-radius: 2px;
+            transition: background 0.1s;
+        `;
+        container.appendChild(bar);
+    }
+    
+    // 创建右部分（6格，红色）
+    for (let i = 0; i < RECORD_BATTERY_CONFIG.right.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'record-battery-item';
+        bar.dataset.section = 'right';
+        bar.dataset.index = i;
+        bar.style.cssText = `
+            flex: 1;
+            height: 70%;
+            margin: 0 2px;
+            background: #555;
+            border-radius: 2px;
+            transition: background 0.1s;
+        `;
+        container.appendChild(bar);
+    }
+}
+
+// 更新录制模式电量条
+function updateRecordBatteryBar(value) {
+    // value: 0-30，映射到格子
+    const bars = document.querySelectorAll('.record-battery-item');
+    const totalBars = bars.length;
+    if (totalBars === 0) {
+        console.log('updateRecordBatteryBar - 没有格子');
+        return;
+    }
+    
+    // 计算要点亮的格子数（从左边开始，因为左边是蓝色对应低速）
+    const litCount = Math.round((value / 30) * totalBars);
+    
+    console.log('updateRecordBatteryBar - value:', value, 'litCount:', litCount);
+    
+    bars.forEach((bar, index) => {
+        const section = bar.dataset.section;
+        if (index < litCount) {
+            // 点亮
+            if (section === 'left') {
+                bar.style.background = RECORD_BATTERY_CONFIG.left.color;
+            } else if (section === 'middle') {
+                bar.style.background = RECORD_BATTERY_CONFIG.middle.color;
+            } else {
+                bar.style.background = RECORD_BATTERY_CONFIG.right.color;
+            }
+        } else {
+            // 熄灭
+            bar.style.background = '#555';
+        }
+    });
+}
+
+// 显示/隐藏录制模式电量条
+function toggleRecordBatteryBar(show) {
+    const bar = document.getElementById('record-battery-bar');
+    if (bar) {
+        bar.style.display = show ? 'block' : 'none';
+    }
 }
 
 // 页面加载完成后初始化游戏

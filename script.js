@@ -1383,9 +1383,13 @@ function setupTouchListeners() {
         const touchAreaTop = document.querySelector('.touch-area-top');
         const touchAreaMiddle = document.querySelector('.touch-area-middle');
         const touchAreaBottom = document.querySelector('.touch-area-bottom');
-        if (touchAreaTop) touchAreaTop.style.opacity = '0';
-        if (touchAreaMiddle) touchAreaMiddle.style.opacity = '0';
-        if (touchAreaBottom) touchAreaBottom.style.opacity = '0';
+        
+        // 录制阶段（completeCount < 4）才隐藏绘制区域
+        if (completeCount < 4) {
+            if (touchAreaTop) touchAreaTop.style.opacity = '0';
+            if (touchAreaMiddle) touchAreaMiddle.style.opacity = '0';
+            if (touchAreaBottom) touchAreaBottom.style.opacity = '0';
+        }
         
         // 停止计时并显示最终时间
         stopStopwatch();
@@ -2036,6 +2040,12 @@ function showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBo
 
 // 清除所有触摸区域
 function clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom) {
+    // 录制模式下不隐藏绘制区域
+    if (completeCount < 4) {
+        console.log('录制模式下，不隐藏绘制区域');
+        return;
+    }
+    
     if (touchAreaTop) {
         touchAreaTop.style.opacity = '0';
     }
@@ -3059,15 +3069,6 @@ function updateRecordDrawAreas() {
     console.log('touchAreaTop visibility:', getComputedStyle(touchAreaTop).visibility);
     console.log('touchAreaTop opacity:', getComputedStyle(touchAreaTop).opacity);
     
-    // 如果 completeCount >= 4，隐藏所有绘制区域
-    if (completeCount >= 4) {
-        console.log('completeCount >= 4，隐藏绘制区域');
-        touchAreaTop.style.opacity = '0';
-        touchAreaMiddle.style.opacity = '0';
-        touchAreaBottom.style.opacity = '0';
-        return;
-    }
-    
     // completeCount < 4 时，三个区域都填实显示
     const baseOpacity = '0.6';
     const glowOpacity = '1';
@@ -3114,13 +3115,31 @@ function updateRecordDrawAreas() {
     // 根据 completeCount 和 touchCount 决定哪个区域发光
     console.log('根据 completeCount 和 touchCount 决定发光, completeCount:', completeCount, 'touchCount:', touchCount);
     
-    // 重置所有区域
+    // 正常游戏阶段（completeCount >= 4）：不填实，不发光，只显示边框
+    if (completeCount >= 4) {
+        console.log('正常游戏阶段，绘制区域不填实');
+        touchAreaTop.style.opacity = '1';
+        touchAreaTop.style.boxShadow = 'none';
+        touchAreaTop.style.backgroundColor = 'transparent';
+        touchAreaMiddle.style.opacity = '1';
+        touchAreaMiddle.style.boxShadow = 'none';
+        touchAreaMiddle.style.backgroundColor = 'transparent';
+        touchAreaBottom.style.opacity = '1';
+        touchAreaBottom.style.boxShadow = 'none';
+        touchAreaBottom.style.backgroundColor = 'transparent';
+        return;
+    }
+    
+    // 重置所有区域（录制阶段）
     touchAreaTop.style.opacity = baseOpacity;
     touchAreaTop.style.boxShadow = 'none';
+    touchAreaTop.style.backgroundColor = 'rgba(231, 76, 60, 0.5)';
     touchAreaMiddle.style.opacity = baseOpacity;
     touchAreaMiddle.style.boxShadow = 'none';
+    touchAreaMiddle.style.backgroundColor = 'rgba(46, 204, 113, 0.5)';
     touchAreaBottom.style.opacity = baseOpacity;
     touchAreaBottom.style.boxShadow = 'none';
+    touchAreaBottom.style.backgroundColor = 'rgba(241, 196, 15, 0.5)';
     
     // completeCount = 3 时，三个区域同时发光（完成阶段）
     if (completeCount === 3) {

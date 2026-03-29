@@ -116,13 +116,13 @@ body {
 
 .level-label {
     font-size: 14px;
-    color: #e74c3c;
+    color: #f1c40f;
 }
 
 .level-value {
     font-size: 24px;
     font-weight: bold;
-    color: #e74c3c;
+    color: #f1c40f;
     text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
 }
 
@@ -375,17 +375,20 @@ body {
 
 .touch-area-top {
     border-color: #e74c3c;
-    background-color: rgba(231, 76, 60, 0.2);
+    background-color: rgba(231, 76, 60, 0.5);
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
 }
 
 .touch-area-middle {
     border-color: #2ecc71;
-    background-color: rgba(46, 204, 113, 0.2);
+    background-color: rgba(46, 204, 113, 0.5);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
 }
 
 .touch-area-bottom {
     border-color: #f1c40f;
-    background-color: rgba(241, 196, 15, 0.2);
+    background-color: rgba(241, 196, 15, 0.5);
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
 }
 
 /* 电量条 */

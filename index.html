@@ -21,7 +21,7 @@
         
         <!-- 记分显示 -->
         <div class="score-display" id="score-display">
-            <div class="level-display" id="level-display">
+            <div class="level-display">
                 <span class="level-label">等级</span>
                 <span class="level-value" id="level-value">1</span>
             </div>
@@ -29,42 +29,10 @@
                 <span class="score-label">得分</span>
                 <span class="score-value" id="score-value">0</span>
             </div>
-            <div class="success-rate-row">
-                <span class="success-rate-label">成功率</span>
-                <span class="success-rate-value" id="success-rate-value">100%</span>
-            </div>
-        </div>
-        
-        <!-- 等级选择面板 -->
-        <div class="level-select-panel" id="level-select-panel" style="display: none;">
-            <div class="panel-title">选择等级</div>
-            <div class="level-grid" id="level-grid"></div>
-        </div>
-        
-        <!-- 挑战失败提示 -->
-        <div class="challenge-fail-modal" id="challenge-fail-modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-title">挑战失败</div>
-                <div class="modal-message">本局未达标，要重新挑战吗？</div>
-                <div class="modal-buttons">
-                    <button class="modal-btn retry-btn" id="retry-btn">重新挑战</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 升级成功提示 -->
-        <div class="level-up-modal" id="level-up-modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-title level-up-title">🎉 升级成功！</div>
-                <div class="modal-message" id="level-up-message">解锁下一级</div>
-                <div class="modal-buttons">
-                    <button class="modal-btn continue-btn" id="continue-btn">继续</button>
-                </div>
-            </div>
         </div>
         
         <!-- 电量条 -->
-        <div class="battery-bar hidden" id="battery-bar">
+        <div class="battery-bar" id="battery-bar">
             <div class="battery-bar-container" id="battery-bar-container">
                 <!-- 电量条格子将通过JavaScript动态生成 -->
             </div>

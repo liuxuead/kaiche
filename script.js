@@ -524,6 +524,36 @@ function initGame() {
     const loaded = loadSavedData();
     if (loaded) {
         console.log('已加载保存的数据，跳过初始化');
+    } else {
+        // 没有保存的数据，使用默认初始化数据
+        console.log('没有保存的数据，使用默认初始化数据');
+        
+        // 加载默认数据
+        completeCount = DEFAULT_GAME_DATA.completeCount;
+        touchData.bottom = { ...DEFAULT_GAME_DATA.touchData.bottom };
+        touchData.middle = { ...DEFAULT_GAME_DATA.touchData.middle };
+        touchData.top = { ...DEFAULT_GAME_DATA.touchData.top };
+        middleRangeAdjusted = DEFAULT_GAME_DATA.middleRangeAdjusted;
+        middleRangeStart = DEFAULT_GAME_DATA.middleRangeStart;
+        middleRangeEnd = DEFAULT_GAME_DATA.middleRangeEnd;
+        
+        // 加载 allTouchData
+        allTouchData.length = 0;
+        DEFAULT_GAME_DATA.allTouchData.forEach(record => {
+            allTouchData.push(record);
+        });
+        
+        // 更新UI
+        const completeCounter = document.getElementById('complete-counter');
+        if (completeCounter) {
+            completeCounter.textContent = completeCount;
+        }
+        
+        // 更新统计面板
+        updateStatsPanel();
+        updateDataDisplay();
+        
+        console.log('默认数据已加载，completeCount:', completeCount);
     }
     
     setupTouchListeners();
@@ -551,8 +581,14 @@ function initGame() {
     // 初始化框大小
     updateDynamicFrameSize();
     
-    // 监听窗口大小变化，更新框的大小
-    window.addEventListener('resize', updateDynamicFrameSize);
+    // 页面加载时立即绘制按压区域
+    drawPressAreas();
+    
+    // 监听窗口大小变化，更新框的大小和绘制区域
+    window.addEventListener('resize', () => {
+        updateDynamicFrameSize();
+        drawPressAreas();
+    });
     
     // 控制球相关变量
     let ballX = 0; // 球的X坐标（相对于框）
@@ -1085,6 +1121,33 @@ function initGame() {
 
 
 
+// 默认游戏数据（竖屏适配）
+const DEFAULT_GAME_DATA = {
+    completeCount: 4,
+    allTouchData: [
+        {
+            timestamp: 1774685517973,
+            top: { x: 200, y: 200, radius: 50, width: 100, height: 100 },
+            middle: { x: 200, y: 400, radius: 50, width: 150, height: 100 },
+            bottom: { x: 200, y: 600, radius: 50, width: 100, height: 100 }
+        },
+        {
+            timestamp: 1774685526704,
+            top: { x: 200, y: 200, radius: 50, width: 100, height: 100 },
+            middle: { x: 200, y: 400, radius: 50, width: 150, height: 100 },
+            bottom: { x: 200, y: 600, radius: 50, width: 100, height: 100 }
+        }
+    ],
+    touchData: {
+        bottom: { x: 200, y: 600, radius: 50, width: 100, height: 100 },
+        middle: { x: 200, y: 400, radius: 50, width: 150, height: 100 },
+        top: { x: 200, y: 200, radius: 50, width: 100, height: 100 }
+    },
+    middleRangeAdjusted: false,
+    middleRangeStart: 0.1,
+    middleRangeEnd: 0.6
+};
+
 // 存储触摸位置数据
 const touchData = {
     bottom: { x: 0, y: 0, radius: 50, width: 100, height: 100 },
@@ -1092,7 +1155,7 @@ const touchData = {
     top: { x: 0, y: 0, radius: 50, width: 100, height: 100 }
 };
 
-// 存储所有记录的数据
+// 存储所有记录的数据（初始为空，在 initGame 中设置默认值）
 const allTouchData = [];
 // 记录上一次"下"的数据，用来检测变化
 let lastBottomX = 0;
@@ -2280,6 +2343,9 @@ function resetAllData() {
     // 清除按压区域
     clearPressAreas();
     
+    // 重新绘制按压区域（使用默认位置）
+    drawPressAreas();
+    
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
     if (completeCounter) {
@@ -2306,8 +2372,9 @@ function drawPressAreas() {
     clearPressAreas();
     
     const stats = getStatsAverage();
+    // 如果没有统计数据，不显示绘制区域
     if (stats.top.y === 0 || stats.bottom.y === 0 || stats.middle.y === 0) {
-        console.log('统计数据不完整，无法绘制按压区域');
+        console.log('统计数据不完整，不显示绘制区域');
         return;
     }
     
@@ -2317,10 +2384,7 @@ function drawPressAreas() {
     // 获取容器高度，用于反转镜像坐标
     const containerHeight = gameContainer.clientHeight;
     
-    // 先清除现有的按压区域
-    clearPressAreas();
-    
-    // 反转镜像坐标
+    // 反转镜像坐标（触摸记录时使用了镜像坐标，现在需要反转回来显示）
     const reversedBottom = {
         x: stats.bottom.x,
         y: containerHeight - stats.bottom.y,

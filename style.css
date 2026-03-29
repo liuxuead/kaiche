@@ -27,6 +27,15 @@ body {
     color: white;
 }
 
+/* 绘制区域（按压区域） */
+.press-area {
+    position: absolute;
+    border-radius: 50%;
+    background-color: transparent;
+    pointer-events: none;
+    z-index: 20;
+}
+
 /* 等级显示 */
 .level-display {
     position: absolute;
@@ -35,7 +44,7 @@ body {
     transform: translateY(-50%) rotate(-90deg);
     font-size: 1.5rem;
     font-weight: bold;
-    color: #ffffff;
+    color: #e74c3c;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     z-index: 100;
     white-space: nowrap;

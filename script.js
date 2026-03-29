@@ -1615,6 +1615,9 @@ function recordTouchData(touch) {
             completeCounter.textContent = completeCount;
             console.log('第一次录入完成，completeCount:', completeCount);
             
+            // 更新绘制区域显示（可能需要发光）
+            updateRecordDrawAreas();
+            
             // 当completeCount变为3时，开始仪表盘闪烁
             if (completeCount === 3) {
                 console.log('completeCount 变为3，开始仪表盘闪烁');
@@ -1704,6 +1707,9 @@ function recordTouchData(touch) {
                 const completeCounter = document.getElementById('complete-counter');
                 completeCounter.textContent = completeCount;
                 console.log('录入完成，completeCount:', completeCount);
+                
+                // 更新绘制区域显示（可能需要发光）
+                updateRecordDrawAreas();
                 
                 // 存到数组
                 saveTouchDataToAll();
@@ -3000,14 +3006,21 @@ function clearPressAreas() {
 
 // 更新录制模式下的绘制区域显示（completeCount < 4）
 function updateRecordDrawAreas() {
+    console.log('=== updateRecordDrawAreas 被调用 ===');
+    console.log('completeCount:', completeCount, 'touchCount:', touchCount);
+    
     const touchAreaTop = document.querySelector('.touch-area-top');
     const touchAreaMiddle = document.querySelector('.touch-area-middle');
     const touchAreaBottom = document.querySelector('.touch-area-bottom');
     
-    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) return;
+    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) {
+        console.log('找不到绘制区域元素');
+        return;
+    }
     
     // 如果 completeCount >= 4，隐藏所有绘制区域
     if (completeCount >= 4) {
+        console.log('completeCount >= 4，隐藏绘制区域');
         touchAreaTop.style.opacity = '0';
         touchAreaMiddle.style.opacity = '0';
         touchAreaBottom.style.opacity = '0';
@@ -3023,6 +3036,7 @@ function updateRecordDrawAreas() {
     
     // 获取统计数据（平均值或直接值）
     const statsData = getStatsAverage();
+    console.log('统计数据:', statsData);
     
     // 获取默认数据中的位置
     const defaultTop = DEFAULT_GAME_DATA.touchData.top;
@@ -3056,21 +3070,47 @@ function updateRecordDrawAreas() {
     touchAreaBottom.style.width = `${bottomRadius * 2}px`;
     touchAreaBottom.style.height = `${bottomRadius * 2}px`;
     
-    // completeCount = 3 时，三个区域同时发光
+    // 根据 completeCount 和 touchCount 决定哪个区域发光
+    console.log('根据 completeCount 和 touchCount 决定发光, completeCount:', completeCount, 'touchCount:', touchCount);
+    
+    // 重置所有区域
+    touchAreaTop.style.opacity = baseOpacity;
+    touchAreaTop.style.boxShadow = 'none';
+    touchAreaMiddle.style.opacity = baseOpacity;
+    touchAreaMiddle.style.boxShadow = 'none';
+    touchAreaBottom.style.opacity = baseOpacity;
+    touchAreaBottom.style.boxShadow = 'none';
+    
+    // completeCount = 3 时，三个区域同时发光（完成阶段）
     if (completeCount === 3) {
+        console.log('completeCount = 3，三个区域同时发光！');
         touchAreaTop.style.opacity = glowOpacity;
         touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
         touchAreaMiddle.style.opacity = glowOpacity;
         touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
         touchAreaBottom.style.opacity = glowOpacity;
         touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
-    } else {
-        touchAreaTop.style.opacity = baseOpacity;
-        touchAreaTop.style.boxShadow = 'none';
-        touchAreaMiddle.style.opacity = baseOpacity;
-        touchAreaMiddle.style.boxShadow = 'none';
-        touchAreaBottom.style.opacity = baseOpacity;
-        touchAreaBottom.style.boxShadow = 'none';
+    }
+    // 录制阶段（completeCount < 3）
+    else {
+        // touchCount = 0 或 3 时，下区域发光
+        if (touchCount === 0 || touchCount === 3) {
+            console.log('touchCount = 0 或 3，下区域发光');
+            touchAreaBottom.style.opacity = glowOpacity;
+            touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
+        }
+        // touchCount = 1 时，中区域发光
+        else if (touchCount === 1) {
+            console.log('touchCount = 1，中区域发光');
+            touchAreaMiddle.style.opacity = glowOpacity;
+            touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
+        }
+        // touchCount = 2 时，上区域发光
+        else if (touchCount === 2) {
+            console.log('touchCount = 2，上区域发光');
+            touchAreaTop.style.opacity = glowOpacity;
+            touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
+        }
     }
 }
 

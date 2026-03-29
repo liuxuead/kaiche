@@ -1325,17 +1325,36 @@ function setupTouchListeners() {
             
             // 更新仪表盘数值
             targetDashboardValue = calculateDashboardValue(mirrorY);
-            console.log('录制模式 - mirrorY:', mirrorY, 'targetDashboardValue:', targetDashboardValue);
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
             
-            // 更新电量条
-            console.log('调用updateBatteryBar, value:', targetDashboardValue);
-            updateBatteryBar(targetDashboardValue);
+            // 确定手指在哪个区域
+            let currentPosition = '';
+            if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
+                const dx = mirrorX - touchData.bottom.x;
+                const dy = mirrorY - touchData.bottom.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist <= touchData.bottom.radius) currentPosition = 'bottom';
+            }
+            if (!currentPosition && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
+                const dx = mirrorX - touchData.middle.x;
+                const dy = mirrorY - touchData.middle.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist <= touchData.middle.radius) currentPosition = 'middle';
+            }
+            if (!currentPosition && (touchData.top.x !== 0 || touchData.top.y !== 0)) {
+                const dx = mirrorX - touchData.top.x;
+                const dy = mirrorY - touchData.top.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist <= touchData.top.radius) currentPosition = 'top';
+            }
             
-            // 更新新的录制模式电量条
-            updateRecordBatteryBar(targetDashboardValue);
+            // 根据位置高亮绘制区域和仪表盘
+            if (currentPosition) {
+                highlightDrawAreaByPosition(currentPosition);
+                updateDashboardGlow(currentPosition);
+            }
         }
         
         // 实时更新电量条（completeCount达到4后才启用）
@@ -1385,30 +1404,25 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // completeCount <= 3 时，仪表盘数值回落到0，电量条也清空
+        // 清除仪表盘发光效果
+        clearDashboardGlow();
+        
+        // completeCount <= 3 时，仪表盘数值回落到0，绘制区域恢复基础状态
         if (completeCount <= 3) {
             targetDashboardValue = 0;
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
-            // 清空电量条，恢复透明
-            const bars = document.querySelectorAll('.battery-bar-item');
-            bars.forEach(bar => {
-                bar.style.background = 'transparent';
-            });
+            // 恢复绘制区域为基础状态（填实但不发光）
+            updateRecordDrawAreas();
         }
         
-        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
+        // completeCount >=4 时，仪表盘数值回落到0
         if (completeCount >= 4) {
             targetDashboardValue = 0;
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
-            // 清空电量条，恢复透明
-            const bars = document.querySelectorAll('.battery-bar-item');
-            bars.forEach(bar => {
-                bar.style.background = 'transparent';
-            });
         }
     });
     
@@ -2179,6 +2193,11 @@ function stopStopwatch() {
     
     console.log('stopStopwatch 被调用，completeCount:', completeCount, 'totalSeconds:', totalSeconds, 'currentTouch:', currentTouch ? '存在' : '不存在');
     
+    // 更新绘制区域显示（录制模式下）
+    if (completeCount < 4) {
+        updateRecordDrawAreas();
+    }
+    
     // 当completeCount=3且计时达到3秒时，调整"中"的范围
     if (completeCount === 3 && totalSeconds >= 3 && currentTouch) {
         console.log('计时达到3秒，调整"中"的范围');
@@ -2210,6 +2229,8 @@ function stopStopwatch() {
         drawPressAreas();
         // 保存数据到localStorage
         saveStatsData();
+        // 更新绘制区域显示（切换到正常模式）
+        updateRecordDrawAreas();
     }
 }
 
@@ -2476,14 +2497,8 @@ function resetRecordData() {
     updateDataDisplay();
     updateStatsPanel();
     
-    // 恢复电量条显示 - completeCount < 4 时显示
-    const batteryBar = document.querySelector('.battery-bar');
-    if (batteryBar) {
-        batteryBar.classList.remove('hidden'); // 显示电量条
-        batteryBar.style.boxShadow = 'none';
-        batteryBar.style.border = 'none';
-        console.log('重置记录数据，completeCount = 0，显示电量条');
-    }
+    // 更新录制模式下的绘制区域显示
+    updateRecordDrawAreas();
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
@@ -3068,18 +3083,11 @@ function initGameSystem() {
     loadGameData();
     setupLevelLongPress();
     
-    // 初始化录制模式电量条
-    initRecordBatteryBar();
+    // 隐藏录制模式电量条
+    toggleRecordBatteryBar(false);
     
-    // 根据completeCount决定电量条显示/隐藏
-    // 控制新的录制模式电量条显示/隐藏
-    if (completeCount >= 4) {
-        toggleRecordBatteryBar(false);
-        console.log('游戏系统初始化，completeCount >= 4，隐藏录制模式电量条');
-    } else {
-        toggleRecordBatteryBar(true);
-        console.log('游戏系统初始化，completeCount < 4，显示录制模式电量条');
-    }
+    // 初始化录制模式下的绘制区域显示
+    updateRecordDrawAreas();
     
     // 设置按钮事件
     document.getElementById('retry-btn').onclick = hideModals;
@@ -3453,6 +3461,112 @@ function toggleRecordBatteryBar(show) {
     const bar = document.getElementById('record-battery-bar');
     if (bar) {
         bar.style.display = show ? 'block' : 'none';
+    }
+}
+
+// 更新录制模式下的绘制区域显示（completeCount < 4）
+function updateRecordDrawAreas() {
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    
+    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) return;
+    
+    // 如果 completeCount >= 4，隐藏所有绘制区域
+    if (completeCount >= 4) {
+        touchAreaTop.style.opacity = '0';
+        touchAreaMiddle.style.opacity = '0';
+        touchAreaBottom.style.opacity = '0';
+        return;
+    }
+    
+    // completeCount < 4 时，三个区域都填实显示
+    // 设置基础样式（填实但不发光）
+    const baseOpacity = '0.6';
+    const glowOpacity = '1';
+    
+    // 根据 touchData 设置位置和大小
+    if (touchData.top.x !== 0 || touchData.top.y !== 0) {
+        touchAreaTop.style.left = `${touchData.top.x}px`;
+        touchAreaTop.style.top = `${touchData.top.y}px`;
+        touchAreaTop.style.width = `${touchData.top.radius * 2}px`;
+        touchAreaTop.style.height = `${touchData.top.radius * 2}px`;
+        touchAreaTop.style.opacity = baseOpacity;
+    }
+    
+    if (touchData.middle.x !== 0 || touchData.middle.y !== 0) {
+        touchAreaMiddle.style.left = `${touchData.middle.x}px`;
+        touchAreaMiddle.style.top = `${touchData.middle.y}px`;
+        touchAreaMiddle.style.width = `${touchData.middle.radius * 2}px`;
+        touchAreaMiddle.style.height = `${touchData.middle.radius * 2}px`;
+        touchAreaMiddle.style.opacity = baseOpacity;
+    }
+    
+    if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
+        touchAreaBottom.style.left = `${touchData.bottom.x}px`;
+        touchAreaBottom.style.top = `${touchData.bottom.y}px`;
+        touchAreaBottom.style.width = `${touchData.bottom.radius * 2}px`;
+        touchAreaBottom.style.height = `${touchData.bottom.radius * 2}px`;
+        touchAreaBottom.style.opacity = baseOpacity;
+    }
+}
+
+// 根据手指位置高亮对应的绘制区域（录制模式）
+function highlightDrawAreaByPosition(position) {
+    if (completeCount >= 4) return;
+    
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    
+    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) return;
+    
+    // 重置所有区域为基础透明度
+    const baseOpacity = '0.6';
+    const glowOpacity = '1';
+    
+    touchAreaTop.style.opacity = baseOpacity;
+    touchAreaMiddle.style.opacity = baseOpacity;
+    touchAreaBottom.style.opacity = baseOpacity;
+    
+    // 根据位置高亮对应区域
+    if (position === 'bottom' && (touchData.bottom.x !== 0 || touchData.bottom.y !== 0)) {
+        touchAreaBottom.style.opacity = glowOpacity;
+        touchAreaBottom.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
+    } else if (position === 'middle' && (touchData.middle.x !== 0 || touchData.middle.y !== 0)) {
+        touchAreaMiddle.style.opacity = glowOpacity;
+        touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
+    } else if (position === 'top' && (touchData.top.x !== 0 || touchData.top.y !== 0)) {
+        touchAreaTop.style.opacity = glowOpacity;
+        touchAreaTop.style.boxShadow = '0 0 20px #3498db, 0 0 40px #3498db';
+    }
+}
+
+// 更新仪表盘发光效果（录制模式）
+function updateDashboardGlow(position) {
+    if (completeCount >= 4) return;
+    
+    const dashboard = document.querySelector('.dashboard');
+    if (!dashboard) return;
+    
+    // 清除之前的发光效果
+    dashboard.style.boxShadow = '';
+    
+    // 根据位置设置发光颜色
+    if (position === 'bottom') {
+        dashboard.style.boxShadow = '0 0 30px #f1c40f, 0 0 60px #f1c40f';
+    } else if (position === 'middle') {
+        dashboard.style.boxShadow = '0 0 30px #2ecc71, 0 0 60px #2ecc71';
+    } else if (position === 'top') {
+        dashboard.style.boxShadow = '0 0 30px #e74c3c, 0 0 60px #e74c3c';
+    }
+}
+
+// 清除仪表盘发光效果
+function clearDashboardGlow() {
+    const dashboard = document.querySelector('.dashboard');
+    if (dashboard) {
+        dashboard.style.boxShadow = '';
     }
 }
 

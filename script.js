@@ -288,65 +288,6 @@ function continuousLaneUpdate() {
     requestAnimationFrame(continuousLaneUpdate);
 }
 
-// 输出车道线和小车位置日志
-function logLaneAndCarPositions() {
-    const gameContainer = document.querySelector('.game-container');
-    const yellowRectangle = document.getElementById('yellow-rectangle');
-    const topTopLane = document.getElementById('top-top-lane');
-    const topLane = document.getElementById('top-lane');
-    const bottomLane = document.getElementById('bottom-lane');
-    const bottomBottomLane = document.getElementById('bottom-bottom-lane');
-    
-    if (gameContainer && yellowRectangle) {
-        const containerRect = gameContainer.getBoundingClientRect();
-        const carRect = yellowRectangle.getBoundingClientRect();
-        
-        console.log('=== 位置信息日志 ===');
-        console.log('游戏容器高度:', containerRect.height);
-        console.log('游戏容器顶部:', containerRect.top);
-        console.log('游戏容器底部:', containerRect.bottom);
-        console.log('');
-        
-        // 计算小车位置
-        const carY = carRect.top - containerRect.top;
-        const carCenterY = carY + (carRect.height / 2);
-        console.log('小车位置:');
-        console.log('  顶部 Y:', Math.round(carY));
-        console.log('  中心 Y:', Math.round(carCenterY));
-        console.log('  底部 Y:', Math.round(carY + carRect.height));
-        console.log('');
-        
-        // 计算车道线位置
-        if (topTopLane) {
-            const topTopLaneRect = topTopLane.getBoundingClientRect();
-            const topTopLaneY = topTopLaneRect.top - containerRect.top;
-            console.log('上方车道线 (top-top-lane):', Math.round(topTopLaneY));
-        }
-        
-        if (topLane) {
-            const topLaneRect = topLane.getBoundingClientRect();
-            const topLaneY = topLaneRect.top - containerRect.top;
-            console.log('上方车道线 (top-lane):', Math.round(topLaneY));
-        }
-        
-        if (bottomLane) {
-            const bottomLaneRect = bottomLane.getBoundingClientRect();
-            const bottomLaneY = bottomLaneRect.top - containerRect.top;
-            console.log('下方车道线 (bottom-lane):', Math.round(bottomLaneY));
-        }
-        
-        if (bottomBottomLane) {
-            const bottomBottomLaneRect = bottomBottomLane.getBoundingClientRect();
-            const bottomBottomLaneY = bottomBottomLaneRect.top - containerRect.top;
-            console.log('下方车道线 (bottom-bottom-lane):', Math.round(bottomBottomLaneY));
-        }
-        
-        console.log('====================');
-    }
-}
-
-
-
 // 根据触摸位置计算仪表盘数值
 function calculateDashboardValue(mirrorY) {
     const stats = getStatsAverage();
@@ -375,7 +316,6 @@ function calculateDashboardValue(mirrorY) {
     let position = (relativeY - minY) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
-    // 电量条下方亮 = 仪表盘0，电量条上方亮 = 仪表盘300
     // 直接返回计算值：下方position=0时返回0，上方position=1时返回300
     let rawValue = position * DASHBOARD_MAX_VALUE;
     
@@ -1134,6 +1074,9 @@ function initGame() {
                     
                     // 更新得分显示
                     updateScoreDisplay();
+                    
+                    // 检查是否达标
+                    checkRoundEnd();
                 }
             }
         }
@@ -1349,7 +1292,12 @@ function updateTimer() {
     // 检查是否时间到
     if (!timerPaused && remainingTime <= 0) {
         clearInterval(timerInterval);
-        checkRoundEnd();
+        
+        // 检查是否达标
+        const leveledUp = checkLevelUp();
+        if (!leveledUp) {
+            showChallengeFailModal();
+        }
     }
 }
 
@@ -1372,24 +1320,8 @@ function checkLevelUp() {
     return false;
 }
 
-// 检查本局是否结束（3分钟时间限制或达标）
+// 检查本局是否结束（达标或时间到）
 function checkRoundEnd() {
-    const currentTime = Date.now();
-    
-    // 检查时间是否到
-    if (currentTime - roundStartTime >= ROUND_TIME_LIMIT) {
-        // 清除计时器
-        if (timerInterval) {
-            clearInterval(timerInterval);
-        }
-        
-        const leveledUp = checkLevelUp();
-        if (!leveledUp) {
-            showChallengeFailModal();
-        }
-        return true;
-    }
-    
     // 实时检查是否达标
     const leveledUp = checkLevelUp();
     if (leveledUp) {
@@ -1611,6 +1543,9 @@ function updateGreenBalls() {
                 
                 // 更新得分显示
                 updateScoreDisplay();
+                
+                // 检查是否达标
+                checkRoundEnd();
             }
         }
     }
@@ -1630,6 +1565,18 @@ function initGameSystem() {
     updateScoreDisplay();
     
     console.log('游戏系统初始化完成，当前等级:', currentLevel);
+    
+    // 检验不需要的元素是否被清除
+    console.log('=== 检验不需要的元素 ===');
+    
+    // 检验白色虚线的车道
+    const lanes = [
+        document.getElementById('top-top-lane'),
+        document.getElementById('top-lane'),
+        document.getElementById('bottom-lane'),
+        document.getElementById('bottom-bottom-lane')
+    ];
+    console.log('车道线元素:', lanes);
 }
 
 // 设置等级点击事件
@@ -2060,19 +2007,17 @@ function setupTouchListeners() {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
-        // 实时更新电量条和仪表盘（completeCount <= 3 时启用）
-        if (completeCount <= 3) {
-            const gameContainer = document.querySelector('.game-container');
-            const containerHeight = gameContainer.clientHeight;
-            const rect = gameContainer.getBoundingClientRect();
-            const mirrorX = e.clientX - rect.left;
-            const mirrorY = containerHeight - e.clientY;
-            
-            // 更新仪表盘数值
-            targetDashboardValue = calculateDashboardValue(mirrorY);
-            if (!dashboardAnimationId) {
-                updateDashboardValue();
-            }
+        // 实时更新仪表盘
+        const gameContainer = document.querySelector('.game-container');
+        const containerHeight = gameContainer.clientHeight;
+        const rect = gameContainer.getBoundingClientRect();
+        const mirrorX = e.clientX - rect.left;
+        const mirrorY = containerHeight - e.clientY;
+        
+        // 更新仪表盘数值
+        targetDashboardValue = calculateDashboardValue(mirrorY);
+        if (!dashboardAnimationId) {
+            updateDashboardValue();
         }
         
         // completeCount达到4后才启用绘制区域逻辑
@@ -2198,23 +2143,12 @@ function recordTouchData(touch) {
             completeCounter.textContent = completeCount;
             console.log('第一次录入完成，completeCount:', completeCount);
             
-            // 当completeCount变为3时，开始仪表盘闪烁，隐藏电量条
+            // 当completeCount变为3时，开始仪表盘闪烁
             if (completeCount === 3) {
-                console.log('completeCount 变为3，开始仪表盘闪烁，隐藏电量条');
+                console.log('completeCount 变为3，开始仪表盘闪烁');
                 const dashboard = document.querySelector('.dashboard');
                 if (dashboard) {
                     dashboard.classList.add('blinking');
-                }
-                
-                // 隐藏电量条
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
-                    console.log('找到电量条元素，添加hidden类');
-                    batteryBar.classList.add('hidden');
-                    console.log('电量条类列表:', batteryBar.className);
-                    console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
-                } else {
-                    console.log('未找到电量条元素');
                 }
                 
                 // 显示确认全指数据的提示
@@ -2303,7 +2237,6 @@ function recordTouchData(touch) {
     }
     
     updateDataDisplay();
-     // 更新电量条记录状态
 }
 
 // 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）
@@ -2339,12 +2272,6 @@ function saveTouchDataToAll() {
         
         // 检查是否达到3次
             if (allTouchData.length >= 3) {
-                // 电量条边框变亮，表示已锁定（仅在电量条未隐藏时）
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar && !batteryBar.classList.contains('hidden')) {
-                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                    batteryBar.style.border = '2px solid #00ff00';
-                }
                 console.log('========================================');
                 console.log('统计已达到3次！记录区域停止记录');
                 console.log('========================================');
@@ -2732,22 +2659,11 @@ function stopStopwatch() {
             dashboard.classList.remove('blinking');
         }
         
-        // 确保电量条保持隐藏状态
-        const batteryBar = document.querySelector('.battery-bar');
-        if (batteryBar) {
-            batteryBar.classList.add('hidden');
-        }
-        
         adjustMiddleRange(currentTouch);
         // 将completeCount增加到4，避免再次触发
         completeCount = 4;
         const completeCounter = document.getElementById('complete-counter');
         completeCounter.textContent = completeCount;
-        // 显示长方形
-        const yellowRectangle = document.getElementById('yellow-rectangle');
-        if (yellowRectangle) {
-            yellowRectangle.style.display = 'block';
-        }
         // 绘制按压区域
         drawPressAreas();
         // 保存数据到localStorage
@@ -2950,14 +2866,6 @@ function resetRecordData() {
     clearDisplayText(textTop, textMiddle, textBottom);
     updateDataDisplay();
     updateStatsPanel();
-    
-    // 恢复电量条显示
-    const batteryBar = document.querySelector('.battery-bar');
-    if (batteryBar) {
-        batteryBar.classList.remove('hidden');
-        batteryBar.style.boxShadow = 'none';
-        batteryBar.style.border = '2px solid #3498db';
-    }
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');

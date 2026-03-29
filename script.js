@@ -3119,27 +3119,21 @@ function updateRecordDrawAreas() {
     if (completeCount >= 4) {
         console.log('正常游戏阶段，绘制区域不填实');
         touchAreaTop.style.opacity = '1';
-        touchAreaTop.style.boxShadow = 'none';
-        touchAreaTop.style.backgroundColor = 'transparent';
+        touchAreaTop.classList.remove('filled');
         touchAreaMiddle.style.opacity = '1';
-        touchAreaMiddle.style.boxShadow = 'none';
-        touchAreaMiddle.style.backgroundColor = 'transparent';
+        touchAreaMiddle.classList.remove('filled');
         touchAreaBottom.style.opacity = '1';
-        touchAreaBottom.style.boxShadow = 'none';
-        touchAreaBottom.style.backgroundColor = 'transparent';
+        touchAreaBottom.classList.remove('filled');
         return;
     }
     
     // 重置所有区域（录制阶段）
     touchAreaTop.style.opacity = baseOpacity;
-    touchAreaTop.style.boxShadow = 'none';
-    touchAreaTop.style.backgroundColor = 'rgba(231, 76, 60, 0.5)';
+    touchAreaTop.classList.add('filled');
     touchAreaMiddle.style.opacity = baseOpacity;
-    touchAreaMiddle.style.boxShadow = 'none';
-    touchAreaMiddle.style.backgroundColor = 'rgba(46, 204, 113, 0.5)';
+    touchAreaMiddle.classList.add('filled');
     touchAreaBottom.style.opacity = baseOpacity;
-    touchAreaBottom.style.boxShadow = 'none';
-    touchAreaBottom.style.backgroundColor = 'rgba(241, 196, 15, 0.5)';
+    touchAreaBottom.classList.add('filled');
     
     // completeCount = 3 时，三个区域同时发光（完成阶段）
     if (completeCount === 3) {

@@ -113,16 +113,6 @@ function adjustMiddleRange(touch) {
     console.log('按压位置:', position.toFixed(2));
     console.log('新的"中"范围:', middleRangeStart.toFixed(2), '-', middleRangeEnd.toFixed(2));
     console.log('========================================');
-    
-    // 电量条闪烁提示
-    const batteryBar = document.querySelector('.battery-bar');
-    if (batteryBar) {
-        batteryBar.style.boxShadow = '0 0 20px #ffff00, 0 0 40px #ffff00';
-        setTimeout(() => {
-            batteryBar.style.boxShadow = 'none';
-            batteryBar.style.border = 'none';
-        }, 500);
-    }
 }
 
 // 判断触摸位置是否在绘制范围附近
@@ -416,9 +406,6 @@ function initGame() {
         dashboardEl.textContent = '0';
     }
     
-    // 初始化电量条
-    initBatteryBar();
-    
     // 上中下按钮事件
     const btnTop = document.getElementById('btn-top');
     const btnMiddle = document.getElementById('btn-middle');
@@ -472,14 +459,6 @@ function initGame() {
             
             // 更新统计面板为0
             updateStatsPanel();
-             // 重置电量条
-            
-            // 恢复电量条边框样式
-            const batteryBar = document.querySelector('.battery-bar');
-            if (batteryBar) {
-                batteryBar.style.boxShadow = 'none';
-                batteryBar.style.border = 'none';
-            }
             
             // 重置仪表盘显示0
             dashboardValue = 0;
@@ -524,14 +503,6 @@ function initGame() {
             clearDisplayText(textTop, textMiddle, textBottom);
             updateDataDisplay();
             updateStatsPanel();
-             // 重置电量条
-            
-            // 恢复电量条边框样式
-            const batteryBar = document.querySelector('.battery-bar');
-            if (batteryBar) {
-                batteryBar.style.boxShadow = 'none';
-                batteryBar.style.border = 'none';
-            }
             
             // 更新完成计数器
             const completeCounter = document.getElementById('complete-counter');
@@ -1255,12 +1226,9 @@ function setupTouchListeners() {
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
-            
-            // 更新电量条
-            updateBatteryBar(targetDashboardValue);
         }
         
-        // 实时更新电量条（completeCount达到4后才启用）
+        // completeCount达到4后才启用绘制区域逻辑
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1307,30 +1275,10 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // completeCount <= 3 时，仪表盘数值回落到0，电量条也清空
-        if (completeCount <= 3) {
-            targetDashboardValue = 0;
-            if (!dashboardAnimationId) {
-                updateDashboardValue();
-            }
-            // 清空电量条，恢复透明
-            const bars = document.querySelectorAll('.battery-bar-item');
-            bars.forEach(bar => {
-                bar.style.background = 'transparent';
-            });
-        }
-        
-        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
-        if (completeCount >= 4) {
-            targetDashboardValue = 0;
-            if (!dashboardAnimationId) {
-                updateDashboardValue();
-            }
-            // 清空电量条，恢复透明
-            const bars = document.querySelectorAll('.battery-bar-item');
-            bars.forEach(bar => {
-                bar.style.background = 'transparent';
-            });
+        // 触摸结束时仪表盘数值回落到0
+        targetDashboardValue = 0;
+        if (!dashboardAnimationId) {
+            updateDashboardValue();
         }
     });
     
@@ -1418,12 +1366,9 @@ function setupTouchListeners() {
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
-            
-            // 更新电量条
-            updateBatteryBar(targetDashboardValue);
         }
         
-        // 实时更新电量条（completeCount达到4后才启用）
+        // completeCount达到4后才启用绘制区域逻辑
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1456,17 +1401,10 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
-        if (completeCount >= 4) {
-            targetDashboardValue = 0;
-            if (!dashboardAnimationId) {
-                updateDashboardValue();
-            }
-            // 清空电量条，恢复透明
-            const bars = document.querySelectorAll('.battery-bar-item');
-            bars.forEach(bar => {
-                bar.style.background = 'transparent';
-            });
+        // 鼠标松开时仪表盘数值回落到0
+        targetDashboardValue = 0;
+        if (!dashboardAnimationId) {
+            updateDashboardValue();
         }
     });
 }
@@ -1560,46 +1498,11 @@ function recordTouchData(touch) {
                 }
             }
             
-            // 当completeCount > 3时，确保电量条保持隐藏
-            if (completeCount > 3) {
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
-                    if (!batteryBar.classList.contains('hidden')) {
-                        console.log('completeCount > 3，确保电量条保持隐藏');
-                        batteryBar.classList.add('hidden');
-                        console.log('电量条类列表:', batteryBar.className);
-                        console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
-                    } else {
-                        console.log('completeCount > 3，电量条已经隐藏，无需操作');
-                        console.log('电量条类列表:', batteryBar.className);
-                        console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
-                    }
-                } else {
-                    console.log('completeCount > 3，未找到电量条元素');
-                }
-            }
-            
-            // 测试：当 completeCount 变为4时显示长方形
-            if (completeCount === 4) {
-                console.log('completeCount 变为4，测试显示长方形');
-                const yellowRectangle = document.getElementById('yellow-rectangle');
-                if (yellowRectangle) {
-                    yellowRectangle.style.display = 'block';
-                }
-            }
-            
             // 存到数组
             saveTouchDataToAll();
             
             // 检查是否达到3次
             if (completeCount >= 3) {
-                // 电量条边框变亮，表示统计完成（仅在电量条未隐藏时）
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar && !batteryBar.classList.contains('hidden')) {
-                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                    batteryBar.style.border = '2px solid #00ff00';
-                }
-                
                 console.log('========================================');
                 console.log('统计完成！completeCount = 3');
                 console.log('请长按压3秒调整"中"的范围');
@@ -1622,13 +1525,6 @@ function recordTouchData(touch) {
             
             // 检查是否达到3次，如果是就不再记录
                 if (completeCount >= 3) {
-                    // 电量条边框变亮，表示统计完成（仅在电量条未隐藏时）
-                    const batteryBar = document.querySelector('.battery-bar');
-                    if (batteryBar && !batteryBar.classList.contains('hidden')) {
-                        batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                        batteryBar.style.border = '2px solid #00ff00';
-                    }
-                    
                     console.log('========================================');
                     console.log('统计完成！completeCount = 3');
                     console.log('请长按压3秒调整"中"的范围');
@@ -2188,21 +2084,6 @@ function loadSavedData() {
                     drawPressAreas();
                 }
                 
-                // 处理电量条显示/隐藏
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
-                    if (completeCount <= 3) {
-                        // 激活电量条
-                        batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                        batteryBar.style.border = '2px solid #00ff00';
-                        console.log('从localStorage加载数据，completeCount <= 3，激活电量条');
-                    } else {
-                        // 隐藏电量条
-                        batteryBar.classList.add('hidden');
-                        console.log('从localStorage加载数据，completeCount > 3，隐藏电量条');
-                    }
-                }
-                
                 console.log('从localStorage加载了统计数据，completeCount:', completeCount);
                 return true; // 返回true表示加载成功
             }
@@ -2395,29 +2276,9 @@ function resetAllData() {
     clearDisplayText(textTop, textMiddle, textBottom);
     updateDataDisplay();
     updateStatsPanel();
-     // 重置电量条
     
     // 清除按压区域
     clearPressAreas();
-    
-    // 恢复电量条边框样式和位置大小
-    const batteryBar = document.querySelector('.battery-bar');
-    if (batteryBar) {
-        batteryBar.style.boxShadow = 'none';
-        batteryBar.style.border = 'none';
-        // 重置电量条位置和大小
-        batteryBar.style.position = 'fixed';
-        batteryBar.style.bottom = '170px';
-        batteryBar.style.right = '20px';
-        batteryBar.style.transform = 'none';
-        batteryBar.style.zIndex = '99999';
-        batteryBar.style.width = '320px'; // 恢复原来的宽度
-        batteryBar.style.height = '30px'; // 恢复原来的高度
-        batteryBar.style.pointerEvents = 'auto'; // 恢复事件捕获
-        batteryBar.style.backgroundColor = '#333'; // 恢复背景色
-        batteryBar.style.display = 'flex'; // 恢复显示
-        batteryBar.classList.remove('hidden'); // 移除隐藏类
-    }
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
@@ -2548,161 +2409,7 @@ function clearPressAreas() {
     areas.forEach(area => area.remove());
 }
 
-// 电量条分区配置
-const BATTERY_BAR_CONFIG = {
-    top: { count: 6, color: '#e74c3c' },      // 上：6格，红色
-    middle: { count: 9, color: '#2ecc71' },   // 中：9格，绿色
-    bottom: { count: 5, color: '#3498db' }    // 下：5格，蓝色
-};
 
-// 初始化电量条
-function initBatteryBar() {
-    const batteryBarContainer = document.getElementById('battery-bar-container');
-    if (!batteryBarContainer) return;
-    
-    // 清空现有内容
-    batteryBarContainer.innerHTML = '';
-    
-    // 创建上部分（6格，红色）
-    for (let i = 0; i < BATTERY_BAR_CONFIG.top.count; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'battery-bar-item';
-        bar.dataset.section = 'top';
-        bar.dataset.index = i;
-        batteryBarContainer.appendChild(bar);
-    }
-    
-    // 创建中部分（9格，绿色）
-    for (let i = 0; i < BATTERY_BAR_CONFIG.middle.count; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'battery-bar-item';
-        bar.dataset.section = 'middle';
-        bar.dataset.index = i;
-        batteryBarContainer.appendChild(bar);
-    }
-    
-    // 创建下部分（5格，蓝色）
-    for (let i = 0; i < BATTERY_BAR_CONFIG.bottom.count; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'battery-bar-item';
-        bar.dataset.section = 'bottom';
-        bar.dataset.index = i;
-        batteryBarContainer.appendChild(bar);
-    }
-}
-
-// 更新电量条显示
-function updateBatteryBar(value) {
-    // 检查电量条是否被隐藏，如果是则不更新
-    const batteryBar = document.querySelector('.battery-bar');
-    if (batteryBar && batteryBar.classList.contains('hidden')) {
-        return;
-    }
-    
-    // value: 0-30，映射到0-20个格子（6+9+5）
-    const stats = getStatsAverage();
-    if (stats.top.y === 0 || stats.bottom.y === 0) {
-        return;
-    }
-    
-    const gameContainer = document.querySelector('.game-container');
-    if (!gameContainer) return;
-    
-    const rect = gameContainer.getBoundingClientRect();
-    // 根据仪表盘数值计算相对Y坐标
-    const relativeY = (value / 30) * rect.height;
-    
-    // 计算当前Y在统计范围内的位置 (0-1)
-    let totalRange = Math.abs(stats.bottom.y - stats.top.y);
-    if (totalRange <= 0) {
-        totalRange = 100;
-    }
-    
-    // 确定哪个是上，哪个是下
-    const minY = Math.min(stats.top.y, stats.bottom.y);
-    const maxY = Math.max(stats.top.y, stats.bottom.y);
-    
-    let position;
-    if (totalRange === 100) {
-        position = 0.5;
-    } else {
-        position = (relativeY - minY) / totalRange;
-        position = Math.max(0, Math.min(1, position));
-    }
-    
-    // 反转位置，让上下对应
-    position = 1 - position;
-    
-    // 根据位置确定在哪个区域
-    // 上区域：0-0.3 (6格)
-    // 中区域：0.3-0.8 (9格)
-    // 下区域：0.8-1 (5格)
-    let targetSection, sectionIndex, sectionPosition;
-    const topThreshold = 0.3;
-    const bottomThreshold = 0.8;
-    
-    if (position < topThreshold) {
-        // 上区域
-        targetSection = 'top';
-        sectionPosition = position / topThreshold;
-        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.top.count - 1));
-    } else if (position > bottomThreshold) {
-        // 下区域
-        targetSection = 'bottom';
-        sectionPosition = (position - bottomThreshold) / (1 - bottomThreshold);
-        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.bottom.count - 1));
-    } else {
-        // 中区域
-        targetSection = 'middle';
-        sectionPosition = (position - topThreshold) / (bottomThreshold - topThreshold);
-        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.middle.count - 1));
-    }
-    
-    // 计算在总格子中的索引
-    let centerIndex;
-    if (targetSection === 'top') {
-        centerIndex = sectionIndex;
-    } else if (targetSection === 'middle') {
-        centerIndex = BATTERY_BAR_CONFIG.top.count + sectionIndex;
-    } else {
-        centerIndex = BATTERY_BAR_CONFIG.top.count + BATTERY_BAR_CONFIG.middle.count + sectionIndex;
-    }
-    
-    const spread = 2; // 向两边扩散的范围
-    
-    const bars = document.querySelectorAll('.battery-bar-item');
-    bars.forEach((bar, i) => {
-        const distance = Math.abs(i - centerIndex);
-        const section = bar.dataset.section;
-        
-        if (distance <= spread) {
-            const intensity = 1 - (distance / (spread + 1));
-            
-            // 根据区域使用不同颜色
-            let r, g, b;
-            if (section === 'top') {
-                // 红色（对应记录的上）
-                r = Math.round(231 * intensity + 50 * (1 - intensity));
-                g = Math.round(76 * intensity);
-                b = Math.round(60 * intensity);
-            } else if (section === 'middle') {
-                // 绿色
-                r = Math.round(46 * intensity);
-                g = Math.round(204 * intensity + 50 * (1 - intensity));
-                b = Math.round(113 * intensity);
-            } else {
-                // 蓝色（对应记录的下）
-                r = Math.round(52 * intensity);
-                g = Math.round(152 * intensity);
-                b = Math.round(219 * intensity + 100 * (1 - intensity));
-            }
-            
-            bar.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-        } else {
-            bar.style.backgroundColor = 'transparent';
-        }
-    });
-}
 
 // 页面加载完成后初始化游戏
 window.addEventListener('DOMContentLoaded', initGame);

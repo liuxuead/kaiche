@@ -122,8 +122,8 @@ body {
 .level-value {
     font-size: 24px;
     font-weight: bold;
-    color: #e74c3c;
-    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+    color: #f1c40f;
+    text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
 }
 
 .score-row {

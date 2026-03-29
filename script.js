@@ -2385,8 +2385,9 @@ function drawPressAreas() {
     const containerHeight = gameContainer.clientHeight;
     
     // 反转镜像坐标（触摸记录时使用了镜像坐标，现在需要反转回来显示）
+    // 同时往左移动自身高度
     const reversedBottom = {
-        x: stats.bottom.x,
+        x: stats.bottom.x - (stats.bottom.height || 100),
         y: containerHeight - stats.bottom.y,
         radius: stats.bottom.radius,
         width: stats.bottom.width,
@@ -2394,7 +2395,7 @@ function drawPressAreas() {
     };
     
     const reversedMiddle = {
-        x: stats.middle.x,
+        x: stats.middle.x - (stats.middle.height || 100),
         y: containerHeight - stats.middle.y,
         radius: stats.middle.radius,
         width: stats.middle.width,
@@ -2402,7 +2403,7 @@ function drawPressAreas() {
     };
     
     const reversedTop = {
-        x: stats.top.x,
+        x: stats.top.x - (stats.top.height || 100),
         y: containerHeight - stats.top.y,
         radius: stats.top.radius,
         width: stats.top.width,

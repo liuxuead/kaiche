@@ -1162,6 +1162,16 @@ function initGame() {
     
     // 启动游戏，重置回合并开始计时器
     resetRound();
+    
+    // 输出计时器大小的日志
+    setTimeout(() => {
+        const timerValue = document.getElementById('timer-value');
+        if (timerValue) {
+            const rect = timerValue.getBoundingClientRect();
+            console.log('计时器大小:', rect.width, 'x', rect.height);
+            console.log('计时器样式:', getComputedStyle(timerValue).fontSize);
+        }
+    }, 1000);
 
 }
 

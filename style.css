@@ -79,7 +79,7 @@ body {
 }
 
 .timer-value {
-    font-size: 4rem;
+    font-size: 2rem;
     font-weight: bold;
     color: #e74c3c;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
@@ -101,12 +101,6 @@ body {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
     margin-right: 5px;
-}
-
-.timer-value {
-    font-size: 16px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.9);
 }
 
 .score-row {

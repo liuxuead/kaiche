@@ -10,14 +10,18 @@
     <!-- 清除按钮已隐藏，使用长按仪表盘重置 -->
     <button class="clear-button" id="clear-btn" style="position: fixed; bottom: 20px; left: 20px; z-index: 99999; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">统</button>
     <button class="clear-button" id="reset-record-btn" style="position: fixed; bottom: 55px; left: 20px; z-index: 99999; background: #ff6600; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">记</button>
-    <button id="export-data-btn" style="position: fixed; bottom: 90px; left: 20px; z-index: 99999; background: #3498db; width: 30px; height: 30px; padding: 0; font-size: 14px; display: block; border: none; border-radius: 5px; color: white;">导</button>
     
-
     
     <div class="game-container">
         <div class="complete-counter" id="complete-counter">0</div>
         <div class="dashboard">
             <div class="dashboard-value">0</div>
+        </div>
+        
+        <!-- 计时器显示 -->
+        <div class="timer-display" id="timer-display">
+            <span class="timer-label">剩余时间</span>
+            <span class="timer-value" id="timer-value">3:00</span>
         </div>
         
         <!-- 等级显示 -->
@@ -39,21 +43,18 @@
         </div>
         
         <!-- 升级提示模态框 -->
-        <div class="modal" id="level-up-modal">
-            <div class="modal-content">
-                <h3>升级成功！</h3>
-                <p id="level-up-message">恭喜解锁新等级！</p>
-                <button onclick="hideModals()">确定</button>
-            </div>
+        <!-- 升级成功动画提示 -->
+        <div class="challenge-fail-toast" id="level-up-modal">
+            <h3 style="color: #27ae60;">升级成功！</h3>
+            <p id="level-up-message">恭喜解锁新等级！</p>
+            <button onclick="hideModals()">确定</button>
         </div>
         
-        <!-- 挑战失败模态框 -->
-        <div class="modal" id="challenge-fail-modal">
-            <div class="modal-content">
-                <h3>挑战失败</h3>
-                <p>未能达到目标分数和成功率</p>
-                <button onclick="hideModals()">确定</button>
-            </div>
+        <!-- 挑战失败动画提示 -->
+        <div class="challenge-fail-toast" id="challenge-fail-modal">
+            <h3>挑战失败</h3>
+            <p>未能达到目标分数和成功率</p>
+            <button onclick="hideModals()">确定</button>
         </div>
         
         <!-- 等级选择面板 -->
@@ -61,7 +62,7 @@
             <div class="level-select-content">
                 <h3>选择等级</h3>
                 <div class="level-buttons" id="level-buttons"></div>
-                <button onclick="hideLevelSelectModal()">关闭</button>
+                <button id="level-select-close-btn">关闭</button>
             </div>
         </div>
         

@@ -1121,27 +1121,27 @@ function initGame() {
 
 
 
-// 默认游戏数据（竖屏适配）
+// 默认游戏数据（参考项目原始数据）
 const DEFAULT_GAME_DATA = {
     completeCount: 4,
     allTouchData: [
         {
             timestamp: 1774685517973,
-            top: { x: 200, y: 200, radius: 50, width: 100, height: 100 },
-            middle: { x: 200, y: 400, radius: 50, width: 150, height: 100 },
-            bottom: { x: 200, y: 600, radius: 50, width: 100, height: 100 }
+            top: { x: 962, y: 137, radius: 50, width: 100, height: 100 },
+            middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
+            bottom: { x: 1217, y: 137, radius: 50, width: 100, height: 100 }
         },
         {
             timestamp: 1774685526704,
-            top: { x: 200, y: 200, radius: 50, width: 100, height: 100 },
-            middle: { x: 200, y: 400, radius: 50, width: 150, height: 100 },
-            bottom: { x: 200, y: 600, radius: 50, width: 100, height: 100 }
+            top: { x: 963, y: 137, radius: 50, width: 100, height: 100 },
+            middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
+            bottom: { x: 1204, y: 145, radius: 50, width: 100, height: 100 }
         }
     ],
     touchData: {
-        bottom: { x: 200, y: 600, radius: 50, width: 100, height: 100 },
-        middle: { x: 200, y: 400, radius: 50, width: 150, height: 100 },
-        top: { x: 200, y: 200, radius: 50, width: 100, height: 100 }
+        bottom: { x: 1202, y: 137, radius: 50, width: 100, height: 100 },
+        middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
+        top: { x: 982, y: 145, radius: 50, width: 100, height: 100 }
     },
     middleRangeAdjusted: false,
     middleRangeStart: 0.1,

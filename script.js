@@ -113,6 +113,16 @@ function adjustMiddleRange(touch) {
     console.log('按压位置:', position.toFixed(2));
     console.log('新的"中"范围:', middleRangeStart.toFixed(2), '-', middleRangeEnd.toFixed(2));
     console.log('========================================');
+    
+    // 电量条闪烁提示
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.style.boxShadow = '0 0 20px #ffff00, 0 0 40px #ffff00';
+        setTimeout(() => {
+            batteryBar.style.boxShadow = 'none';
+            batteryBar.style.border = 'none';
+        }, 500);
+    }
 }
 
 // 判断触摸位置是否在绘制范围附近
@@ -162,11 +172,6 @@ function updateDashboardValue() {
     const dashboardEl = document.querySelector('.dashboard-value');
     if (!dashboardEl) return;
     
-    // completeCount < 4 时不更新速度显示（显示秒表）
-    if (completeCount < 4) {
-        return;
-    }
-    
     // 计算差值，平滑过渡
     const diff = targetDashboardValue - dashboardValue;
     if (Math.abs(diff) < 0.1) {
@@ -174,6 +179,9 @@ function updateDashboardValue() {
         dashboardValue = targetDashboardValue;
         dashboardEl.textContent = Math.round(dashboardValue);
         dashboardAnimationId = null;
+        
+        // 更新车道线速度
+        updateLaneSpeed(dashboardValue);
         return;
     }
     
@@ -181,12 +189,14 @@ function updateDashboardValue() {
     dashboardValue += diff * 0.2;
     dashboardEl.textContent = Math.round(dashboardValue);
     
+    // 更新车道线速度
+    updateLaneSpeed(dashboardValue);
+    
     // 继续动画
     dashboardAnimationId = requestAnimationFrame(updateDashboardValue);
 }
 
-// 更新车道线速度（旧代码已注释）
-/*
+// 更新车道线速度
 function updateLaneSpeed(speed) {
     const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
@@ -225,10 +235,8 @@ function updateLaneSpeed(speed) {
             }
     });
 }
-*/
 
-// 使用指定的持续时间更新车道线（旧代码已注释）
-/*
+// 使用指定的持续时间更新车道线
 function updateLaneSpeedWithDuration(duration, speed) {
     const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
@@ -258,10 +266,8 @@ function updateLaneSpeedWithDuration(duration, speed) {
         }
     });
 }
-*/
 
-// 持续更新车道线（即使速度稳定时也能保持运动）（旧代码已注释）
-/*
+// 持续更新车道线（即使速度稳定时也能保持运动）
 let lastSpeed = 0;
 let currentDuration = 0.2; // 当前动画持续时间
 let targetDuration = 0.2; // 目标动画持续时间
@@ -285,10 +291,8 @@ function continuousLaneUpdate() {
     
     requestAnimationFrame(continuousLaneUpdate);
 }
-*/
 
-// 输出车道线和小车位置日志（旧代码已注释）
-/*
+// 输出车道线和小车位置日志
 function logLaneAndCarPositions() {
     const gameContainer = document.querySelector('.game-container');
     const yellowRectangle = document.getElementById('yellow-rectangle');
@@ -344,23 +348,21 @@ function logLaneAndCarPositions() {
         console.log('====================');
     }
 }
-*/
+
+
 
 // 根据触摸位置计算仪表盘数值
 function calculateDashboardValue(mirrorY) {
     const stats = getStatsAverage();
+    
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
+        return DASHBOARD_MAX_VALUE / 2; // 默认中间值
+    }
+    
     const gameContainer = document.querySelector('.game-container');
     if (!gameContainer) return DASHBOARD_MAX_VALUE / 2;
     
     const rect = gameContainer.getBoundingClientRect();
-    
-    // 录制模式（completeCount < 4）：根据手指Y位置直接计算
-    if (stats.top.y === 0 || stats.bottom.y === 0) {
-        // 根据手指在屏幕上的Y位置计算（0-30）
-        const relativeY = mirrorY;
-        const position = relativeY / rect.height;
-        return Math.round(position * DASHBOARD_MAX_VALUE);
-    }
     // 把mirrorY转换成相对于game-container的坐标
     const relativeY = mirrorY - rect.top;
     
@@ -377,6 +379,7 @@ function calculateDashboardValue(mirrorY) {
     let position = (relativeY - minY) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
+    // 电量条下方亮 = 仪表盘0，电量条上方亮 = 仪表盘300
     // 直接返回计算值：下方position=0时返回0，上方position=1时返回300
     let rawValue = position * DASHBOARD_MAX_VALUE;
     
@@ -412,6 +415,9 @@ function initGame() {
     if (dashboardEl) {
         dashboardEl.textContent = '0';
     }
+    
+    // 初始化电量条
+    initBatteryBar();
     
     // 上中下按钮事件
     const btnTop = document.getElementById('btn-top');
@@ -466,6 +472,14 @@ function initGame() {
             
             // 更新统计面板为0
             updateStatsPanel();
+             // 重置电量条
+            
+            // 恢复电量条边框样式
+            const batteryBar = document.querySelector('.battery-bar');
+            if (batteryBar) {
+                batteryBar.style.boxShadow = 'none';
+                batteryBar.style.border = 'none';
+            }
             
             // 重置仪表盘显示0
             dashboardValue = 0;
@@ -510,6 +524,14 @@ function initGame() {
             clearDisplayText(textTop, textMiddle, textBottom);
             updateDataDisplay();
             updateStatsPanel();
+             // 重置电量条
+            
+            // 恢复电量条边框样式
+            const batteryBar = document.querySelector('.battery-bar');
+            if (batteryBar) {
+                batteryBar.style.boxShadow = 'none';
+                batteryBar.style.border = 'none';
+            }
             
             // 更新完成计数器
             const completeCounter = document.getElementById('complete-counter');
@@ -640,12 +662,6 @@ function initGame() {
     
     // 更新球的移动
     function updateBallMovement() {
-        // completeCount < 4 时不移动小黄球
-        if (completeCount < 4) {
-            requestAnimationFrame(updateBallMovement);
-            return;
-        }
-        
         const frame = document.getElementById('dynamic-frame');
         if (!frame) return;
         
@@ -931,6 +947,21 @@ function initGame() {
         });
     }
     
+    // 小绿球相关变量
+    const greenBalls = []; // 存储小绿球信息
+    const MAX_GREEN_BALLS = 5; // 最大小绿球数量
+    const GREEN_BALL_SIZE = 30; // 小绿球大小
+    
+    // 得分变量
+    let totalScore = 0; // 总得分
+    
+    // 小绿球速度等级配置
+    const GREEN_BALL_SPEEDS = [
+        { min: 1, max: 10, probability: 0.2 }, // 慢速
+        { min: 11, max: 20, probability: 0.5 }, // 中速
+        { min: 21, max: 30, probability: 0.3 }  // 快速
+    ];
+    
     // 生成小绿球
     function createGreenBall() {
         // 检查当前小绿球数量是否达到上限
@@ -1074,18 +1105,17 @@ function initGame() {
                     }
                     // 速度差>=10，得0分
                     
-                    // 更新游戏系统数据
-                    totalEatenBalls++;
                     if (points > 0) {
-                        roundScore += points;
-                        validEatenBalls++;
+                        totalScore += points;
+                        // 更新得分显示
+                        const scoreValue = document.getElementById('score-value');
+                        if (scoreValue) {
+                            scoreValue.textContent = totalScore;
+                        }
                         console.log(`碰撞得分: ${points}分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
                     } else {
                         console.log(`碰撞无得分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
                     }
-                    
-                    // 更新得分显示
-                    updateScoreDisplay();
                     
                     // 移除小绿球
                     frame.removeChild(ball.element);
@@ -1115,47 +1145,7 @@ function initGame() {
 
 }
 
-// 默认游戏数据（新用户打开即可玩）
-const DEFAULT_GAME_DATA = {
-    completeCount: 4,
-    allTouchData: [
-        {
-            timestamp: 1774685517973,
-            top: { x: 962, y: 137, radius: 50, width: 100, height: 100 },
-            middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
-            bottom: { x: 1217, y: 137, radius: 50, width: 100, height: 100 }
-        },
-        {
-            timestamp: 1774685526704,
-            top: { x: 963, y: 137, radius: 50, width: 100, height: 100 },
-            middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
-            bottom: { x: 1204, y: 145, radius: 50, width: 100, height: 100 }
-        }
-    ],
-    touchData: {
-        bottom: { x: 1202, y: 137, radius: 50, width: 100, height: 100 },
-        middle: { x: 1104, y: 148, radius: 50, width: 150, height: 100 },
-        top: { x: 982, y: 145, radius: 50, width: 100, height: 100 }
-    },
-    middleRangeAdjusted: false,
-    middleRangeStart: 0.1,
-    middleRangeEnd: 0.6
-};
 
-// 小绿球相关变量
-const greenBalls = []; // 存储小绿球信息
-const MAX_GREEN_BALLS = 5; // 最大小绿球数量
-const GREEN_BALL_SIZE = 30; // 小绿球大小
-
-// 得分变量
-let totalScore = 0; // 总得分
-
-// 小绿球速度等级配置
-const GREEN_BALL_SPEEDS = [
-    { min: 1, max: 10, probability: 0.2 }, // 慢速
-    { min: 11, max: 20, probability: 0.5 }, // 中速
-    { min: 21, max: 30, probability: 0.3 }  // 快速
-];
 
 // 存储触摸位置数据
 const touchData = {
@@ -1284,7 +1274,7 @@ function setupTouchListeners() {
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
-        // 实时更新仪表盘和绘制区域（completeCount <= 3 时启用）
+        // 实时更新电量条和仪表盘（completeCount <= 3 时启用）
         if (completeCount <= 3) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1299,56 +1289,11 @@ function setupTouchListeners() {
                 updateDashboardValue();
             }
             
-            // 确定手指在哪个区域（使用统计数据或默认数据）
-            let currentPosition = '';
-            
-            // 获取统计数据
-            const statsData = getStatsAverage();
-            
-            // 获取默认数据
-            const defaultTop = DEFAULT_GAME_DATA.touchData.top;
-            const defaultMiddle = DEFAULT_GAME_DATA.touchData.middle;
-            const defaultBottom = DEFAULT_GAME_DATA.touchData.bottom;
-            
-            // 下区域
-            const bottomX = (statsData.bottom.x !== 0) ? statsData.bottom.x : defaultBottom.x;
-            const bottomY = (statsData.bottom.y !== 0) ? statsData.bottom.y : defaultBottom.y;
-            const bottomRadius = statsData.bottom.radius || defaultBottom.radius;
-            const dxBottom = mirrorX - bottomX;
-            const dyBottom = mirrorY - bottomY;
-            const distBottom = Math.sqrt(dxBottom * dxBottom + dyBottom * dyBottom);
-            if (distBottom <= bottomRadius) currentPosition = 'bottom';
-            
-            // 中区域
-            if (!currentPosition) {
-                const middleX = (statsData.middle.x !== 0) ? statsData.middle.x : defaultMiddle.x;
-                const middleY = (statsData.middle.y !== 0) ? statsData.middle.y : defaultMiddle.y;
-                const middleRadius = statsData.middle.radius || defaultMiddle.radius;
-                const dxMiddle = mirrorX - middleX;
-                const dyMiddle = mirrorY - middleY;
-                const distMiddle = Math.sqrt(dxMiddle * dxMiddle + dyMiddle * dyMiddle);
-                if (distMiddle <= middleRadius) currentPosition = 'middle';
-            }
-            
-            // 上区域
-            if (!currentPosition) {
-                const topX = (statsData.top.x !== 0) ? statsData.top.x : defaultTop.x;
-                const topY = (statsData.top.y !== 0) ? statsData.top.y : defaultTop.y;
-                const topRadius = statsData.top.radius || defaultTop.radius;
-                const dxTop = mirrorX - topX;
-                const dyTop = mirrorY - topY;
-                const distTop = Math.sqrt(dxTop * dxTop + dyTop * dyTop);
-                if (distTop <= topRadius) currentPosition = 'top';
-            }
-            
-            // 根据位置高亮绘制区域和仪表盘
-            if (currentPosition) {
-                highlightDrawAreaByPosition(currentPosition);
-                updateDashboardGlow(currentPosition);
-            }
+            // 更新电量条
+            updateBatteryBar(targetDashboardValue);
         }
         
-        // 实时更新仪表盘（completeCount达到4后才启用）
+        // 实时更新电量条（completeCount达到4后才启用）
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1395,25 +1340,30 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // 清除仪表盘发光效果
-        clearDashboardGlow();
-        
-        // completeCount <= 3 时，仪表盘数值回落到0，绘制区域恢复基础状态
+        // completeCount <= 3 时，仪表盘数值回落到0，电量条也清空
         if (completeCount <= 3) {
             targetDashboardValue = 0;
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
-            // 恢复绘制区域为基础状态（填实但不发光）
-            updateRecordDrawAreas();
+            // 清空电量条，恢复透明
+            const bars = document.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = 'transparent';
+            });
         }
         
-        // completeCount >=4 时，仪表盘数值回落到0
+        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
         if (completeCount >= 4) {
             targetDashboardValue = 0;
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
+            // 清空电量条，恢复透明
+            const bars = document.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = 'transparent';
+            });
         }
     });
     
@@ -1488,7 +1438,7 @@ function setupTouchListeners() {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
-        // 实时更新仪表盘（completeCount <= 3 时启用）
+        // 实时更新电量条和仪表盘（completeCount <= 3 时启用）
         if (completeCount <= 3) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1501,9 +1451,12 @@ function setupTouchListeners() {
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
+            
+            // 更新电量条
+            updateBatteryBar(targetDashboardValue);
         }
         
-        // 实时更新仪表盘（completeCount达到4后才启用）
+        // 实时更新电量条（completeCount达到4后才启用）
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1536,12 +1489,17 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // completeCount >=4 时，仪表盘数值回落到0
+        // completeCount >=4 时，仪表盘数值回落到0，电量条也清空
         if (completeCount >= 4) {
             targetDashboardValue = 0;
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
+            // 清空电量条，恢复透明
+            const bars = document.querySelectorAll('.battery-bar-item');
+            bars.forEach(bar => {
+                bar.style.background = 'transparent';
+            });
         }
     });
 }
@@ -1615,20 +1573,46 @@ function recordTouchData(touch) {
             completeCounter.textContent = completeCount;
             console.log('第一次录入完成，completeCount:', completeCount);
             
-            // 更新绘制区域显示（可能需要发光）
-            updateRecordDrawAreas();
-            
-            // 当completeCount变为3时，开始仪表盘闪烁
+            // 当completeCount变为3时，开始仪表盘闪烁，隐藏电量条
             if (completeCount === 3) {
-                console.log('completeCount 变为3，开始仪表盘闪烁');
+                console.log('completeCount 变为3，开始仪表盘闪烁，隐藏电量条');
                 const dashboard = document.querySelector('.dashboard');
                 if (dashboard) {
                     dashboard.classList.add('blinking');
                 }
+                
+                // 隐藏电量条
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    console.log('找到电量条元素，添加hidden类');
+                    batteryBar.classList.add('hidden');
+                    console.log('电量条类列表:', batteryBar.className);
+                    console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
+                } else {
+                    console.log('未找到电量条元素');
+                }
             }
             
-            // 测试：当 completeCount 变为4时显示长方形（旧代码已注释）
-            /*
+            // 当completeCount > 3时，确保电量条保持隐藏
+            if (completeCount > 3) {
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    if (!batteryBar.classList.contains('hidden')) {
+                        console.log('completeCount > 3，确保电量条保持隐藏');
+                        batteryBar.classList.add('hidden');
+                        console.log('电量条类列表:', batteryBar.className);
+                        console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
+                    } else {
+                        console.log('completeCount > 3，电量条已经隐藏，无需操作');
+                        console.log('电量条类列表:', batteryBar.className);
+                        console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
+                    }
+                } else {
+                    console.log('completeCount > 3，未找到电量条元素');
+                }
+            }
+            
+            // 测试：当 completeCount 变为4时显示长方形
             if (completeCount === 4) {
                 console.log('completeCount 变为4，测试显示长方形');
                 const yellowRectangle = document.getElementById('yellow-rectangle');
@@ -1636,13 +1620,19 @@ function recordTouchData(touch) {
                     yellowRectangle.style.display = 'block';
                 }
             }
-            */
             
             // 存到数组
             saveTouchDataToAll();
             
             // 检查是否达到3次
             if (completeCount >= 3) {
+                // 电量条边框变亮，表示统计完成（仅在电量条未隐藏时）
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar && !batteryBar.classList.contains('hidden')) {
+                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                    batteryBar.style.border = '2px solid #00ff00';
+                }
+                
                 console.log('========================================');
                 console.log('统计完成！completeCount = 3');
                 console.log('请长按压3秒调整"中"的范围');
@@ -1665,6 +1655,13 @@ function recordTouchData(touch) {
             
             // 检查是否达到3次，如果是就不再记录
                 if (completeCount >= 3) {
+                    // 电量条边框变亮，表示统计完成（仅在电量条未隐藏时）
+                    const batteryBar = document.querySelector('.battery-bar');
+                    if (batteryBar && !batteryBar.classList.contains('hidden')) {
+                        batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                        batteryBar.style.border = '2px solid #00ff00';
+                    }
+                    
                     console.log('========================================');
                     console.log('统计完成！completeCount = 3');
                     console.log('请长按压3秒调整"中"的范围');
@@ -1708,9 +1705,6 @@ function recordTouchData(touch) {
                 completeCounter.textContent = completeCount;
                 console.log('录入完成，completeCount:', completeCount);
                 
-                // 更新绘制区域显示（可能需要发光）
-                updateRecordDrawAreas();
-                
                 // 存到数组
                 saveTouchDataToAll();
             }
@@ -1718,6 +1712,7 @@ function recordTouchData(touch) {
     }
     
     updateDataDisplay();
+     // 更新电量条记录状态
 }
 
 // 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）
@@ -1753,6 +1748,12 @@ function saveTouchDataToAll() {
         
         // 检查是否达到3次
             if (allTouchData.length >= 3) {
+                // 电量条边框变亮，表示已锁定（仅在电量条未隐藏时）
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar && !batteryBar.classList.contains('hidden')) {
+                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
+                    batteryBar.style.border = '2px solid #00ff00';
+                }
                 console.log('========================================');
                 console.log('统计已达到3次！记录区域停止记录');
                 console.log('========================================');
@@ -1776,17 +1777,7 @@ function getStatsAverage() {
         };
     }
     
-    // completeCount = 0 或 1 时，直接返回最新一条记录（不做平均值计算）
-    if (completeCount <= 1) {
-        const latest = allTouchData[count - 1];
-        return {
-            top: { ...latest.top },
-            middle: { ...latest.middle },
-            bottom: { ...latest.bottom }
-        };
-    }
-    
-    // completeCount > 1 时，计算平均值
+    // 计算平均值
     let sumTopX = 0, sumTopY = 0, sumTopR = 0, sumTopW = 0, sumTopH = 0;
     let sumMiddleX = 0, sumMiddleY = 0, sumMiddleR = 0, sumMiddleW = 0, sumMiddleH = 0;
     let sumBottomX = 0, sumBottomY = 0, sumBottomR = 0, sumBottomW = 0, sumBottomH = 0;
@@ -2141,11 +2132,6 @@ function stopStopwatch() {
     
     console.log('stopStopwatch 被调用，completeCount:', completeCount, 'totalSeconds:', totalSeconds, 'currentTouch:', currentTouch ? '存在' : '不存在');
     
-    // 更新绘制区域显示（录制模式下）
-    if (completeCount < 4) {
-        updateRecordDrawAreas();
-    }
-    
     // 当completeCount=3且计时达到3秒时，调整"中"的范围
     if (completeCount === 3 && totalSeconds >= 3 && currentTouch) {
         console.log('计时达到3秒，调整"中"的范围');
@@ -2155,24 +2141,26 @@ function stopStopwatch() {
             dashboard.classList.remove('blinking');
         }
         
+        // 确保电量条保持隐藏状态
+        const batteryBar = document.querySelector('.battery-bar');
+        if (batteryBar) {
+            batteryBar.classList.add('hidden');
+        }
+        
         adjustMiddleRange(currentTouch);
         // 将completeCount增加到4，避免再次触发
         completeCount = 4;
         const completeCounter = document.getElementById('complete-counter');
         completeCounter.textContent = completeCount;
-        // 显示长方形（旧代码已注释）
-        /*
+        // 显示长方形
         const yellowRectangle = document.getElementById('yellow-rectangle');
         if (yellowRectangle) {
             yellowRectangle.style.display = 'block';
         }
-        */
         // 绘制按压区域
         drawPressAreas();
         // 保存数据到localStorage
         saveStatsData();
-        // 更新绘制区域显示（切换到正常模式）
-        updateRecordDrawAreas();
     }
 }
 
@@ -2197,101 +2185,57 @@ function saveStatsData() {
 // 从localStorage加载统计数据
 function loadSavedData() {
     const savedData = localStorage.getItem('gameStats');
-    
-    // 如果没有保存的数据，使用默认数据
-    if (!savedData) {
-        console.log('没有找到保存的数据，使用默认数据');
-        loadDefaultData();
-        return true;
-    }
-    
-    try {
-        const parsedData = JSON.parse(savedData);
-        if (parsedData.stats && parsedData.allTouchData) {
-            // 加载统计数据 - 使用push方式，避免const赋值错误
-            allTouchData.length = 0; // 清空现有数据
-            parsedData.allTouchData.forEach(record => {
-                allTouchData.push(record);
-            });
-            completeCount = parsedData.completeCount || 4;
-            
-            // 恢复touchData
-            if (parsedData.touchData) {
-                touchData.top = parsedData.touchData.top || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
-                touchData.middle = parsedData.touchData.middle || { x: 0, y: 0, radius: 50, width: 150, height: 100 };
-                touchData.bottom = parsedData.touchData.bottom || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+    if (savedData) {
+        try {
+            const parsedData = JSON.parse(savedData);
+            if (parsedData.stats && parsedData.allTouchData) {
+                // 加载统计数据 - 使用push方式，避免const赋值错误
+                allTouchData.length = 0; // 清空现有数据
+                parsedData.allTouchData.forEach(record => {
+                    allTouchData.push(record);
+                });
+                completeCount = parsedData.completeCount || 4;
+                
+                // 恢复touchData
+                if (parsedData.touchData) {
+                    touchData.top = parsedData.touchData.top || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+                    touchData.middle = parsedData.touchData.middle || { x: 0, y: 0, radius: 50, width: 150, height: 100 };
+                    touchData.bottom = parsedData.touchData.bottom || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+                }
+                
+                // 恢复"中"范围调整状态
+                middleRangeAdjusted = parsedData.middleRangeAdjusted || false;
+                middleRangeStart = parsedData.middleRangeStart || 0.33;
+                middleRangeEnd = parsedData.middleRangeEnd || 0.66;
+                
+                // 更新UI
+                const completeCounter = document.getElementById('complete-counter');
+                completeCounter.textContent = completeCount;
+                
+                // 更新统计面板
+                updateStatsPanel();
+                updateDataDisplay();
+                
+                // 如果 completeCount >= 4，绘制按压区域
+                if (completeCount >= 4) {
+                    drawPressAreas();
+                }
+                
+                // 处理电量条显示/隐藏 - 游戏系统运行时始终隐藏
+                const batteryBar = document.querySelector('.battery-bar');
+                if (batteryBar) {
+                    batteryBar.classList.add('hidden');
+                    console.log('从localStorage加载数据，游戏系统运行，保持电量条隐藏');
+                }
+                
+                console.log('从localStorage加载了统计数据，completeCount:', completeCount);
+                return true; // 返回true表示加载成功
             }
-            
-            // 恢复"中"范围调整状态
-            middleRangeAdjusted = parsedData.middleRangeAdjusted || false;
-            middleRangeStart = parsedData.middleRangeStart || 0.33;
-            middleRangeEnd = parsedData.middleRangeEnd || 0.66;
-            
-            // 更新UI
-            const completeCounter = document.getElementById('complete-counter');
-            completeCounter.textContent = completeCount;
-            
-            // 更新统计面板
-            updateStatsPanel();
-            updateDataDisplay();
-            
-            // 如果 completeCount >= 4，绘制按压区域
-            if (completeCount >= 4) {
-                drawPressAreas();
-            }
-            
-            console.log('从localStorage加载了统计数据，completeCount:', completeCount);
-            return true; // 返回true表示加载成功
+        } catch (error) {
+            console.error('加载保存数据失败:', error);
         }
-    } catch (error) {
-        console.error('加载保存数据失败:', error);
-        console.log('加载失败，使用默认数据');
-        loadDefaultData();
-        return true;
     }
-    
     return false; // 返回false表示没有加载到数据
-}
-
-// 加载默认游戏数据
-function loadDefaultData() {
-    console.log('加载默认游戏数据...');
-    
-    // 加载allTouchData
-    allTouchData.length = 0;
-    DEFAULT_GAME_DATA.allTouchData.forEach(record => {
-        allTouchData.push(record);
-    });
-    
-    // 设置completeCount
-    completeCount = DEFAULT_GAME_DATA.completeCount;
-    
-    // 设置touchData
-    touchData.top = DEFAULT_GAME_DATA.touchData.top;
-    touchData.middle = DEFAULT_GAME_DATA.touchData.middle;
-    touchData.bottom = DEFAULT_GAME_DATA.touchData.bottom;
-    
-    // 设置"中"范围调整状态
-    middleRangeAdjusted = DEFAULT_GAME_DATA.middleRangeAdjusted;
-    middleRangeStart = DEFAULT_GAME_DATA.middleRangeStart;
-    middleRangeEnd = DEFAULT_GAME_DATA.middleRangeEnd;
-    
-    // 更新UI
-    const completeCounter = document.getElementById('complete-counter');
-    completeCounter.textContent = completeCount;
-    
-    // 更新统计面板
-    updateStatsPanel();
-    updateDataDisplay();
-    
-    // 绘制按压区域
-    drawPressAreas();
-    
-    // 重置游戏回合，确保得分和成功率从0开始
-    resetRound();
-    updateScoreDisplay();
-    
-    console.log('默认游戏数据加载完成，completeCount:', completeCount);
 }
 
 // 清除保存的统计数据
@@ -2397,13 +2341,14 @@ function resetRecordData() {
     const textMiddle = document.getElementById('text-middle');
     const textBottom = document.getElementById('text-bottom');
     
-    // 清空记录数据，但保留统计数据
+    // 重置所有数据
     touchData.top = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
     touchData.middle = { x: 0, y: 0, radius: 50, width: 150, height: 100 };
     touchData.bottom = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
     touchCount = 0;
     lastBottomX = 0;
     lastBottomY = 0;
+    allTouchData.length = 0;
     completeCount = 0;
     
     // 重置"中"范围调整状态
@@ -2411,7 +2356,8 @@ function resetRecordData() {
     middleRangeStart = 0.33;
     middleRangeEnd = 0.66;
     
-    // 不清除统计数据，保留 allTouchData
+    // 清除保存的统计数据
+    clearSavedData();
     
     // 清除显示
     clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
@@ -2419,8 +2365,14 @@ function resetRecordData() {
     updateDataDisplay();
     updateStatsPanel();
     
-    // 更新录制模式下的绘制区域显示
-    updateRecordDrawAreas();
+    // 恢复电量条显示 - 游戏系统运行时保持隐藏
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.classList.add('hidden');
+        batteryBar.style.boxShadow = 'none';
+        batteryBar.style.border = 'none';
+        console.log('重置记录数据，保持电量条隐藏');
+    }
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
@@ -2469,9 +2421,29 @@ function resetAllData() {
     clearDisplayText(textTop, textMiddle, textBottom);
     updateDataDisplay();
     updateStatsPanel();
+     // 重置电量条
     
     // 清除按压区域
     clearPressAreas();
+    
+    // 恢复电量条边框样式和位置大小 - 游戏系统运行时保持隐藏
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.style.boxShadow = 'none';
+        batteryBar.style.border = 'none';
+        // 重置电量条位置和大小
+        batteryBar.style.position = 'fixed';
+        batteryBar.style.bottom = '170px';
+        batteryBar.style.right = '20px';
+        batteryBar.style.transform = 'none';
+        batteryBar.style.zIndex = '99999';
+        batteryBar.style.width = '320px'; // 恢复原来的宽度
+        batteryBar.style.height = '30px'; // 恢复原来的高度
+        batteryBar.style.pointerEvents = 'auto'; // 恢复事件捕获
+        batteryBar.style.backgroundColor = '#333'; // 恢复背景色
+        batteryBar.classList.add('hidden'); // 保持隐藏
+        console.log('重置所有数据，保持电量条隐藏');
+    }
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
@@ -2547,6 +2519,68 @@ function drawPressAreas() {
     // 绘制上区域（红色）
     createPressArea(gameContainer, reversedTop, '#e74c3c');
 }
+
+// ============================================
+// 电量条监控系统（已禁用）
+// ============================================
+
+// function monitorBatteryBar() {
+//     const batteryBar = document.querySelector('.battery-bar');
+//     if (!batteryBar) {
+//         console.log('⚠️ 找不到电量条元素！');
+//         return;
+//     }
+
+//     console.log('🔍 开始监控电量条...');
+//     
+//     const originalClassListAdd = batteryBar.classList.add.bind(batteryBar.classList);
+//     const originalClassListRemove = batteryBar.classList.remove.bind(batteryBar.classList);
+//     const originalStyleSetProperty = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').set;
+//     
+//     batteryBar.classList.add = function(...args) {
+//         console.log('📝 电量条添加类:', args, '调用栈:', new Error().stack);
+//         return originalClassListAdd.apply(this, args);
+//     };
+//     
+//     batteryBar.classList.remove = function(...args) {
+//         console.log('❌ 电量条移除类:', args, '调用栈:', new Error().stack);
+//         return originalClassListRemove.apply(this, args);
+//     };
+//     
+//     Object.defineProperty(batteryBar.style, 'display', {
+//         set: function(value) {
+//             console.log('🎨 电量条display改变为:', value, '调用栈:', new Error().stack);
+//             originalStyleSetProperty.call(this, 'display', value);
+//         }
+//     });
+//     
+//     const observer = new MutationObserver((mutations) => {
+//         mutations.forEach((mutation) => {
+//             if (mutation.attributeName === 'class') {
+//                 console.log('🔄 电量条class变化:', mutation.oldValue, '→', batteryBar.className);
+//             }
+//             if (mutation.attributeName === 'style') {
+//                 console.log('🎨 电量条style变化');
+//             }
+//         });
+//     });
+//     
+//     observer.observe(batteryBar, {
+//         attributes: true,
+//         attributeOldValue: true,
+//         attributeFilter: ['class', 'style']
+//     });
+//     
+//     setInterval(() => {
+//         console.log('📍 电量条当前状态:', {
+//             classList: batteryBar.className,
+//             isHidden: batteryBar.classList.contains('hidden'),
+//             display: batteryBar.style.display,
+//             visibility: batteryBar.style.visibility,
+//             opacity: batteryBar.style.opacity
+//         });
+//     }, 2000);
+// }
 
 // ============================================
 // 游戏系统 - 等级挑战系统
@@ -2797,9 +2831,6 @@ function getLevelBasedSpeedConfig() {
 // 重写createGreenBall函数，使用等级配置
 const originalCreateGreenBall = createGreenBall;
 function createGreenBall() {
-    // completeCount < 4 时不生成小绿球
-    if (completeCount < 4) return;
-    
     if (ballsInRound >= 5) return;
     if (greenBalls.length >= MAX_GREEN_BALLS) return;
     
@@ -2933,8 +2964,12 @@ function initGameSystem() {
     loadGameData();
     setupLevelLongPress();
     
-    // 初始化录制模式下的绘制区域显示
-    updateRecordDrawAreas();
+    // 确保电量条在游戏系统初始化时被隐藏
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar) {
+        batteryBar.classList.add('hidden');
+        console.log('游戏系统初始化，隐藏电量条');
+    }
     
     // 设置按钮事件
     document.getElementById('retry-btn').onclick = hideModals;
@@ -3004,176 +3039,160 @@ function clearPressAreas() {
     areas.forEach(area => area.remove());
 }
 
-// 更新录制模式下的绘制区域显示（completeCount < 4）
-function updateRecordDrawAreas() {
-    console.log('=== updateRecordDrawAreas 被调用 ===');
-    console.log('completeCount:', completeCount, 'touchCount:', touchCount);
+// 电量条分区配置
+const BATTERY_BAR_CONFIG = {
+    top: { count: 6, color: '#e74c3c' },      // 上：6格，红色
+    middle: { count: 9, color: '#2ecc71' },   // 中：9格，绿色
+    bottom: { count: 5, color: '#3498db' }    // 下：5格，蓝色
+};
+
+// 初始化电量条
+function initBatteryBar() {
+    const batteryBarContainer = document.getElementById('battery-bar-container');
+    if (!batteryBarContainer) return;
     
-    const touchAreaTop = document.querySelector('.touch-area-top');
-    const touchAreaMiddle = document.querySelector('.touch-area-middle');
-    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    // 清空现有内容
+    batteryBarContainer.innerHTML = '';
     
-    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) {
-        console.log('找不到绘制区域元素');
+    // 创建上部分（6格，红色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.top.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'top';
+        bar.dataset.index = i;
+        batteryBarContainer.appendChild(bar);
+    }
+    
+    // 创建中部分（9格，绿色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.middle.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'middle';
+        bar.dataset.index = i;
+        batteryBarContainer.appendChild(bar);
+    }
+    
+    // 创建下部分（5格，蓝色）
+    for (let i = 0; i < BATTERY_BAR_CONFIG.bottom.count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'battery-bar-item';
+        bar.dataset.section = 'bottom';
+        bar.dataset.index = i;
+        batteryBarContainer.appendChild(bar);
+    }
+}
+
+// 更新电量条显示
+function updateBatteryBar(value) {
+    // 检查电量条是否被隐藏，如果是则不更新
+    const batteryBar = document.querySelector('.battery-bar');
+    if (batteryBar && batteryBar.classList.contains('hidden')) {
         return;
     }
     
-    // 如果 completeCount >= 4，隐藏所有绘制区域
-    if (completeCount >= 4) {
-        console.log('completeCount >= 4，隐藏绘制区域');
-        touchAreaTop.style.opacity = '0';
-        touchAreaMiddle.style.opacity = '0';
-        touchAreaBottom.style.opacity = '0';
+    // value: 0-30，映射到0-20个格子（6+9+5）
+    const stats = getStatsAverage();
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
         return;
     }
-    
-    // completeCount < 4 时，三个区域都填实显示
-    const baseOpacity = '0.6';
-    const glowOpacity = '1';
     
     const gameContainer = document.querySelector('.game-container');
-    const containerHeight = gameContainer ? gameContainer.clientHeight : 800;
+    if (!gameContainer) return;
     
-    // 获取统计数据（平均值或直接值）
-    const statsData = getStatsAverage();
-    console.log('统计数据:', statsData);
+    const rect = gameContainer.getBoundingClientRect();
+    // 根据仪表盘数值计算相对Y坐标
+    const relativeY = (value / 30) * rect.height;
     
-    // 获取默认数据中的位置
-    const defaultTop = DEFAULT_GAME_DATA.touchData.top;
-    const defaultMiddle = DEFAULT_GAME_DATA.touchData.middle;
-    const defaultBottom = DEFAULT_GAME_DATA.touchData.bottom;
-    
-    // 上区域（红色）- 优先使用统计数据，其次默认数据
-    const topX = (statsData.top.x !== 0) ? statsData.top.x : defaultTop.x;
-    const topY = (statsData.top.y !== 0) ? statsData.top.y : defaultTop.y;
-    const topRadius = statsData.top.radius || defaultTop.radius;
-    touchAreaTop.style.left = `${topX}px`;
-    touchAreaTop.style.top = `${containerHeight - topY}px`;
-    touchAreaTop.style.width = `${topRadius * 2}px`;
-    touchAreaTop.style.height = `${topRadius * 2}px`;
-    
-    // 中区域（绿色）- 优先使用统计数据，其次默认数据
-    const middleX = (statsData.middle.x !== 0) ? statsData.middle.x : defaultMiddle.x;
-    const middleY = (statsData.middle.y !== 0) ? statsData.middle.y : defaultMiddle.y;
-    const middleRadius = statsData.middle.radius || defaultMiddle.radius;
-    touchAreaMiddle.style.left = `${middleX}px`;
-    touchAreaMiddle.style.top = `${containerHeight - middleY}px`;
-    touchAreaMiddle.style.width = `${middleRadius * 2}px`;
-    touchAreaMiddle.style.height = `${middleRadius * 2}px`;
-    
-    // 下区域（黄色）- 优先使用统计数据，其次默认数据
-    const bottomX = (statsData.bottom.x !== 0) ? statsData.bottom.x : defaultBottom.x;
-    const bottomY = (statsData.bottom.y !== 0) ? statsData.bottom.y : defaultBottom.y;
-    const bottomRadius = statsData.bottom.radius || defaultBottom.radius;
-    touchAreaBottom.style.left = `${bottomX}px`;
-    touchAreaBottom.style.top = `${containerHeight - bottomY}px`;
-    touchAreaBottom.style.width = `${bottomRadius * 2}px`;
-    touchAreaBottom.style.height = `${bottomRadius * 2}px`;
-    
-    // 根据 completeCount 和 touchCount 决定哪个区域发光
-    console.log('根据 completeCount 和 touchCount 决定发光, completeCount:', completeCount, 'touchCount:', touchCount);
-    
-    // 重置所有区域
-    touchAreaTop.style.opacity = baseOpacity;
-    touchAreaTop.style.boxShadow = 'none';
-    touchAreaMiddle.style.opacity = baseOpacity;
-    touchAreaMiddle.style.boxShadow = 'none';
-    touchAreaBottom.style.opacity = baseOpacity;
-    touchAreaBottom.style.boxShadow = 'none';
-    
-    // completeCount = 3 时，三个区域同时发光（完成阶段）
-    if (completeCount === 3) {
-        console.log('completeCount = 3，三个区域同时发光！');
-        touchAreaTop.style.opacity = glowOpacity;
-        touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
-        touchAreaMiddle.style.opacity = glowOpacity;
-        touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
-        touchAreaBottom.style.opacity = glowOpacity;
-        touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
+    // 计算当前Y在统计范围内的位置 (0-1)
+    let totalRange = Math.abs(stats.bottom.y - stats.top.y);
+    if (totalRange <= 0) {
+        totalRange = 100;
     }
-    // 录制阶段（completeCount < 3）
-    else {
-        // touchCount = 0 或 3 时，下区域发光
-        if (touchCount === 0 || touchCount === 3) {
-            console.log('touchCount = 0 或 3，下区域发光');
-            touchAreaBottom.style.opacity = glowOpacity;
-            touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
+    
+    // 确定哪个是上，哪个是下
+    const minY = Math.min(stats.top.y, stats.bottom.y);
+    const maxY = Math.max(stats.top.y, stats.bottom.y);
+    
+    let position;
+    if (totalRange === 100) {
+        position = 0.5;
+    } else {
+        position = (relativeY - minY) / totalRange;
+        position = Math.max(0, Math.min(1, position));
+    }
+    
+    // 反转位置，让上下对应
+    position = 1 - position;
+    
+    // 根据位置确定在哪个区域
+    // 上区域：0-0.3 (6格)
+    // 中区域：0.3-0.8 (9格)
+    // 下区域：0.8-1 (5格)
+    let targetSection, sectionIndex, sectionPosition;
+    const topThreshold = 0.3;
+    const bottomThreshold = 0.8;
+    
+    if (position < topThreshold) {
+        // 上区域
+        targetSection = 'top';
+        sectionPosition = position / topThreshold;
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.top.count - 1));
+    } else if (position > bottomThreshold) {
+        // 下区域
+        targetSection = 'bottom';
+        sectionPosition = (position - bottomThreshold) / (1 - bottomThreshold);
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.bottom.count - 1));
+    } else {
+        // 中区域
+        targetSection = 'middle';
+        sectionPosition = (position - topThreshold) / (bottomThreshold - topThreshold);
+        sectionIndex = Math.round(sectionPosition * (BATTERY_BAR_CONFIG.middle.count - 1));
+    }
+    
+    // 计算在总格子中的索引
+    let centerIndex;
+    if (targetSection === 'top') {
+        centerIndex = sectionIndex;
+    } else if (targetSection === 'middle') {
+        centerIndex = BATTERY_BAR_CONFIG.top.count + sectionIndex;
+    } else {
+        centerIndex = BATTERY_BAR_CONFIG.top.count + BATTERY_BAR_CONFIG.middle.count + sectionIndex;
+    }
+    
+    const spread = 2; // 向两边扩散的范围
+    
+    const bars = document.querySelectorAll('.battery-bar-item');
+    bars.forEach((bar, i) => {
+        const distance = Math.abs(i - centerIndex);
+        const section = bar.dataset.section;
+        
+        if (distance <= spread) {
+            const intensity = 1 - (distance / (spread + 1));
+            
+            // 根据区域使用不同颜色
+            let r, g, b;
+            if (section === 'top') {
+                // 红色（对应记录的上）
+                r = Math.round(231 * intensity + 50 * (1 - intensity));
+                g = Math.round(76 * intensity);
+                b = Math.round(60 * intensity);
+            } else if (section === 'middle') {
+                // 绿色
+                r = Math.round(46 * intensity);
+                g = Math.round(204 * intensity + 50 * (1 - intensity));
+                b = Math.round(113 * intensity);
+            } else {
+                // 蓝色（对应记录的下）
+                r = Math.round(52 * intensity);
+                g = Math.round(152 * intensity);
+                b = Math.round(219 * intensity + 100 * (1 - intensity));
+            }
+            
+            bar.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+        } else {
+            bar.style.backgroundColor = 'transparent';
         }
-        // touchCount = 1 时，中区域发光
-        else if (touchCount === 1) {
-            console.log('touchCount = 1，中区域发光');
-            touchAreaMiddle.style.opacity = glowOpacity;
-            touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
-        }
-        // touchCount = 2 时，上区域发光
-        else if (touchCount === 2) {
-            console.log('touchCount = 2，上区域发光');
-            touchAreaTop.style.opacity = glowOpacity;
-            touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
-        }
-    }
-}
-
-// 根据手指位置高亮对应的绘制区域（录制模式）
-function highlightDrawAreaByPosition(position) {
-    if (completeCount >= 4) return;
-    
-    const touchAreaTop = document.querySelector('.touch-area-top');
-    const touchAreaMiddle = document.querySelector('.touch-area-middle');
-    const touchAreaBottom = document.querySelector('.touch-area-bottom');
-    
-    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) return;
-    
-    // 重置所有区域为基础透明度
-    const baseOpacity = '0.6';
-    const glowOpacity = '1';
-    
-    touchAreaTop.style.opacity = baseOpacity;
-    touchAreaMiddle.style.opacity = baseOpacity;
-    touchAreaBottom.style.opacity = baseOpacity;
-    touchAreaTop.style.boxShadow = 'none';
-    touchAreaMiddle.style.boxShadow = 'none';
-    touchAreaBottom.style.boxShadow = 'none';
-    
-    // 根据位置高亮对应区域
-    if (position === 'bottom') {
-        touchAreaBottom.style.opacity = glowOpacity;
-        touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
-    } else if (position === 'middle') {
-        touchAreaMiddle.style.opacity = glowOpacity;
-        touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
-    } else if (position === 'top') {
-        touchAreaTop.style.opacity = glowOpacity;
-        touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
-    }
-}
-
-// 更新仪表盘发光效果（录制模式）
-function updateDashboardGlow(position) {
-    if (completeCount >= 4) return;
-    
-    const dashboard = document.querySelector('.dashboard');
-    if (!dashboard) return;
-    
-    // 清除之前的发光效果
-    dashboard.style.boxShadow = '';
-    
-    // 根据位置设置发光颜色
-    if (position === 'bottom') {
-        dashboard.style.boxShadow = '0 0 30px #f1c40f, 0 0 60px #f1c40f';
-    } else if (position === 'middle') {
-        dashboard.style.boxShadow = '0 0 30px #2ecc71, 0 0 60px #2ecc71';
-    } else if (position === 'top') {
-        dashboard.style.boxShadow = '0 0 30px #e74c3c, 0 0 60px #e74c3c';
-    }
-}
-
-// 清除仪表盘发光效果
-function clearDashboardGlow() {
-    const dashboard = document.querySelector('.dashboard');
-    if (dashboard) {
-        dashboard.style.boxShadow = '';
-    }
+    });
 }
 
 // 页面加载完成后初始化游戏

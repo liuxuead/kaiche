@@ -94,7 +94,7 @@ body {
 .score-display {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 80px;
     background-color: transparent;
     padding: 10px 15px;
     border-radius: 8px;
@@ -187,7 +187,7 @@ body {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) rotate(-90deg);
+    transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, 0.95);
     padding: 20px;
     border-radius: 15px;
@@ -357,9 +357,9 @@ body {
     position: absolute;
     width: 100px;
     height: 100px;
-    border: 3px solid #e74c3c;
+    border: 3px solid #3498db;
     border-radius: 50%;
-    background-color: rgba(231, 76, 60, 0.2);
+    background-color: rgba(52, 152, 219, 0.2);
     transform: translate(-50%, -50%);
     opacity: 0;
     z-index: 15;
@@ -381,9 +381,9 @@ body {
     position: absolute;
     width: 100px;
     height: 100px;
-    border: 3px solid #f1c40f;
+    border: 3px solid #e74c3c;
     border-radius: 50%;
-    background-color: rgba(241, 196, 15, 0.2);
+    background-color: rgba(231, 76, 60, 0.2);
     transform: translate(-50%, -50%);
     opacity: 0;
     z-index: 15;
@@ -420,50 +420,8 @@ body {
     flex: 1;
     margin: 1px;
     border-radius: 2px;
+    background-color: transparent;
     transition: background-color 0.3s ease;
-}
-
-/* 新的录制模式电量条 */
-.record-battery-bar {
-    position: fixed;
-    bottom: 170px;
-    right: 20px;
-    width: 320px;
-    height: 30px;
-    background: #333;
-    border-radius: 5px;
-    z-index: 99999;
-    display: flex;
-    padding: 3px 5px;
-    box-sizing: border-box;
-}
-
-.record-battery-bar.hidden {
-    display: none !important;
-}
-
-.record-battery-bar .battery-segment {
-    flex: 1;
-    margin: 0 1px;
-    border-radius: 2px;
-    opacity: 0.2;
-    transition: opacity 0.2s ease;
-}
-
-.record-battery-bar .battery-segment.red {
-    background-color: #e74c3c;
-}
-
-.record-battery-bar .battery-segment.green {
-    background-color: #2ecc71;
-}
-
-.record-battery-bar .battery-segment.blue {
-    background-color: #3498db;
-}
-
-.record-battery-bar .battery-segment.active {
-    opacity: 1;
 }
 
 /* 数据显示区域 */

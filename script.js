@@ -1244,6 +1244,7 @@ function setupTouchListeners() {
         if (completeCount < 3) {
             touchTimer = setTimeout(() => {
                 // 超过1秒，记录数据
+                // currentTouch 已经是 e.touches[0]，直接传递
                 recordTouchData(currentTouch);
                 // 记录完成后停止计时
                 stopStopwatch();
@@ -2514,51 +2515,79 @@ function drawPressAreas() {
     clearPressAreas();
     
     const stats = getStatsAverage();
-    // 如果没有统计数据，不显示绘制区域
-    if (stats.top.y === 0 || stats.bottom.y === 0 || stats.middle.y === 0) {
-        console.log('统计数据不完整，不显示绘制区域');
-        return;
-    }
-    
     const gameContainer = document.querySelector('.game-container');
     if (!gameContainer) return;
     
-    // 获取容器高度，用于反转镜像坐标
+    // 获取容器宽度和高度
+    const containerWidth = gameContainer.clientWidth;
     const containerHeight = gameContainer.clientHeight;
     
-    // 反转镜像坐标（触摸记录时使用了镜像坐标，现在需要反转回来显示）
-    const reversedBottom = {
-        x: stats.bottom.x,
-        y: containerHeight - stats.bottom.y,
-        radius: stats.bottom.radius,
-        width: stats.bottom.width,
-        height: stats.bottom.height
-    };
+    let bottomArea, middleArea, topArea;
     
-    const reversedMiddle = {
-        x: stats.middle.x,
-        y: containerHeight - stats.middle.y,
-        radius: stats.middle.radius,
-        width: stats.middle.width,
-        height: stats.middle.height
-    };
-    
-    const reversedTop = {
-        x: stats.top.x,
-        y: containerHeight - stats.top.y,
-        radius: stats.top.radius,
-        width: stats.top.width,
-        height: stats.top.height
-    };
+    // 如果有统计数据，使用真实坐标
+    if (stats.top.y !== 0 && stats.bottom.y !== 0 && stats.middle.y !== 0) {
+        // 反转镜像坐标（触摸记录时使用了镜像坐标，现在需要反转回来显示）
+        bottomArea = {
+            x: stats.bottom.x,
+            y: containerHeight - stats.bottom.y,
+            radius: stats.bottom.radius,
+            width: stats.bottom.width,
+            height: stats.bottom.height
+        };
+        
+        middleArea = {
+            x: stats.middle.x,
+            y: containerHeight - stats.middle.y,
+            radius: stats.middle.radius,
+            width: stats.middle.width,
+            height: stats.middle.height
+        };
+        
+        topArea = {
+            x: stats.top.x,
+            y: containerHeight - stats.top.y,
+            radius: stats.top.radius,
+            width: stats.top.width,
+            height: stats.top.height
+        };
+    } else {
+        // 如果没有统计数据，使用默认位置
+        console.log('统计数据不完整，使用默认位置显示绘制区域');
+        const horizontalPosition = containerWidth * 0.2;
+        
+        bottomArea = {
+            x: horizontalPosition,
+            y: containerHeight * 0.8,
+            radius: 50,
+            width: 100,
+            height: 100
+        };
+        
+        middleArea = {
+            x: horizontalPosition,
+            y: containerHeight * 0.5,
+            radius: 50,
+            width: 150,
+            height: 100
+        };
+        
+        topArea = {
+            x: horizontalPosition,
+            y: containerHeight * 0.2,
+            radius: 50,
+            width: 100,
+            height: 100
+        };
+    }
     
     // 绘制下区域（黑色）
-    createPressArea(gameContainer, reversedBottom, '#000000');
+    createPressArea(gameContainer, bottomArea, '#000000');
     
     // 绘制中区域（绿色）
-    createPressArea(gameContainer, reversedMiddle, '#2ecc71');
+    createPressArea(gameContainer, middleArea, '#2ecc71');
     
     // 绘制上区域（红色）
-    createPressArea(gameContainer, reversedTop, '#e74c3c');
+    createPressArea(gameContainer, topArea, '#e74c3c');
     
     console.log('按压区域已绘制');
 }

@@ -116,14 +116,14 @@ body {
 
 .level-label {
     font-size: 14px;
-    color: #ff0000;
+    color: #aaa;
 }
 
 .level-value {
     font-size: 24px;
     font-weight: bold;
-    color: #ff0000;
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+    color: #e74c3c;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
 }
 
 .score-row {
@@ -353,53 +353,40 @@ body {
 }
 
 /* 三个不同颜色的触摸区域 */
-.touch-area-top,
-.touch-area-middle,
+.touch-area-top {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 3px solid #e74c3c;
+    border-radius: 50%;
+    background-color: rgba(231, 76, 60, 0.2);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    z-index: 15;
+}
+
+.touch-area-middle {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 3px solid #2ecc71;
+    border-radius: 50%;
+    background-color: rgba(46, 204, 113, 0.2);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    z-index: 15;
+}
+
 .touch-area-bottom {
     position: absolute;
     width: 100px;
     height: 100px;
-    border: 3px solid;
+    border: 3px solid #f1c40f;
     border-radius: 50%;
-    -webkit-border-radius: 50%;
-    -moz-border-radius: 50%;
+    background-color: rgba(241, 196, 15, 0.2);
     transform: translate(-50%, -50%);
-    -webkit-transform: translate(-50%, -50%);
-    -moz-transform: translate(-50%, -50%);
-    -ms-transform: translate(-50%, -50%);
-    opacity: 0.6;
-    z-index: 9999;
-    display: block !important;
-    visibility: visible !important;
-    pointer-events: none;
-}
-
-.touch-area-top {
-    border-color: #e74c3c;
-}
-
-.touch-area-middle {
-    border-color: #2ecc71;
-}
-
-.touch-area-bottom {
-    border-color: #f1c40f;
-}
-
-/* 录制阶段样式 */
-.touch-area-top.filled {
-    background-color: rgba(231, 76, 60, 0.5);
-    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
-}
-
-.touch-area-middle.filled {
-    background-color: rgba(46, 204, 113, 0.5);
-    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-}
-
-.touch-area-bottom.filled {
-    background-color: rgba(241, 196, 15, 0.5);
-    box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+    opacity: 0;
+    z-index: 15;
 }
 
 /* 电量条 */
@@ -632,20 +619,6 @@ body {
     0% { transform: translateY(-50%) scale(1); }
     50% { transform: translateY(-50%) scale(1.2); }
     100% { transform: translateY(-50%) scale(1); }
-}
-
-/* 震动动画 */
-@keyframes shake {
-    0%, 100% { transform: translate(0, 0); }
-    10% { transform: translate(-5px, -5px); }
-    20% { transform: translate(5px, 5px); }
-    30% { transform: translate(-5px, 5px); }
-    40% { transform: translate(5px, -5px); }
-    50% { transform: translate(-5px, -5px); }
-    60% { transform: translate(5px, 5px); }
-    70% { transform: translate(-5px, 5px); }
-    80% { transform: translate(5px, -5px); }
-    90% { transform: translate(-5px, -5px); }
 }
 
 /* 可随页面动的长方形框 */

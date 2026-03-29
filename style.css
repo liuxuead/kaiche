@@ -27,29 +27,6 @@ body {
     color: white;
 }
 
-/* 绘制区域（按压区域） */
-.press-area {
-    position: absolute;
-    border-radius: 50%;
-    background-color: transparent;
-    pointer-events: none;
-    z-index: 20;
-}
-
-/* 等级显示 */
-.level-display {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%) rotate(-90deg);
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #ff69b4;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-    z-index: 100;
-    white-space: nowrap;
-}
-
 .game-container h1 {
     font-size: 3rem;
     margin-bottom: 2rem;
@@ -189,6 +166,41 @@ body {
     transform: translate(-50%, -50%);
     opacity: 0;
     z-index: 15;
+}
+
+/* 电量条 */
+.battery-bar {
+    position: fixed;
+    bottom: 170px;
+    right: 20px;
+    width: 320px;
+    height: 30px;
+    background: #333;
+    border-radius: 5px;
+    z-index: 99999;
+    overflow: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.battery-bar.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+.battery-bar-container {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    padding: 0 5px;
+}
+
+.battery-bar-item {
+    flex: 1;
+    margin: 1px;
+    border-radius: 2px;
+    background-color: transparent;
+    transition: background-color 0.3s ease;
 }
 
 /* 数据显示区域 */

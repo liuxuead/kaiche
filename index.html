@@ -10,7 +10,6 @@
     <!-- 清除按钮已隐藏，使用长按仪表盘重置 -->
     <button class="clear-button" id="clear-btn" style="position: fixed; bottom: 20px; left: 20px; z-index: 99999; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">统</button>
     <button class="clear-button" id="reset-record-btn" style="position: fixed; bottom: 55px; left: 20px; z-index: 99999; background: #ff6600; width: 30px; height: 30px; padding: 0; font-size: 14px; display: none;">记</button>
-    <button id="export-data-btn" style="position: fixed; bottom: 90px; left: 20px; z-index: 99999; background: #3498db; width: 30px; height: 30px; padding: 0; font-size: 14px; display: block; border: none; border-radius: 5px; color: white;">导</button>
     
 
     
@@ -20,8 +19,12 @@
             <div class="dashboard-value">0</div>
         </div>
         
-        <!-- 等级显示 -->
-        <div class="level-display" id="level-display">等级：1</div>
+        <!-- 电量条 -->
+        <div class="battery-bar" id="battery-bar">
+            <div class="battery-bar-container" id="battery-bar-container">
+                <!-- 电量条格子将通过JavaScript动态生成 -->
+            </div>
+        </div>
         
         <div class="touch-info" style="display: none;">触摸位置: (0, 0)</div>
         <div class="touch-area"></div>
@@ -78,6 +81,6 @@
             </div>
         </div>
     </div>
-    <script src="script.js?v=2"></script>
+    <script src="script.js"></script>
 </body>
 </html>

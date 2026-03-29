@@ -3047,8 +3047,17 @@ function updateRecordDrawAreas() {
     
     if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) {
         console.log('找不到绘制区域元素');
+        console.log('touchAreaTop:', touchAreaTop);
+        console.log('touchAreaMiddle:', touchAreaMiddle);
+        console.log('touchAreaBottom:', touchAreaBottom);
         return;
     }
+    
+    // 检查元素是否可见
+    console.log('元素样式:');
+    console.log('touchAreaTop display:', getComputedStyle(touchAreaTop).display);
+    console.log('touchAreaTop visibility:', getComputedStyle(touchAreaTop).visibility);
+    console.log('touchAreaTop opacity:', getComputedStyle(touchAreaTop).opacity);
     
     // 如果 completeCount >= 4，隐藏所有绘制区域
     if (completeCount >= 4) {

@@ -116,14 +116,14 @@ body {
 
 .level-label {
     font-size: 14px;
-    color: #2ecc71;
+    color: #ff0000;
 }
 
 .level-value {
     font-size: 24px;
     font-weight: bold;
-    color: #2ecc71;
-    text-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+    color: #ff0000;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
 }
 
 .score-row {
@@ -368,9 +368,10 @@ body {
     -moz-transform: translate(-50%, -50%);
     -ms-transform: translate(-50%, -50%);
     opacity: 0.6;
-    z-index: 15;
-    display: block;
-    visibility: visible;
+    z-index: 9999;
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: none;
 }
 
 .touch-area-top {

@@ -3048,76 +3048,67 @@ function clearPressAreas() {
 
 // 更新录制模式下的绘制区域显示（completeCount < 4）
 function updateRecordDrawAreas() {
-    console.log('=== updateRecordDrawAreas 被调用 ===');
-    console.log('completeCount:', completeCount, 'touchCount:', touchCount);
-    
     const touchAreaTop = document.querySelector('.touch-area-top');
     const touchAreaMiddle = document.querySelector('.touch-area-middle');
     const touchAreaBottom = document.querySelector('.touch-area-bottom');
     
     if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) {
-        console.log('找不到绘制区域元素');
-        console.log('touchAreaTop:', touchAreaTop);
-        console.log('touchAreaMiddle:', touchAreaMiddle);
-        console.log('touchAreaBottom:', touchAreaBottom);
         return;
     }
     
-    // 检查元素是否可见
-    console.log('元素样式:');
-    console.log('touchAreaTop display:', getComputedStyle(touchAreaTop).display);
-    console.log('touchAreaTop visibility:', getComputedStyle(touchAreaTop).visibility);
-    console.log('touchAreaTop opacity:', getComputedStyle(touchAreaTop).opacity);
-    
-    // completeCount < 4 时，三个区域都填实显示
     const baseOpacity = '0.6';
     const glowOpacity = '1';
     
     const gameContainer = document.querySelector('.game-container');
-    const containerHeight = gameContainer ? gameContainer.clientHeight : 800;
+    const containerWidth = gameContainer ? gameContainer.clientWidth : window.innerWidth;
+    const containerHeight = gameContainer ? gameContainer.clientHeight : window.innerHeight;
     
-    // 获取统计数据（平均值或直接值）
+    // 计算缩放比例（基于设计宽度 1280px）
+    const designWidth = 1280;
+    const scaleRatio = containerWidth / designWidth;
+    
     const statsData = getStatsAverage();
-    console.log('统计数据:', statsData);
-    
-    // 获取默认数据中的位置
     const defaultTop = DEFAULT_GAME_DATA.touchData.top;
     const defaultMiddle = DEFAULT_GAME_DATA.touchData.middle;
     const defaultBottom = DEFAULT_GAME_DATA.touchData.bottom;
     
-    // 上区域（红色）- 优先使用统计数据，其次默认数据
-    const topX = (statsData.top.x !== 0) ? statsData.top.x : defaultTop.x;
-    const topY = (statsData.top.y !== 0) ? statsData.top.y : defaultTop.y;
-    const topRadius = statsData.top.radius || defaultTop.radius;
+    // 上区域（红色）- 按比例缩放位置
+    const topX = ((statsData.top.x !== 0) ? statsData.top.x : defaultTop.x) * scaleRatio;
+    const topY = ((statsData.top.y !== 0) ? statsData.top.y : defaultTop.y) * scaleRatio;
+    const topRadius = (statsData.top.radius || defaultTop.radius) * scaleRatio;
     touchAreaTop.style.left = `${topX}px`;
     touchAreaTop.style.top = `${containerHeight - topY}px`;
     touchAreaTop.style.width = `${topRadius * 2}px`;
     touchAreaTop.style.height = `${topRadius * 2}px`;
     
-    // 中区域（绿色）- 优先使用统计数据，其次默认数据
-    const middleX = (statsData.middle.x !== 0) ? statsData.middle.x : defaultMiddle.x;
-    const middleY = (statsData.middle.y !== 0) ? statsData.middle.y : defaultMiddle.y;
-    const middleRadius = statsData.middle.radius || defaultMiddle.radius;
+    // 中区域（绿色）- 按比例缩放位置
+    const middleX = ((statsData.middle.x !== 0) ? statsData.middle.x : defaultMiddle.x) * scaleRatio;
+    const middleY = ((statsData.middle.y !== 0) ? statsData.middle.y : defaultMiddle.y) * scaleRatio;
+    const middleRadius = (statsData.middle.radius || defaultMiddle.radius) * scaleRatio;
     touchAreaMiddle.style.left = `${middleX}px`;
     touchAreaMiddle.style.top = `${containerHeight - middleY}px`;
     touchAreaMiddle.style.width = `${middleRadius * 2}px`;
     touchAreaMiddle.style.height = `${middleRadius * 2}px`;
     
-    // 下区域（黄色）- 优先使用统计数据，其次默认数据
-    const bottomX = (statsData.bottom.x !== 0) ? statsData.bottom.x : defaultBottom.x;
-    const bottomY = (statsData.bottom.y !== 0) ? statsData.bottom.y : defaultBottom.y;
-    const bottomRadius = statsData.bottom.radius || defaultBottom.radius;
+    // 下区域（黄色）- 按比例缩放位置
+    const bottomX = ((statsData.bottom.x !== 0) ? statsData.bottom.x : defaultBottom.x) * scaleRatio;
+    const bottomY = ((statsData.bottom.y !== 0) ? statsData.bottom.y : defaultBottom.y) * scaleRatio;
+    const bottomRadius = (statsData.bottom.radius || defaultBottom.radius) * scaleRatio;
     touchAreaBottom.style.left = `${bottomX}px`;
     touchAreaBottom.style.top = `${containerHeight - bottomY}px`;
     touchAreaBottom.style.width = `${bottomRadius * 2}px`;
     touchAreaBottom.style.height = `${bottomRadius * 2}px`;
     
-    // 根据 completeCount 和 touchCount 决定哪个区域发光
-    console.log('根据 completeCount 和 touchCount 决定发光, completeCount:', completeCount, 'touchCount:', touchCount);
+    // 确保绘制区域始终可见
+    touchAreaTop.style.display = 'block';
+    touchAreaTop.style.visibility = 'visible';
+    touchAreaMiddle.style.display = 'block';
+    touchAreaMiddle.style.visibility = 'visible';
+    touchAreaBottom.style.display = 'block';
+    touchAreaBottom.style.visibility = 'visible';
     
     // 正常游戏阶段（completeCount >= 4）：不填实，不发光，只显示边框
     if (completeCount >= 4) {
-        console.log('正常游戏阶段，绘制区域不填实');
         touchAreaTop.style.opacity = '1';
         touchAreaTop.classList.remove('filled');
         touchAreaMiddle.style.opacity = '1';
@@ -3127,7 +3118,7 @@ function updateRecordDrawAreas() {
         return;
     }
     
-    // 重置所有区域（录制阶段）
+    // 录制阶段：填实显示
     touchAreaTop.style.opacity = baseOpacity;
     touchAreaTop.classList.add('filled');
     touchAreaMiddle.style.opacity = baseOpacity;
@@ -3135,9 +3126,8 @@ function updateRecordDrawAreas() {
     touchAreaBottom.style.opacity = baseOpacity;
     touchAreaBottom.classList.add('filled');
     
-    // completeCount = 3 时，三个区域同时发光（完成阶段）
+    // completeCount = 3 时，三个区域同时发光
     if (completeCount === 3) {
-        console.log('completeCount = 3，三个区域同时发光！');
         touchAreaTop.style.opacity = glowOpacity;
         touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
         touchAreaMiddle.style.opacity = glowOpacity;

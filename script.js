@@ -1488,8 +1488,9 @@ function recordTouchData(touch) {
     const containerHeight = gameContainer.clientHeight;
     
     // 镜像坐标：以横向中线为基准翻转
-    const mirrorX = Math.round(touch.clientX);
-    const originalY = Math.round(touch.clientY);
+    const rect = gameContainer.getBoundingClientRect();
+    const mirrorX = Math.round(touch.clientX - rect.left);
+    const originalY = Math.round(touch.clientY - rect.top);
     const mirrorY = containerHeight - originalY;
     
     // 增加触摸计数
@@ -2525,36 +2526,29 @@ function drawPressAreas() {
     // 获取容器高度，用于反转镜像坐标
     const containerHeight = gameContainer.clientHeight;
     
-    // 获取容器宽度和高度，用于适配位置
-    const containerWidth = gameContainer.clientWidth;
-    const containerHeight = gameContainer.clientHeight;
-    
-    // 计算适配位置（基于屏幕尺寸的比例）
-    // 左侧 20% 宽度位置，垂直方向 20%、50%、80% 高度位置
-    const horizontalPosition = containerWidth * 0.2;
-    
+    // 反转镜像坐标（触摸记录时使用了镜像坐标，现在需要反转回来显示）
     const reversedBottom = {
-        x: horizontalPosition,
-        y: containerHeight * 0.8,
-        radius: 50,
-        width: 100,
-        height: 100
+        x: stats.bottom.x,
+        y: containerHeight - stats.bottom.y,
+        radius: stats.bottom.radius,
+        width: stats.bottom.width,
+        height: stats.bottom.height
     };
     
     const reversedMiddle = {
-        x: horizontalPosition,
-        y: containerHeight * 0.5,
-        radius: 50,
-        width: 150,
-        height: 100
+        x: stats.middle.x,
+        y: containerHeight - stats.middle.y,
+        radius: stats.middle.radius,
+        width: stats.middle.width,
+        height: stats.middle.height
     };
     
     const reversedTop = {
-        x: horizontalPosition,
-        y: containerHeight * 0.2,
-        radius: 50,
-        width: 100,
-        height: 100
+        x: stats.top.x,
+        y: containerHeight - stats.top.y,
+        radius: stats.top.radius,
+        width: stats.top.width,
+        height: stats.top.height
     };
     
     // 绘制下区域（黑色）

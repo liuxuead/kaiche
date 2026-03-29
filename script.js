@@ -162,6 +162,11 @@ function updateDashboardValue() {
     const dashboardEl = document.querySelector('.dashboard-value');
     if (!dashboardEl) return;
     
+    // completeCount < 4 时不更新速度显示（显示秒表）
+    if (completeCount < 4) {
+        return;
+    }
+    
     // 计算差值，平滑过渡
     const diff = targetDashboardValue - dashboardValue;
     if (Math.abs(diff) < 0.1) {
@@ -169,9 +174,6 @@ function updateDashboardValue() {
         dashboardValue = targetDashboardValue;
         dashboardEl.textContent = Math.round(dashboardValue);
         dashboardAnimationId = null;
-        
-        // 更新车道线速度
-        updateLaneSpeed(dashboardValue);
         return;
     }
     
@@ -179,14 +181,12 @@ function updateDashboardValue() {
     dashboardValue += diff * 0.2;
     dashboardEl.textContent = Math.round(dashboardValue);
     
-    // 更新车道线速度
-    updateLaneSpeed(dashboardValue);
-    
     // 继续动画
     dashboardAnimationId = requestAnimationFrame(updateDashboardValue);
 }
 
-// 更新车道线速度
+// 更新车道线速度（旧代码已注释）
+/*
 function updateLaneSpeed(speed) {
     const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
@@ -225,8 +225,10 @@ function updateLaneSpeed(speed) {
             }
     });
 }
+*/
 
-// 使用指定的持续时间更新车道线
+// 使用指定的持续时间更新车道线（旧代码已注释）
+/*
 function updateLaneSpeedWithDuration(duration, speed) {
     const topTopLane = document.getElementById('top-top-lane');
     const topLane = document.getElementById('top-lane');
@@ -256,8 +258,10 @@ function updateLaneSpeedWithDuration(duration, speed) {
         }
     });
 }
+*/
 
-// 持续更新车道线（即使速度稳定时也能保持运动）
+// 持续更新车道线（即使速度稳定时也能保持运动）（旧代码已注释）
+/*
 let lastSpeed = 0;
 let currentDuration = 0.2; // 当前动画持续时间
 let targetDuration = 0.2; // 目标动画持续时间
@@ -281,8 +285,10 @@ function continuousLaneUpdate() {
     
     requestAnimationFrame(continuousLaneUpdate);
 }
+*/
 
-// 输出车道线和小车位置日志
+// 输出车道线和小车位置日志（旧代码已注释）
+/*
 function logLaneAndCarPositions() {
     const gameContainer = document.querySelector('.game-container');
     const yellowRectangle = document.getElementById('yellow-rectangle');
@@ -338,21 +344,23 @@ function logLaneAndCarPositions() {
         console.log('====================');
     }
 }
-
-
+*/
 
 // 根据触摸位置计算仪表盘数值
 function calculateDashboardValue(mirrorY) {
     const stats = getStatsAverage();
-    
-    if (stats.top.y === 0 || stats.bottom.y === 0) {
-        return DASHBOARD_MAX_VALUE / 2; // 默认中间值
-    }
-    
     const gameContainer = document.querySelector('.game-container');
     if (!gameContainer) return DASHBOARD_MAX_VALUE / 2;
     
     const rect = gameContainer.getBoundingClientRect();
+    
+    // 录制模式（completeCount < 4）：根据手指Y位置直接计算
+    if (stats.top.y === 0 || stats.bottom.y === 0) {
+        // 根据手指在屏幕上的Y位置计算（0-30）
+        const relativeY = mirrorY;
+        const position = relativeY / rect.height;
+        return Math.round(position * DASHBOARD_MAX_VALUE);
+    }
     // 把mirrorY转换成相对于game-container的坐标
     const relativeY = mirrorY - rect.top;
     
@@ -369,7 +377,6 @@ function calculateDashboardValue(mirrorY) {
     let position = (relativeY - minY) / totalRange;
     position = Math.max(0, Math.min(1, position));
     
-    // 电量条下方亮 = 仪表盘0，电量条上方亮 = 仪表盘300
     // 直接返回计算值：下方position=0时返回0，上方position=1时返回300
     let rawValue = position * DASHBOARD_MAX_VALUE;
     
@@ -524,36 +531,6 @@ function initGame() {
     const loaded = loadSavedData();
     if (loaded) {
         console.log('已加载保存的数据，跳过初始化');
-    } else {
-        // 没有保存的数据，使用默认初始化数据
-        console.log('没有保存的数据，使用默认初始化数据');
-        
-        // 加载默认数据
-        completeCount = DEFAULT_GAME_DATA.completeCount;
-        touchData.bottom = { ...DEFAULT_GAME_DATA.touchData.bottom };
-        touchData.middle = { ...DEFAULT_GAME_DATA.touchData.middle };
-        touchData.top = { ...DEFAULT_GAME_DATA.touchData.top };
-        middleRangeAdjusted = DEFAULT_GAME_DATA.middleRangeAdjusted;
-        middleRangeStart = DEFAULT_GAME_DATA.middleRangeStart;
-        middleRangeEnd = DEFAULT_GAME_DATA.middleRangeEnd;
-        
-        // 加载 allTouchData
-        allTouchData.length = 0;
-        DEFAULT_GAME_DATA.allTouchData.forEach(record => {
-            allTouchData.push(record);
-        });
-        
-        // 更新UI
-        const completeCounter = document.getElementById('complete-counter');
-        if (completeCounter) {
-            completeCounter.textContent = completeCount;
-        }
-        
-        // 更新统计面板
-        updateStatsPanel();
-        updateDataDisplay();
-        
-        console.log('默认数据已加载，completeCount:', completeCount);
     }
     
     setupTouchListeners();
@@ -581,14 +558,8 @@ function initGame() {
     // 初始化框大小
     updateDynamicFrameSize();
     
-    // 页面加载时立即绘制按压区域
-    drawPressAreas();
-    
-    // 监听窗口大小变化，更新框的大小和绘制区域
-    window.addEventListener('resize', () => {
-        updateDynamicFrameSize();
-        drawPressAreas();
-    });
+    // 监听窗口大小变化，更新框的大小
+    window.addEventListener('resize', updateDynamicFrameSize);
     
     // 控制球相关变量
     let ballX = 0; // 球的X坐标（相对于框）
@@ -669,6 +640,12 @@ function initGame() {
     
     // 更新球的移动
     function updateBallMovement() {
+        // completeCount < 4 时不移动小黄球
+        if (completeCount < 4) {
+            requestAnimationFrame(updateBallMovement);
+            return;
+        }
+        
         const frame = document.getElementById('dynamic-frame');
         if (!frame) return;
         
@@ -954,18 +931,6 @@ function initGame() {
         });
     }
     
-    // 小绿球相关变量
-    const greenBalls = []; // 存储小绿球信息
-    const MAX_GREEN_BALLS = 5; // 最大小绿球数量
-    const GREEN_BALL_SIZE = 30; // 小绿球大小
-    
-    // 小绿球速度等级配置
-    const GREEN_BALL_SPEEDS = [
-        { min: 2, max: 4, probability: 0.5 }, // 慢速
-        { min: 5, max: 7, probability: 0.3 }, // 中速
-        { min: 8, max: 10, probability: 0.2 }  // 快速
-    ];
-    
     // 生成小绿球
     function createGreenBall() {
         // 检查当前小绿球数量是否达到上限
@@ -1093,10 +1058,38 @@ function initGame() {
                 
                 // 碰撞检测
                 if (distance < (GREEN_BALL_SIZE + yellowBallSize) / 2) {
+                    // 计算得分
+                    const yellowBallSpeed = Math.round(dashboardValue);
+                    const greenBallSpeed = ball.speed;
+                    const speedDiff = Math.abs(yellowBallSpeed - greenBallSpeed);
+                    
+                    let points = 0;
+                    // 黄球速度为0时不得分
+                    if (yellowBallSpeed === 0) {
+                        points = 0;
+                    } else if (speedDiff === 0) {
+                        points = 10; // 相同速度，得10分
+                    } else if (speedDiff < 10) {
+                        points = 10 - speedDiff; // 速度差1-9，得9-1分
+                    }
+                    // 速度差>=10，得0分
+                    
+                    // 更新游戏系统数据
+                    totalEatenBalls++;
+                    if (points > 0) {
+                        roundScore += points;
+                        validEatenBalls++;
+                        console.log(`碰撞得分: ${points}分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
+                    } else {
+                        console.log(`碰撞无得分 (黄球速度: ${yellowBallSpeed}, 绿球速度: ${greenBallSpeed}, 速度差: ${speedDiff})`);
+                    }
+                    
+                    // 更新得分显示
+                    updateScoreDisplay();
+                    
                     // 移除小绿球
                     frame.removeChild(ball.element);
                     greenBalls.splice(i, 1);
-                    console.log('碰撞小绿球，已移除');
                 }
             }
         }
@@ -1116,12 +1109,13 @@ function initGame() {
     updateBallMovement();
     updateGreenBalls();
     startGreenBallGeneration();
+    
+    // 初始化游戏系统（等级挑战系统）
+    initGameSystem();
 
 }
 
-
-
-// 默认游戏数据（参考项目原始数据）
+// 默认游戏数据（新用户打开即可玩）
 const DEFAULT_GAME_DATA = {
     completeCount: 4,
     allTouchData: [
@@ -1148,6 +1142,21 @@ const DEFAULT_GAME_DATA = {
     middleRangeEnd: 0.6
 };
 
+// 小绿球相关变量
+const greenBalls = []; // 存储小绿球信息
+const MAX_GREEN_BALLS = 5; // 最大小绿球数量
+const GREEN_BALL_SIZE = 30; // 小绿球大小
+
+// 得分变量
+let totalScore = 0; // 总得分
+
+// 小绿球速度等级配置
+const GREEN_BALL_SPEEDS = [
+    { min: 1, max: 10, probability: 0.2 }, // 慢速
+    { min: 11, max: 20, probability: 0.5 }, // 中速
+    { min: 21, max: 30, probability: 0.3 }  // 快速
+];
+
 // 存储触摸位置数据
 const touchData = {
     bottom: { x: 0, y: 0, radius: 50, width: 100, height: 100 },
@@ -1155,7 +1164,7 @@ const touchData = {
     top: { x: 0, y: 0, radius: 50, width: 100, height: 100 }
 };
 
-// 存储所有记录的数据（初始为空，在 initGame 中设置默认值）
+// 存储所有记录的数据
 const allTouchData = [];
 // 记录上一次"下"的数据，用来检测变化
 let lastBottomX = 0;
@@ -1275,7 +1284,7 @@ function setupTouchListeners() {
         currentTouch = e.touches[0];
         updateTouchInfo(currentTouch, touchArea);
         
-        // 实时更新电量条和仪表盘（completeCount <= 3 时启用）
+        // 实时更新仪表盘和绘制区域（completeCount <= 3 时启用）
         if (completeCount <= 3) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1289,9 +1298,57 @@ function setupTouchListeners() {
             if (!dashboardAnimationId) {
                 updateDashboardValue();
             }
+            
+            // 确定手指在哪个区域（使用统计数据或默认数据）
+            let currentPosition = '';
+            
+            // 获取统计数据
+            const statsData = getStatsAverage();
+            
+            // 获取默认数据
+            const defaultTop = DEFAULT_GAME_DATA.touchData.top;
+            const defaultMiddle = DEFAULT_GAME_DATA.touchData.middle;
+            const defaultBottom = DEFAULT_GAME_DATA.touchData.bottom;
+            
+            // 下区域
+            const bottomX = (statsData.bottom.x !== 0) ? statsData.bottom.x : defaultBottom.x;
+            const bottomY = (statsData.bottom.y !== 0) ? statsData.bottom.y : defaultBottom.y;
+            const bottomRadius = statsData.bottom.radius || defaultBottom.radius;
+            const dxBottom = mirrorX - bottomX;
+            const dyBottom = mirrorY - bottomY;
+            const distBottom = Math.sqrt(dxBottom * dxBottom + dyBottom * dyBottom);
+            if (distBottom <= bottomRadius) currentPosition = 'bottom';
+            
+            // 中区域
+            if (!currentPosition) {
+                const middleX = (statsData.middle.x !== 0) ? statsData.middle.x : defaultMiddle.x;
+                const middleY = (statsData.middle.y !== 0) ? statsData.middle.y : defaultMiddle.y;
+                const middleRadius = statsData.middle.radius || defaultMiddle.radius;
+                const dxMiddle = mirrorX - middleX;
+                const dyMiddle = mirrorY - middleY;
+                const distMiddle = Math.sqrt(dxMiddle * dxMiddle + dyMiddle * dyMiddle);
+                if (distMiddle <= middleRadius) currentPosition = 'middle';
+            }
+            
+            // 上区域
+            if (!currentPosition) {
+                const topX = (statsData.top.x !== 0) ? statsData.top.x : defaultTop.x;
+                const topY = (statsData.top.y !== 0) ? statsData.top.y : defaultTop.y;
+                const topRadius = statsData.top.radius || defaultTop.radius;
+                const dxTop = mirrorX - topX;
+                const dyTop = mirrorY - topY;
+                const distTop = Math.sqrt(dxTop * dxTop + dyTop * dyTop);
+                if (distTop <= topRadius) currentPosition = 'top';
+            }
+            
+            // 根据位置高亮绘制区域和仪表盘
+            if (currentPosition) {
+                highlightDrawAreaByPosition(currentPosition);
+                updateDashboardGlow(currentPosition);
+            }
         }
         
-        // completeCount达到4后才启用绘制区域逻辑
+        // 实时更新仪表盘（completeCount达到4后才启用）
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1326,9 +1383,13 @@ function setupTouchListeners() {
         const touchAreaTop = document.querySelector('.touch-area-top');
         const touchAreaMiddle = document.querySelector('.touch-area-middle');
         const touchAreaBottom = document.querySelector('.touch-area-bottom');
-        if (touchAreaTop) touchAreaTop.style.opacity = '0';
-        if (touchAreaMiddle) touchAreaMiddle.style.opacity = '0';
-        if (touchAreaBottom) touchAreaBottom.style.opacity = '0';
+        
+        // 录制阶段（completeCount < 4）才隐藏绘制区域
+        if (completeCount < 4) {
+            if (touchAreaTop) touchAreaTop.style.opacity = '0';
+            if (touchAreaMiddle) touchAreaMiddle.style.opacity = '0';
+            if (touchAreaBottom) touchAreaBottom.style.opacity = '0';
+        }
         
         // 停止计时并显示最终时间
         stopStopwatch();
@@ -1338,10 +1399,25 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // 触摸结束时仪表盘数值回落到0
-        targetDashboardValue = 0;
-        if (!dashboardAnimationId) {
-            updateDashboardValue();
+        // 清除仪表盘发光效果
+        clearDashboardGlow();
+        
+        // completeCount <= 3 时，仪表盘数值回落到0，绘制区域恢复基础状态
+        if (completeCount <= 3) {
+            targetDashboardValue = 0;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
+            // 恢复绘制区域为基础状态（填实但不发光）
+            updateRecordDrawAreas();
+        }
+        
+        // completeCount >=4 时，仪表盘数值回落到0
+        if (completeCount >= 4) {
+            targetDashboardValue = 0;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
         }
     });
     
@@ -1416,7 +1492,7 @@ function setupTouchListeners() {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
-        // 实时更新电量条和仪表盘（completeCount <= 3 时启用）
+        // 实时更新仪表盘（completeCount <= 3 时启用）
         if (completeCount <= 3) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1431,7 +1507,7 @@ function setupTouchListeners() {
             }
         }
         
-        // completeCount达到4后才启用绘制区域逻辑
+        // 实时更新仪表盘（completeCount达到4后才启用）
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
             const containerHeight = gameContainer.clientHeight;
@@ -1464,10 +1540,12 @@ function setupTouchListeners() {
         clearTimeout(longPressTimer);
         currentTouch = null;
         
-        // 鼠标松开时仪表盘数值回落到0
-        targetDashboardValue = 0;
-        if (!dashboardAnimationId) {
-            updateDashboardValue();
+        // completeCount >=4 时，仪表盘数值回落到0
+        if (completeCount >= 4) {
+            targetDashboardValue = 0;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
         }
     });
 }
@@ -1541,25 +1619,28 @@ function recordTouchData(touch) {
             completeCounter.textContent = completeCount;
             console.log('第一次录入完成，completeCount:', completeCount);
             
-            // 当completeCount变为3时，开始仪表盘闪烁，隐藏电量条
+            // 更新绘制区域显示（可能需要发光）
+            updateRecordDrawAreas();
+            
+            // 当completeCount变为3时，开始仪表盘闪烁
             if (completeCount === 3) {
-                console.log('completeCount 变为3，开始仪表盘闪烁，隐藏电量条');
+                console.log('completeCount 变为3，开始仪表盘闪烁');
                 const dashboard = document.querySelector('.dashboard');
                 if (dashboard) {
                     dashboard.classList.add('blinking');
                 }
-                
-                // 隐藏电量条
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar) {
-                    console.log('找到电量条元素，添加hidden类');
-                    batteryBar.classList.add('hidden');
-                    console.log('电量条类列表:', batteryBar.className);
-                    console.log('电量条是否隐藏:', batteryBar.classList.contains('hidden'));
-                } else {
-                    console.log('未找到电量条元素');
+            }
+            
+            // 测试：当 completeCount 变为4时显示长方形（旧代码已注释）
+            /*
+            if (completeCount === 4) {
+                console.log('completeCount 变为4，测试显示长方形');
+                const yellowRectangle = document.getElementById('yellow-rectangle');
+                if (yellowRectangle) {
+                    yellowRectangle.style.display = 'block';
                 }
             }
+            */
             
             // 存到数组
             saveTouchDataToAll();
@@ -1631,6 +1712,9 @@ function recordTouchData(touch) {
                 completeCounter.textContent = completeCount;
                 console.log('录入完成，completeCount:', completeCount);
                 
+                // 更新绘制区域显示（可能需要发光）
+                updateRecordDrawAreas();
+                
                 // 存到数组
                 saveTouchDataToAll();
             }
@@ -1638,7 +1722,6 @@ function recordTouchData(touch) {
     }
     
     updateDataDisplay();
-     // 更新电量条记录状态
 }
 
 // 保存当前触摸数据到allTouchData数组（每次"下"值变化时触发，最多3次）
@@ -1674,12 +1757,6 @@ function saveTouchDataToAll() {
         
         // 检查是否达到3次
             if (allTouchData.length >= 3) {
-                // 电量条边框变亮，表示已锁定（仅在电量条未隐藏时）
-                const batteryBar = document.querySelector('.battery-bar');
-                if (batteryBar && !batteryBar.classList.contains('hidden')) {
-                    batteryBar.style.boxShadow = '0 0 10px #00ff00, 0 0 20px #00ff00';
-                    batteryBar.style.border = '2px solid #00ff00';
-                }
                 console.log('========================================');
                 console.log('统计已达到3次！记录区域停止记录');
                 console.log('========================================');
@@ -1703,7 +1780,17 @@ function getStatsAverage() {
         };
     }
     
-    // 计算平均值
+    // completeCount = 0 或 1 时，直接返回最新一条记录（不做平均值计算）
+    if (completeCount <= 1) {
+        const latest = allTouchData[count - 1];
+        return {
+            top: { ...latest.top },
+            middle: { ...latest.middle },
+            bottom: { ...latest.bottom }
+        };
+    }
+    
+    // completeCount > 1 时，计算平均值
     let sumTopX = 0, sumTopY = 0, sumTopR = 0, sumTopW = 0, sumTopH = 0;
     let sumMiddleX = 0, sumMiddleY = 0, sumMiddleR = 0, sumMiddleW = 0, sumMiddleH = 0;
     let sumBottomX = 0, sumBottomY = 0, sumBottomR = 0, sumBottomW = 0, sumBottomH = 0;
@@ -1953,6 +2040,12 @@ function showFixedTouchArea(position, touchAreaTop, touchAreaMiddle, touchAreaBo
 
 // 清除所有触摸区域
 function clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom) {
+    // 录制模式下不隐藏绘制区域
+    if (completeCount < 4) {
+        console.log('录制模式下，不隐藏绘制区域');
+        return;
+    }
+    
     if (touchAreaTop) {
         touchAreaTop.style.opacity = '0';
     }
@@ -2058,6 +2151,11 @@ function stopStopwatch() {
     
     console.log('stopStopwatch 被调用，completeCount:', completeCount, 'totalSeconds:', totalSeconds, 'currentTouch:', currentTouch ? '存在' : '不存在');
     
+    // 更新绘制区域显示（录制模式下）
+    if (completeCount < 4) {
+        updateRecordDrawAreas();
+    }
+    
     // 当completeCount=3且计时达到3秒时，调整"中"的范围
     if (completeCount === 3 && totalSeconds >= 3 && currentTouch) {
         console.log('计时达到3秒，调整"中"的范围');
@@ -2067,26 +2165,24 @@ function stopStopwatch() {
             dashboard.classList.remove('blinking');
         }
         
-        // 确保电量条保持隐藏状态
-        const batteryBar = document.querySelector('.battery-bar');
-        if (batteryBar) {
-            batteryBar.classList.add('hidden');
-        }
-        
         adjustMiddleRange(currentTouch);
         // 将completeCount增加到4，避免再次触发
         completeCount = 4;
         const completeCounter = document.getElementById('complete-counter');
         completeCounter.textContent = completeCount;
-        // 显示长方形
+        // 显示长方形（旧代码已注释）
+        /*
         const yellowRectangle = document.getElementById('yellow-rectangle');
         if (yellowRectangle) {
             yellowRectangle.style.display = 'block';
         }
+        */
         // 绘制按压区域
         drawPressAreas();
         // 保存数据到localStorage
         saveStatsData();
+        // 更新绘制区域显示（切换到正常模式）
+        updateRecordDrawAreas();
     }
 }
 
@@ -2111,50 +2207,101 @@ function saveStatsData() {
 // 从localStorage加载统计数据
 function loadSavedData() {
     const savedData = localStorage.getItem('gameStats');
-    if (savedData) {
-        try {
-            const parsedData = JSON.parse(savedData);
-            if (parsedData.stats && parsedData.allTouchData) {
-                // 加载统计数据 - 使用push方式，避免const赋值错误
-                allTouchData.length = 0; // 清空现有数据
-                parsedData.allTouchData.forEach(record => {
-                    allTouchData.push(record);
-                });
-                completeCount = parsedData.completeCount || 4;
-                
-                // 恢复touchData
-                if (parsedData.touchData) {
-                    touchData.top = parsedData.touchData.top || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
-                    touchData.middle = parsedData.touchData.middle || { x: 0, y: 0, radius: 50, width: 150, height: 100 };
-                    touchData.bottom = parsedData.touchData.bottom || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
-                }
-                
-                // 恢复"中"范围调整状态
-                middleRangeAdjusted = parsedData.middleRangeAdjusted || false;
-                middleRangeStart = parsedData.middleRangeStart || 0.33;
-                middleRangeEnd = parsedData.middleRangeEnd || 0.66;
-                
-                // 更新UI
-                const completeCounter = document.getElementById('complete-counter');
-                completeCounter.textContent = completeCount;
-                
-                // 更新统计面板
-                updateStatsPanel();
-                updateDataDisplay();
-                
-                // 如果 completeCount >= 4，绘制按压区域
-                if (completeCount >= 4) {
-                    drawPressAreas();
-                }
-                
-                console.log('从localStorage加载了统计数据，completeCount:', completeCount);
-                return true; // 返回true表示加载成功
-            }
-        } catch (error) {
-            console.error('加载保存数据失败:', error);
-        }
+    
+    // 如果没有保存的数据，使用默认数据
+    if (!savedData) {
+        console.log('没有找到保存的数据，使用默认数据');
+        loadDefaultData();
+        return true;
     }
+    
+    try {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.stats && parsedData.allTouchData) {
+            // 加载统计数据 - 使用push方式，避免const赋值错误
+            allTouchData.length = 0; // 清空现有数据
+            parsedData.allTouchData.forEach(record => {
+                allTouchData.push(record);
+            });
+            completeCount = parsedData.completeCount || 4;
+            
+            // 恢复touchData
+            if (parsedData.touchData) {
+                touchData.top = parsedData.touchData.top || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+                touchData.middle = parsedData.touchData.middle || { x: 0, y: 0, radius: 50, width: 150, height: 100 };
+                touchData.bottom = parsedData.touchData.bottom || { x: 0, y: 0, radius: 50, width: 100, height: 100 };
+            }
+            
+            // 恢复"中"范围调整状态
+            middleRangeAdjusted = parsedData.middleRangeAdjusted || false;
+            middleRangeStart = parsedData.middleRangeStart || 0.33;
+            middleRangeEnd = parsedData.middleRangeEnd || 0.66;
+            
+            // 更新UI
+            const completeCounter = document.getElementById('complete-counter');
+            completeCounter.textContent = completeCount;
+            
+            // 更新统计面板
+            updateStatsPanel();
+            updateDataDisplay();
+            
+            // 如果 completeCount >= 4，绘制按压区域
+            if (completeCount >= 4) {
+                drawPressAreas();
+            }
+            
+            console.log('从localStorage加载了统计数据，completeCount:', completeCount);
+            return true; // 返回true表示加载成功
+        }
+    } catch (error) {
+        console.error('加载保存数据失败:', error);
+        console.log('加载失败，使用默认数据');
+        loadDefaultData();
+        return true;
+    }
+    
     return false; // 返回false表示没有加载到数据
+}
+
+// 加载默认游戏数据
+function loadDefaultData() {
+    console.log('加载默认游戏数据...');
+    
+    // 加载allTouchData
+    allTouchData.length = 0;
+    DEFAULT_GAME_DATA.allTouchData.forEach(record => {
+        allTouchData.push(record);
+    });
+    
+    // 设置completeCount
+    completeCount = DEFAULT_GAME_DATA.completeCount;
+    
+    // 设置touchData
+    touchData.top = DEFAULT_GAME_DATA.touchData.top;
+    touchData.middle = DEFAULT_GAME_DATA.touchData.middle;
+    touchData.bottom = DEFAULT_GAME_DATA.touchData.bottom;
+    
+    // 设置"中"范围调整状态
+    middleRangeAdjusted = DEFAULT_GAME_DATA.middleRangeAdjusted;
+    middleRangeStart = DEFAULT_GAME_DATA.middleRangeStart;
+    middleRangeEnd = DEFAULT_GAME_DATA.middleRangeEnd;
+    
+    // 更新UI
+    const completeCounter = document.getElementById('complete-counter');
+    completeCounter.textContent = completeCount;
+    
+    // 更新统计面板
+    updateStatsPanel();
+    updateDataDisplay();
+    
+    // 绘制按压区域
+    drawPressAreas();
+    
+    // 重置游戏回合，确保得分和成功率从0开始
+    resetRound();
+    updateScoreDisplay();
+    
+    console.log('默认游戏数据加载完成，completeCount:', completeCount);
 }
 
 // 清除保存的统计数据
@@ -2260,14 +2407,13 @@ function resetRecordData() {
     const textMiddle = document.getElementById('text-middle');
     const textBottom = document.getElementById('text-bottom');
     
-    // 重置所有数据
+    // 清空记录数据，但保留统计数据
     touchData.top = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
     touchData.middle = { x: 0, y: 0, radius: 50, width: 150, height: 100 };
     touchData.bottom = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
     touchCount = 0;
     lastBottomX = 0;
     lastBottomY = 0;
-    allTouchData.length = 0;
     completeCount = 0;
     
     // 重置"中"范围调整状态
@@ -2275,8 +2421,7 @@ function resetRecordData() {
     middleRangeStart = 0.33;
     middleRangeEnd = 0.66;
     
-    // 清除保存的统计数据
-    clearSavedData();
+    // 不清除统计数据，保留 allTouchData
     
     // 清除显示
     clearTouchAreas(touchAreaTop, touchAreaMiddle, touchAreaBottom);
@@ -2284,13 +2429,8 @@ function resetRecordData() {
     updateDataDisplay();
     updateStatsPanel();
     
-    // 恢复电量条显示
-    const batteryBar = document.querySelector('.battery-bar');
-    if (batteryBar) {
-        batteryBar.classList.remove('hidden');
-        batteryBar.style.boxShadow = 'none';
-        batteryBar.style.border = '2px solid #3498db';
-    }
+    // 更新录制模式下的绘制区域显示
+    updateRecordDrawAreas();
     
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
@@ -2343,9 +2483,6 @@ function resetAllData() {
     // 清除按压区域
     clearPressAreas();
     
-    // 重新绘制按压区域（使用默认位置）
-    drawPressAreas();
-    
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
     if (completeCounter) {
@@ -2372,9 +2509,8 @@ function drawPressAreas() {
     clearPressAreas();
     
     const stats = getStatsAverage();
-    // 如果没有统计数据，不显示绘制区域
     if (stats.top.y === 0 || stats.bottom.y === 0 || stats.middle.y === 0) {
-        console.log('统计数据不完整，不显示绘制区域');
+        console.log('统计数据不完整，无法绘制按压区域');
         return;
     }
     
@@ -2384,10 +2520,12 @@ function drawPressAreas() {
     // 获取容器高度，用于反转镜像坐标
     const containerHeight = gameContainer.clientHeight;
     
-    // 反转镜像坐标（触摸记录时使用了镜像坐标，现在需要反转回来显示）
-    // 顶着左边放（x 坐标设置为宽度的一半，这样会贴着左边）
+    // 先清除现有的按压区域
+    clearPressAreas();
+    
+    // 反转镜像坐标
     const reversedBottom = {
-        x: (stats.bottom.width || 100) / 2,
+        x: stats.bottom.x,
         y: containerHeight - stats.bottom.y,
         radius: stats.bottom.radius,
         width: stats.bottom.width,
@@ -2395,7 +2533,7 @@ function drawPressAreas() {
     };
     
     const reversedMiddle = {
-        x: (stats.middle.width || 150) / 2,
+        x: stats.middle.x,
         y: containerHeight - stats.middle.y,
         radius: stats.middle.radius,
         width: stats.middle.width,
@@ -2403,7 +2541,7 @@ function drawPressAreas() {
     };
     
     const reversedTop = {
-        x: (stats.top.width || 100) / 2,
+        x: stats.top.x,
         y: containerHeight - stats.top.y,
         radius: stats.top.radius,
         width: stats.top.width,
@@ -2418,8 +2556,442 @@ function drawPressAreas() {
     
     // 绘制上区域（红色）
     createPressArea(gameContainer, reversedTop, '#e74c3c');
+}
+
+// ============================================
+// 游戏系统 - 等级挑战系统
+// ============================================
+
+// 等级配置系统
+const LEVEL_CONFIGS = [
+    { level: 1, slowMin: 1, slowMax: 10, slowProb: 0.6, midMin: 11, midMax: 18, midProb: 0.3, fastMin: 19, fastMax: 22, fastProb: 0.1, targetScore: 50, targetSuccessRate: 0.6 },
+    { level: 2, slowMin: 1, slowMax: 9, slowProb: 0.55, midMin: 10, midMax: 19, midProb: 0.32, fastMin: 20, fastMax: 24, fastProb: 0.13, targetScore: 120, targetSuccessRate: 0.65 },
+    { level: 3, slowMin: 1, slowMax: 8, slowProb: 0.5, midMin: 9, midMax: 20, midProb: 0.34, fastMin: 21, fastMax: 26, fastProb: 0.16, targetScore: 200, targetSuccessRate: 0.7 },
+    { level: 4, slowMin: 1, slowMax: 7, slowProb: 0.45, midMin: 8, midMax: 21, midProb: 0.36, fastMin: 22, fastMax: 28, fastProb: 0.19, targetScore: 300, targetSuccessRate: 0.7 },
+    { level: 5, slowMin: 1, slowMax: 6, slowProb: 0.4, midMin: 7, midMax: 22, midProb: 0.38, fastMin: 23, fastMax: 30, fastProb: 0.22, targetScore: 420, targetSuccessRate: 0.75 },
+    { level: 6, slowMin: 1, slowMax: 5, slowProb: 0.35, midMin: 6, midMax: 24, midProb: 0.4, fastMin: 25, fastMax: 33, fastProb: 0.25, targetScore: 560, targetSuccessRate: 0.75 },
+    { level: 7, slowMin: 1, slowMax: 4, slowProb: 0.3, midMin: 5, midMax: 26, midProb: 0.42, fastMin: 27, fastMax: 36, fastProb: 0.28, targetScore: 720, targetSuccessRate: 0.8 },
+    { level: 8, slowMin: 1, slowMax: 3, slowProb: 0.25, midMin: 4, midMax: 28, midProb: 0.44, fastMin: 29, fastMax: 40, fastProb: 0.31, targetScore: 900, targetSuccessRate: 0.8 },
+    { level: 9, slowMin: 1, slowMax: 2, slowProb: 0.2, midMin: 3, midMax: 32, midProb: 0.46, fastMin: 33, fastMax: 45, fastProb: 0.34, targetScore: 1100, targetSuccessRate: 0.85 },
+    { level: 10, slowMin: 1, slowMax: 1, slowProb: 0.15, midMin: 2, midMax: 40, midProb: 0.48, fastMin: 41, fastMax: 55, fastProb: 0.37, targetScore: 999999, targetSuccessRate: 1 }
+];
+
+// 游戏状态
+let currentLevel = 1; // 当前等级
+let unlockedLevel = 1; // 已解锁的最高等级
+let roundScore = 0; // 本局得分
+let totalEatenBalls = 0; // 本局吃到的球数
+let validEatenBalls = 0; // 本局有效得分的球数
+let ballsInRound = 0; // 本局已生成的球数
+let isLevelSelectOpen = false; // 等级选择面板是否打开
+
+// 保存游戏数据
+function saveGameData() {
+    const data = {
+        unlockedLevel: unlockedLevel,
+        currentLevel: currentLevel
+    };
+    localStorage.setItem('ballChaseGame', JSON.stringify(data));
+    console.log('游戏数据已保存:', data);
+}
+
+// 加载游戏数据
+function loadGameData() {
+    const saved = localStorage.getItem('ballChaseGame');
+    if (saved) {
+        const data = JSON.parse(saved);
+        unlockedLevel = data.unlockedLevel || 1;
+        currentLevel = Math.min(data.currentLevel || 1, unlockedLevel);
+        console.log('游戏数据已加载:', data);
+        return true;
+    }
+    return false;
+}
+
+// 获取当前等级配置
+function getCurrentLevelConfig() {
+    return LEVEL_CONFIGS.find(c => c.level === currentLevel) || LEVEL_CONFIGS[0];
+}
+
+// 更新得分显示
+function updateScoreDisplay() {
+    const config = getCurrentLevelConfig();
     
-    console.log('按压区域已绘制');
+    // 更新等级显示
+    const levelValue = document.getElementById('level-value');
+    if (levelValue) {
+        levelValue.textContent = currentLevel;
+    }
+    
+    // 更新得分显示
+    const scoreValue = document.getElementById('score-value');
+    if (scoreValue) {
+        scoreValue.textContent = roundScore;
+        scoreValue.classList.remove('met', 'not-met');
+        scoreValue.classList.add(roundScore >= config.targetScore ? 'met' : 'not-met');
+    }
+    
+    // 更新成功率显示
+    const successRateValue = document.getElementById('success-rate-value');
+    if (successRateValue) {
+        const rate = totalEatenBalls > 0 ? (validEatenBalls / totalEatenBalls * 100).toFixed(0) : 0;
+        successRateValue.textContent = `${rate}%`;
+        successRateValue.classList.remove('met', 'not-met');
+        const currentRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 0;
+        successRateValue.classList.add(currentRate >= config.targetSuccessRate ? 'met' : 'not-met');
+    }
+}
+
+// 重置本局
+function resetRound() {
+    roundScore = 0;
+    totalEatenBalls = 0;
+    validEatenBalls = 0;
+    ballsInRound = 0;
+    
+    // 清除所有小绿球
+    const frame = document.getElementById('dynamic-frame');
+    if (frame) {
+        greenBalls.forEach(ball => {
+            if (ball.element && ball.element.parentNode) {
+                ball.element.parentNode.removeChild(ball.element);
+            }
+        });
+        greenBalls.length = 0;
+    }
+    
+    updateScoreDisplay();
+    console.log('本局已重置');
+}
+
+// 检查是否升级
+function checkLevelUp() {
+    const config = getCurrentLevelConfig();
+    const successRate = totalEatenBalls > 0 ? validEatenBalls / totalEatenBalls : 0;
+    
+    if (roundScore >= config.targetScore && successRate >= config.targetSuccessRate) {
+        if (currentLevel < 10) {
+            currentLevel++;
+            if (currentLevel > unlockedLevel) {
+                unlockedLevel = currentLevel;
+            }
+            saveGameData();
+            showLevelUpModal();
+        }
+        return true;
+    }
+    return false;
+}
+
+// 检查本局是否结束（吃完5个球）
+function checkRoundEnd() {
+    if (totalEatenBalls >= 5) {
+        const leveledUp = checkLevelUp();
+        if (!leveledUp) {
+            showChallengeFailModal();
+        }
+        return true;
+    }
+    return false;
+}
+
+// 显示升级提示
+function showLevelUpModal() {
+    const modal = document.getElementById('level-up-modal');
+    const message = document.getElementById('level-up-message');
+    if (modal && message) {
+        message.textContent = `恭喜解锁第 ${currentLevel} 级！`;
+        modal.style.display = 'flex';
+    }
+}
+
+// 显示挑战失败提示
+function showChallengeFailModal() {
+    const modal = document.getElementById('challenge-fail-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// 隐藏模态框
+function hideModals() {
+    document.getElementById('level-up-modal').style.display = 'none';
+    document.getElementById('challenge-fail-modal').style.display = 'none';
+    resetRound();
+}
+
+// 显示等级选择面板
+function showLevelSelectPanel() {
+    const panel = document.getElementById('level-select-panel');
+    const grid = document.getElementById('level-grid');
+    if (!panel || !grid) return;
+    
+    grid.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+        const item = document.createElement('div');
+        item.className = 'level-item';
+        item.textContent = i;
+        
+        if (i > unlockedLevel) {
+            item.classList.add('locked');
+        } else if (i === currentLevel) {
+            item.classList.add('current');
+        } else {
+            item.classList.add('unlocked');
+        }
+        
+        if (i <= unlockedLevel) {
+            item.onclick = () => {
+                currentLevel = i;
+                saveGameData();
+                hideLevelSelectPanel();
+                resetRound();
+            };
+        }
+        
+        grid.appendChild(item);
+    }
+    
+    panel.style.display = 'block';
+    isLevelSelectOpen = true;
+}
+
+// 隐藏等级选择面板
+function hideLevelSelectPanel() {
+    const panel = document.getElementById('level-select-panel');
+    if (panel) {
+        panel.style.display = 'none';
+    }
+    isLevelSelectOpen = false;
+}
+
+// 设置等级长按事件
+function setupLevelLongPress() {
+    const levelDisplay = document.getElementById('level-display');
+    if (!levelDisplay) return;
+    
+    levelDisplay.addEventListener('mousedown', startLongPress);
+    levelDisplay.addEventListener('mouseup', cancelLongPress);
+    levelDisplay.addEventListener('mouseleave', cancelLongPress);
+    levelDisplay.addEventListener('touchstart', startLongPress);
+    levelDisplay.addEventListener('touchend', cancelLongPress);
+}
+
+function startLongPress() {
+    longPressTimer = setTimeout(() => {
+        showLevelSelectPanel();
+    }, 500);
+}
+
+function cancelLongPress() {
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+}
+
+// 根据等级获取小绿球速度配置
+function getLevelBasedSpeedConfig() {
+    const config = getCurrentLevelConfig();
+    const random = Math.random();
+    
+    if (random < config.slowProb) {
+        return { min: config.slowMin, max: config.slowMax };
+    } else if (random < config.slowProb + config.midProb) {
+        return { min: config.midMin, max: config.midMax };
+    } else {
+        return { min: config.fastMin, max: config.fastMax };
+    }
+}
+
+// 重写createGreenBall函数，使用等级配置
+const originalCreateGreenBall = createGreenBall;
+function createGreenBall() {
+    // completeCount < 4 时不生成小绿球
+    if (completeCount < 4) return;
+    
+    if (ballsInRound >= 5) return;
+    if (greenBalls.length >= MAX_GREEN_BALLS) return;
+    
+    const speedConfig = getLevelBasedSpeedConfig();
+    const speed = Math.floor(Math.random() * (speedConfig.max - speedConfig.min + 1)) + speedConfig.min;
+    
+    const angle = Math.random() * Math.PI * 2;
+    const speedX = Math.cos(angle) * speed;
+    const speedY = Math.sin(angle) * speed;
+    
+    const ball = document.createElement('div');
+    ball.className = 'green-ball';
+    
+    const speedText = document.createElement('span');
+    speedText.className = 'speed-text';
+    speedText.textContent = speed;
+    ball.appendChild(speedText);
+    
+    const frame = document.getElementById('dynamic-frame');
+    const frameRect = frame.getBoundingClientRect();
+    
+    let ballX, ballY;
+    let validPosition = false;
+    
+    while (!validPosition) {
+        ballX = Math.random() * (frameRect.width - GREEN_BALL_SIZE);
+        ballY = Math.random() * (frameRect.height - GREEN_BALL_SIZE);
+        
+        const dashboardLeft = 20;
+        const dashboardTop = '50%';
+        const dashboardSize = 120;
+        
+        if (!(ballX < dashboardLeft + dashboardSize)) {
+            validPosition = true;
+        }
+    }
+    
+    ball.style.left = `${ballX}px`;
+    ball.style.top = `${ballY}px`;
+    frame.appendChild(ball);
+    
+    greenBalls.push({
+        element: ball,
+        x: ballX,
+        y: ballY,
+        speedX: speedX,
+        speedY: speedY,
+        speed: speed
+    });
+    
+    ballsInRound++;
+    console.log('生成小绿球，速度:', speed, '等级:', currentLevel);
+}
+
+// 修改碰撞得分逻辑
+const originalUpdateGreenBalls = updateGreenBalls;
+function updateGreenBalls() {
+    const frame = document.getElementById('dynamic-frame');
+    if (!frame) return;
+    
+    const frameRect = frame.getBoundingClientRect();
+    
+    for (let i = greenBalls.length - 1; i >= 0; i--) {
+        const ball = greenBalls[i];
+        
+        let newX = ball.x + ball.speedX * 0.5;
+        let newY = ball.y + ball.speedY * 0.5;
+        
+        if (newX < 0 || newX > frameRect.width - GREEN_BALL_SIZE) {
+            ball.speedX = -ball.speedX;
+            newX = Math.max(0, Math.min(frameRect.width - GREEN_BALL_SIZE, newX));
+        }
+        
+        if (newY < 0 || newY > frameRect.height - GREEN_BALL_SIZE) {
+            ball.speedY = -ball.speedY;
+            newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
+        }
+        
+        ball.x = newX;
+        ball.y = newY;
+        ball.element.style.left = `${newX}px`;
+        ball.element.style.top = `${newY}px`;
+        
+        const yellowBall = document.getElementById('control-ball');
+        if (yellowBall) {
+            const yellowBallX = parseFloat(yellowBall.style.left || '0');
+            const yellowBallY = parseFloat(yellowBall.style.top || '0');
+            const yellowBallSize = 40;
+            
+            const dx = (ball.x + GREEN_BALL_SIZE / 2) - (yellowBallX + yellowBallSize / 2);
+            const dy = (ball.y + GREEN_BALL_SIZE / 2) - (yellowBallY + yellowBallSize / 2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < (GREEN_BALL_SIZE + yellowBallSize) / 2) {
+                const yellowBallSpeed = Math.round(dashboardValue);
+                const greenBallSpeed = ball.speed;
+                const speedDiff = Math.abs(yellowBallSpeed - greenBallSpeed);
+                
+                let points = 0;
+                if (yellowBallSpeed === 0) {
+                    points = 0;
+                } else if (speedDiff === 0) {
+                    points = 10;
+                } else if (speedDiff < 10) {
+                    points = 10 - speedDiff;
+                }
+                
+                // 如果不能得分，让小球反弹而不是吃掉
+                if (points === 0) {
+                    console.log(`碰撞无得分，小球反弹 (黄球:${yellowBallSpeed}, 绿球:${greenBallSpeed}, 差:${speedDiff})`);
+                    // 计算反弹方向
+                    const angle = Math.atan2(dy, dx);
+                    ball.speedX = Math.cos(angle) * Math.abs(ball.speedX);
+                    ball.speedY = Math.sin(angle) * Math.abs(ball.speedY);
+                    // 稍微推开小球避免重复碰撞
+                    ball.x += ball.speedX * 2;
+                    ball.y += ball.speedY * 2;
+                    ball.element.style.left = `${ball.x}px`;
+                    ball.element.style.top = `${ball.y}px`;
+                    continue;
+                }
+                
+                // 能得分，吃掉小球
+                totalEatenBalls++;
+                validEatenBalls++;
+                roundScore += points;
+                console.log(`碰撞得分: ${points}分 (黄球:${yellowBallSpeed}, 绿球:${greenBallSpeed}, 差:${speedDiff})`);
+                
+                // 震动效果
+                triggerVibration();
+                
+                updateScoreDisplay();
+                frame.removeChild(ball.element);
+                greenBalls.splice(i, 1);
+                
+                checkRoundEnd();
+            }
+        }
+    }
+    
+    requestAnimationFrame(updateGreenBalls);
+}
+
+// 触发震动效果
+function triggerVibration() {
+    // 设备震动（如果支持）
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+    
+    // 视觉震动效果
+    const gameContainer = document.querySelector('.game-container');
+    if (gameContainer) {
+        gameContainer.style.animation = 'shake 0.3s ease-in-out';
+        setTimeout(() => {
+            gameContainer.style.animation = '';
+        }, 300);
+    }
+}
+
+// 初始化游戏系统
+function initGameSystem() {
+    loadGameData();
+    setupLevelLongPress();
+    
+    // 初始化录制模式下的绘制区域显示
+    updateRecordDrawAreas();
+    
+    // 设置按钮事件
+    document.getElementById('retry-btn').onclick = hideModals;
+    document.getElementById('continue-btn').onclick = hideModals;
+    
+    // 点击面板外部关闭
+    document.getElementById('level-select-panel').onclick = (e) => {
+        if (e.target.id === 'level-select-panel') {
+            hideLevelSelectPanel();
+        }
+    };
+    
+    resetRound();
+    updateScoreDisplay();
+    console.log('游戏系统初始化完成');
 }
 
 // 创建单个按压区域
@@ -2474,7 +3046,179 @@ function clearPressAreas() {
     areas.forEach(area => area.remove());
 }
 
+// 更新录制模式下的绘制区域显示（completeCount < 4）
+function updateRecordDrawAreas() {
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    
+    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) {
+        return;
+    }
+    
+    const baseOpacity = '0.6';
+    const glowOpacity = '1';
+    
+    const gameContainer = document.querySelector('.game-container');
+    const containerWidth = gameContainer ? gameContainer.clientWidth : window.innerWidth;
+    const containerHeight = gameContainer ? gameContainer.clientHeight : window.innerHeight;
+    
+    // 计算缩放比例（基于设计宽度 1280px）
+    const designWidth = 1280;
+    const scaleRatio = containerWidth / designWidth;
+    
+    const statsData = getStatsAverage();
+    const defaultTop = DEFAULT_GAME_DATA.touchData.top;
+    const defaultMiddle = DEFAULT_GAME_DATA.touchData.middle;
+    const defaultBottom = DEFAULT_GAME_DATA.touchData.bottom;
+    
+    // 上区域（红色）- 按比例缩放位置
+    const topX = ((statsData.top.x !== 0) ? statsData.top.x : defaultTop.x) * scaleRatio;
+    const topY = ((statsData.top.y !== 0) ? statsData.top.y : defaultTop.y) * scaleRatio;
+    const topRadius = (statsData.top.radius || defaultTop.radius) * scaleRatio;
+    touchAreaTop.style.left = `${topX}px`;
+    touchAreaTop.style.top = `${containerHeight - topY}px`;
+    touchAreaTop.style.width = `${topRadius * 2}px`;
+    touchAreaTop.style.height = `${topRadius * 2}px`;
+    
+    // 中区域（绿色）- 按比例缩放位置
+    const middleX = ((statsData.middle.x !== 0) ? statsData.middle.x : defaultMiddle.x) * scaleRatio;
+    const middleY = ((statsData.middle.y !== 0) ? statsData.middle.y : defaultMiddle.y) * scaleRatio;
+    const middleRadius = (statsData.middle.radius || defaultMiddle.radius) * scaleRatio;
+    touchAreaMiddle.style.left = `${middleX}px`;
+    touchAreaMiddle.style.top = `${containerHeight - middleY}px`;
+    touchAreaMiddle.style.width = `${middleRadius * 2}px`;
+    touchAreaMiddle.style.height = `${middleRadius * 2}px`;
+    
+    // 下区域（黄色）- 按比例缩放位置
+    const bottomX = ((statsData.bottom.x !== 0) ? statsData.bottom.x : defaultBottom.x) * scaleRatio;
+    const bottomY = ((statsData.bottom.y !== 0) ? statsData.bottom.y : defaultBottom.y) * scaleRatio;
+    const bottomRadius = (statsData.bottom.radius || defaultBottom.radius) * scaleRatio;
+    touchAreaBottom.style.left = `${bottomX}px`;
+    touchAreaBottom.style.top = `${containerHeight - bottomY}px`;
+    touchAreaBottom.style.width = `${bottomRadius * 2}px`;
+    touchAreaBottom.style.height = `${bottomRadius * 2}px`;
+    
+    // 确保绘制区域始终可见
+    touchAreaTop.style.display = 'block';
+    touchAreaTop.style.visibility = 'visible';
+    touchAreaMiddle.style.display = 'block';
+    touchAreaMiddle.style.visibility = 'visible';
+    touchAreaBottom.style.display = 'block';
+    touchAreaBottom.style.visibility = 'visible';
+    
+    // 正常游戏阶段（completeCount >= 4）：不填实，不发光，只显示边框
+    if (completeCount >= 4) {
+        touchAreaTop.style.opacity = '1';
+        touchAreaTop.classList.remove('filled');
+        touchAreaMiddle.style.opacity = '1';
+        touchAreaMiddle.classList.remove('filled');
+        touchAreaBottom.style.opacity = '1';
+        touchAreaBottom.classList.remove('filled');
+        return;
+    }
+    
+    // 录制阶段：填实显示
+    touchAreaTop.style.opacity = baseOpacity;
+    touchAreaTop.classList.add('filled');
+    touchAreaMiddle.style.opacity = baseOpacity;
+    touchAreaMiddle.classList.add('filled');
+    touchAreaBottom.style.opacity = baseOpacity;
+    touchAreaBottom.classList.add('filled');
+    
+    // completeCount = 3 时，三个区域同时发光
+    if (completeCount === 3) {
+        touchAreaTop.style.opacity = glowOpacity;
+        touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
+        touchAreaMiddle.style.opacity = glowOpacity;
+        touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
+        touchAreaBottom.style.opacity = glowOpacity;
+        touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
+    }
+    // 录制阶段（completeCount < 3）
+    else {
+        // touchCount = 0 或 3 时，下区域发光
+        if (touchCount === 0 || touchCount === 3) {
+            console.log('touchCount = 0 或 3，下区域发光');
+            touchAreaBottom.style.opacity = glowOpacity;
+            touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
+        }
+        // touchCount = 1 时，中区域发光
+        else if (touchCount === 1) {
+            console.log('touchCount = 1，中区域发光');
+            touchAreaMiddle.style.opacity = glowOpacity;
+            touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
+        }
+        // touchCount = 2 时，上区域发光
+        else if (touchCount === 2) {
+            console.log('touchCount = 2，上区域发光');
+            touchAreaTop.style.opacity = glowOpacity;
+            touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
+        }
+    }
+}
 
+// 根据手指位置高亮对应的绘制区域（录制模式）
+function highlightDrawAreaByPosition(position) {
+    if (completeCount >= 4) return;
+    
+    const touchAreaTop = document.querySelector('.touch-area-top');
+    const touchAreaMiddle = document.querySelector('.touch-area-middle');
+    const touchAreaBottom = document.querySelector('.touch-area-bottom');
+    
+    if (!touchAreaTop || !touchAreaMiddle || !touchAreaBottom) return;
+    
+    // 重置所有区域为基础透明度
+    const baseOpacity = '0.6';
+    const glowOpacity = '1';
+    
+    touchAreaTop.style.opacity = baseOpacity;
+    touchAreaMiddle.style.opacity = baseOpacity;
+    touchAreaBottom.style.opacity = baseOpacity;
+    touchAreaTop.style.boxShadow = 'none';
+    touchAreaMiddle.style.boxShadow = 'none';
+    touchAreaBottom.style.boxShadow = 'none';
+    
+    // 根据位置高亮对应区域
+    if (position === 'bottom') {
+        touchAreaBottom.style.opacity = glowOpacity;
+        touchAreaBottom.style.boxShadow = '0 0 20px #f1c40f, 0 0 40px #f1c40f';
+    } else if (position === 'middle') {
+        touchAreaMiddle.style.opacity = glowOpacity;
+        touchAreaMiddle.style.boxShadow = '0 0 20px #2ecc71, 0 0 40px #2ecc71';
+    } else if (position === 'top') {
+        touchAreaTop.style.opacity = glowOpacity;
+        touchAreaTop.style.boxShadow = '0 0 20px #e74c3c, 0 0 40px #e74c3c';
+    }
+}
+
+// 更新仪表盘发光效果（录制模式）
+function updateDashboardGlow(position) {
+    if (completeCount >= 4) return;
+    
+    const dashboard = document.querySelector('.dashboard');
+    if (!dashboard) return;
+    
+    // 清除之前的发光效果
+    dashboard.style.boxShadow = '';
+    
+    // 根据位置设置发光颜色
+    if (position === 'bottom') {
+        dashboard.style.boxShadow = '0 0 30px #f1c40f, 0 0 60px #f1c40f';
+    } else if (position === 'middle') {
+        dashboard.style.boxShadow = '0 0 30px #2ecc71, 0 0 60px #2ecc71';
+    } else if (position === 'top') {
+        dashboard.style.boxShadow = '0 0 30px #e74c3c, 0 0 60px #e74c3c';
+    }
+}
+
+// 清除仪表盘发光效果
+function clearDashboardGlow() {
+    const dashboard = document.querySelector('.dashboard');
+    if (dashboard) {
+        dashboard.style.boxShadow = '';
+    }
+}
 
 // 页面加载完成后初始化游戏
 window.addEventListener('DOMContentLoaded', initGame);

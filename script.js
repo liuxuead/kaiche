@@ -903,6 +903,19 @@ function initGame() {
             // touchDirectionX = 0;
             // touchDirectionY = 0;
         });
+        
+        // 右键点击事件：设置速度为8
+        gameContainer.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // 阻止默认的右键菜单
+            
+            // 设置速度为8
+            targetDashboardValue = 8;
+            if (!dashboardAnimationId) {
+                updateDashboardValue();
+            }
+            
+            console.log('PC端右键点击，速度设置为8');
+        });
     }
     
     // 小绿球相关变量
@@ -1004,6 +1017,29 @@ function initGame() {
         
         const frameRect = frame.getBoundingClientRect();
         
+        // 在循环外部获取黄色小球，避免重复获取和作用域问题
+        const yellowBall = document.getElementById('control-ball');
+        let yellowBallX = 0, yellowBallY = 0, yellowBallSize = 40;
+        if (yellowBall) {
+            yellowBallX = parseFloat(yellowBall.style.left || '0');
+            yellowBallY = parseFloat(yellowBall.style.top || '0');
+        }
+        
+        // 关卡预测距离配置（在循环外部定义，避免重复定义）
+        const levelPredictionDistance = {
+            1: 0,
+            2: 1/8,
+            3: 1/4,
+            4: 3/8,
+            5: 1/2,
+            6: 5/8,
+            7: 3/4,
+            8: 7/8,
+            9: 9/10,
+            10: 1
+        };
+        const predictionDistance = levelPredictionDistance[currentLevel] * frameRect.width;
+        
         for (let i = greenBalls.length - 1; i >= 0; i--) {
             const ball = greenBalls[i];
             
@@ -1022,6 +1058,32 @@ function initGame() {
                 newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
             }
             
+            // 躲避逻辑：简单安全的实现 + 调试日志
+            if (currentLevel > 1 && yellowBall && predictionDistance > 0) {
+                const greenBallCenterX = newX + GREEN_BALL_SIZE / 2;
+                const greenBallCenterY = newY + GREEN_BALL_SIZE / 2;
+                const yellowBallCenterX = yellowBallX + yellowBallSize / 2;
+                const yellowBallCenterY = yellowBallY + yellowBallSize / 2;
+                
+                const dx = greenBallCenterX - yellowBallCenterX;
+                const dy = greenBallCenterY - yellowBallCenterY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < predictionDistance && distance > 0) {
+                    const escapeX = dx / distance;
+                    const escapeY = dy / distance;
+                    const escapeStrength = (predictionDistance - distance) / predictionDistance;
+                    
+                    const oldNewX = newX;
+                    const oldNewY = newY;
+                    newX += escapeX * escapeStrength * 3;
+                    newY += escapeY * escapeStrength * 3;
+                    
+                    newX = Math.max(0, Math.min(frameRect.width - GREEN_BALL_SIZE, newX));
+                    newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
+                }
+            }
+
             // 更新位置
             ball.x = newX;
             ball.y = newY;
@@ -1029,11 +1091,7 @@ function initGame() {
             ball.element.style.top = `${newY}px`;
             
             // 检测与小黄球的碰撞
-            const yellowBall = document.getElementById('control-ball');
             if (yellowBall) {
-                const yellowBallX = parseFloat(yellowBall.style.left || '0');
-                const yellowBallY = parseFloat(yellowBall.style.top || '0');
-                const yellowBallSize = 40;
                 
                 // 计算两球中心距离
                 const dx = (ball.x + GREEN_BALL_SIZE / 2) - (yellowBallX + yellowBallSize / 2);
@@ -1461,96 +1519,7 @@ function createGreenBall() {
         speed: speed
     });
     
-    console.log('生成小绿球，速度:', speed, '等级:', currentLevel);
-}
-
-// 重写updateGreenBalls函数，添加碰撞得分逻辑
-const originalUpdateGreenBalls = updateGreenBalls;
-function updateGreenBalls() {
-    const frame = document.getElementById('dynamic-frame');
-    if (!frame) return;
-    
-    const frameRect = frame.getBoundingClientRect();
-    
-    for (let i = greenBalls.length - 1; i >= 0; i--) {
-        const ball = greenBalls[i];
-        
-        // 计算新位置
-        let newX = ball.x + ball.speedX * 0.5;
-        let newY = ball.y + ball.speedY * 0.5;
-        
-        // 边界碰撞检测
-        if (newX < 0 || newX > frameRect.width - GREEN_BALL_SIZE) {
-            ball.speedX = -ball.speedX;
-            newX = Math.max(0, Math.min(frameRect.width - GREEN_BALL_SIZE, newX));
-        }
-        
-        if (newY < 0 || newY > frameRect.height - GREEN_BALL_SIZE) {
-            ball.speedY = -ball.speedY;
-            newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
-        }
-        
-        // 更新位置
-        ball.x = newX;
-        ball.y = newY;
-        ball.element.style.left = `${newX}px`;
-        ball.element.style.top = `${newY}px`;
-        
-        // 检测与小黄球的碰撞
-        const yellowBall = document.getElementById('control-ball');
-        if (yellowBall) {
-            const yellowBallRect = yellowBall.getBoundingClientRect();
-            const yellowBallX = parseFloat(yellowBall.style.left || '0');
-            const yellowBallY = parseFloat(yellowBall.style.top || '0');
-            const yellowBallSize = 40;
-            
-            // 计算两球中心距离
-            const dx = (ball.x + GREEN_BALL_SIZE / 2) - (yellowBallX + yellowBallSize / 2);
-            const dy = (ball.y + GREEN_BALL_SIZE / 2) - (yellowBallY + yellowBallSize / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // 碰撞检测
-            if (distance < (GREEN_BALL_SIZE + yellowBallSize) / 2) {
-                // 黄色小球速度为0时，不得分，不算入成功率
-                if (Math.round(dashboardValue) === 0) {
-                    // 移除小绿球
-                    frame.removeChild(ball.element);
-                    greenBalls.splice(i, 1);
-                    console.log('黄色小球速度为0，不得分');
-                    continue;
-                }
-                
-                const speedDiff = Math.abs(Math.round(dashboardValue) - ball.speed);
-                let points = 0;
-                
-                if (speedDiff === 0) {
-                    points = 10; // 相同速度，得10分
-                } else if (speedDiff < 10) {
-                    points = 10 - speedDiff; // 速度差1-9，得9-1分
-                }
-                
-                // 更新得分
-                roundScore += points;
-                totalEatenBalls++;
-                if (points > 0) {
-                    validEatenBalls++;
-                }
-                
-                // 移除小绿球
-                frame.removeChild(ball.element);
-                greenBalls.splice(i, 1);
-                console.log('碰撞小绿球，得分:', points, '速度差:', speedDiff);
-                
-                // 更新得分显示
-                updateScoreDisplay();
-                
-                // 检查是否达标
-                checkRoundEnd();
-            }
-        }
-    }
-    
-    requestAnimationFrame(updateGreenBalls);
+    console.log('生成小绿球，速度:', speed);
 }
 
 // 初始化游戏系统
@@ -2007,19 +1976,6 @@ function setupTouchListeners() {
         currentTouch = e;
         updateTouchInfo(e, touchArea);
         
-        // 实时更新仪表盘
-        const gameContainer = document.querySelector('.game-container');
-        const containerHeight = gameContainer.clientHeight;
-        const rect = gameContainer.getBoundingClientRect();
-        const mirrorX = e.clientX - rect.left;
-        const mirrorY = containerHeight - e.clientY;
-        
-        // 更新仪表盘数值
-        targetDashboardValue = calculateDashboardValue(mirrorY);
-        if (!dashboardAnimationId) {
-            updateDashboardValue();
-        }
-        
         // completeCount达到4后才启用绘制区域逻辑
         if (completeCount >= 4) {
             const gameContainer = document.querySelector('.game-container');
@@ -2030,8 +1986,6 @@ function setupTouchListeners() {
             
             // 只有在绘制范围附近100像素内才更新
             if (isNearDrawArea(mirrorX, mirrorY)) {
-                
-                
                 // 更新仪表盘数值
                 targetDashboardValue = calculateDashboardValue(mirrorY);
                 if (!dashboardAnimationId) {

@@ -1,5 +1,75 @@
 
 
+// 避开模式
+let avoidFingerMode = false;
+// 避免在页面加载完成前获取按钮元素
+// const avoidModeBtn = document.getElementById('avoid-mode-btn');
+
+// 切换避开模式
+function toggleAvoidMode() {
+    avoidFingerMode = !avoidFingerMode;
+    // 直接获取按钮元素，确保每次都能找到最新的DOM元素
+    const btn = document.querySelector('.avoid-mode-btn');
+    if (btn) {
+        if (avoidFingerMode) {
+            btn.textContent = '避开模式: 开启';
+            btn.classList.add('active');
+        } else {
+            btn.textContent = '避开模式: 关闭';
+            btn.classList.remove('active');
+        }
+        console.log('避开模式:', avoidFingerMode ? '开启' : '关闭');
+    } else {
+        console.error('找不到避开模式按钮');
+    }
+}
+
+// 为避开模式按钮添加触摸事件支持
+function addAvoidModeButtonListeners() {
+    // 使用类选择器获取按钮元素
+    const btn = document.querySelector('.avoid-mode-btn');
+    if (btn) {
+        // 点击事件
+        btn.addEventListener('click', toggleAvoidMode);
+        // 触摸事件（移动端）
+        btn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            toggleAvoidMode();
+        });
+        console.log('避开模式按钮事件监听器已添加');
+    } else {
+        console.error('找不到避开模式按钮，无法添加事件监听器');
+    }
+}
+
+// 页面加载完成后添加事件监听器
+if (typeof window !== 'undefined') {
+    window.addEventListener('load', addAvoidModeButtonListeners);
+}
+
+// 检查点是否在避开区域内
+function isPointInAvoidArea(x, y) {
+    console.log('避开区域检测开始:', { x, y, avoidFingerMode });
+    if (!avoidFingerMode) {
+        console.log('避开模式未开启，返回false');
+        return false;
+    }
+    
+    // 获取游戏容器高度，使用相对比例计算避开区域
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) {
+        console.error('找不到游戏容器');
+        return false;
+    }
+    
+    const containerHeight = gameContainer.clientHeight;
+    // 避开区域：y >= 容器高度的 60% (相当于之前的477在800高度的容器中)
+    const avoidY = containerHeight * 0.6;
+    const result = y >= avoidY;
+    console.log('避开区域检测结果:', { x, y, containerHeight, avoidY, result });
+    return result;
+}
+
 // 调整"中"的范围（长按压超过3秒后调用）
 function adjustMiddleRange(touch) {
     console.log('adjustMiddleRange 开始执行，touch:', touch);
@@ -976,7 +1046,7 @@ function initGame() {
         let ballX, ballY;
         let validPosition = false;
         
-        // 确保小球不会生成在仪表盘中
+        // 确保小球不会生成在仪表盘中，且在避开模式下不会生成在避开区域内
         while (!validPosition) {
             ballX = Math.random() * (frameRect.width - GREEN_BALL_SIZE);
             ballY = Math.random() * (frameRect.height - GREEN_BALL_SIZE);
@@ -986,7 +1056,13 @@ function initGame() {
             const dashboardTop = 40;
             const dashboardSize = 120;
             
-            if (!(ballX < dashboardLeft + dashboardSize && ballY < dashboardTop + dashboardSize)) {
+            // 检查是否在仪表盘中
+            const inDashboard = ballX < dashboardLeft + dashboardSize && ballY < dashboardTop + dashboardSize;
+            
+            // 检查是否在避开区域内
+            const inAvoidArea = isPointInAvoidArea(ballX, ballY);
+            
+            if (!inDashboard && !inAvoidArea) {
                 validPosition = true;
             }
         }
@@ -1058,23 +1134,17 @@ function initGame() {
                 newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
             }
             
-            // 避开手指区域检测
-            if (isPointInAvoidArea(newX + GREEN_BALL_SIZE / 2, newY + GREEN_BALL_SIZE / 2)) {
-                // 如果新位置在避开区域内，反弹速度
-                const centerX = newX + GREEN_BALL_SIZE / 2;
-                const centerY = newY + GREEN_BALL_SIZE / 2;
-                
-                // 计算反弹方向（简单实现：反向速度）
-                ball.speedX = -ball.speedX * 0.8;
-                ball.speedY = -ball.speedY * 0.8;
-                
-                // 重新计算位置
-                newX = ball.x + ball.speedX * 0.5;
-                newY = ball.y + ball.speedY * 0.5;
-                
-                // 确保在边界内
-                newX = Math.max(0, Math.min(frameRect.width - GREEN_BALL_SIZE, newX));
-                newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
+            // 避开区域碰撞检测
+            if (isPointInAvoidArea(newX, newY)) {
+                // 获取游戏容器高度，使用相对比例计算避开区域
+                const gameContainer = document.querySelector('.game-container');
+                if (gameContainer) {
+                    const containerHeight = gameContainer.clientHeight;
+                    const avoidY = containerHeight * 0.6;
+                    // 反弹回避开区域外
+                    ball.speedY = -Math.abs(ball.speedY); // 向上反弹
+                    newY = avoidY - GREEN_BALL_SIZE; // 确保小球在避开区域外
+                }
             }
             
             // 躲避逻辑：简单安全的实现 + 调试日志
@@ -1218,17 +1288,6 @@ function initGame() {
             console.log('计时器样式:', getComputedStyle(timerValue).fontSize);
         }
     }, 1000);
-    
-    // 模式切换按钮事件
-    const modeToggleBtn = document.getElementById('mode-toggle-btn');
-    if (modeToggleBtn) {
-        modeToggleBtn.addEventListener('click', () => {
-            avoidFingerMode = !avoidFingerMode;
-            modeToggleBtn.textContent = `避开模式: ${avoidFingerMode ? '开启' : '关闭'}`;
-            modeToggleBtn.classList.toggle('active', avoidFingerMode);
-            console.log('避开模式:', avoidFingerMode ? '开启' : '关闭');
-        });
-    }
 
 }
 
@@ -1253,7 +1312,6 @@ const LEVEL_CONFIGS = [
 // 游戏状态
 let currentLevel = 1; // 当前等级
 let unlockedLevel = 1; // 已解锁的最高等级
-let avoidFingerMode = false; // 避开手指区域模式
 let roundScore = 0; // 本局得分
 let totalEatenBalls = 0; // 本局吃到的球数
 let validEatenBalls = 0; // 本局有效得分的球数
@@ -1376,61 +1434,6 @@ function showGreatEffect(x, y, count) {
             effect.parentNode.removeChild(effect);
         }
     }, 1500);
-}
-
-// 检查点是否在避开区域内
-function isPointInAvoidArea(x, y) {
-    if (!avoidFingerMode) return false;
-    
-    const gameContainer = document.querySelector('.game-container');
-    if (!gameContainer) return false;
-    
-    const containerWidth = gameContainer.clientWidth;
-    const containerHeight = gameContainer.clientHeight;
-    
-    // 获取指尖红圈（topArea）的位置
-    const stats = getStatsAverage();
-    let topArea;
-    
-    if (stats.top.y !== 0) {
-        // 使用真实统计数据
-        topArea = {
-            x: stats.top.x,
-            y: containerHeight - stats.top.y,
-            radius: stats.top.radius
-        };
-    } else {
-        // 使用默认位置
-        topArea = {
-            x: containerWidth * 0.2,
-            y: containerHeight * 0.2,
-            radius: 50
-        };
-    }
-    
-    // 计算避开区域边界
-    const circleTop = topArea.y - topArea.radius;
-    const circleLeft = topArea.x - topArea.radius;
-    
-    // 检查是否在红圈内部
-    const dx = x - topArea.x;
-    const dy = y - topArea.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance <= topArea.radius) {
-        return true;
-    }
-    
-    // 检查是否在从红圈最上面到屏幕右侧的直线下侧
-    if (y >= circleTop && x >= topArea.x) {
-        return true;
-    }
-    
-    // 检查是否在从红圈最左侧到屏幕下面的直线左侧
-    if (x <= circleLeft && y >= topArea.y) {
-        return true;
-    }
-    
-    return false;
 }
 
 // 重置本局
@@ -1667,11 +1670,11 @@ function createGreenBall() {
         const dashboardTop = 40;
         const dashboardSize = 120;
         
-        // 检查是否在仪表盘区域
+        // 检查是否在仪表盘中
         const inDashboard = ballX < dashboardLeft + dashboardSize && ballY < dashboardTop + dashboardSize;
         
-        // 检查是否在避开区域
-        const inAvoidArea = isPointInAvoidArea(ballX + GREEN_BALL_SIZE / 2, ballY + GREEN_BALL_SIZE / 2);
+        // 检查是否在避开区域内
+        const inAvoidArea = isPointInAvoidArea(ballX, ballY);
         
         if (!inDashboard && !inAvoidArea) {
             validPosition = true;

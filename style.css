@@ -184,44 +184,6 @@ body {
     z-index: 99999;
 }
 
-/* 控制按钮 */
-.mode-toggle-btn {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: white;
-    border: none;
-    border-radius: 25px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-    z-index: 999999;
-    pointer-events: auto;
-}
-
-.mode-toggle-btn:hover {
-    background: linear-gradient(135deg, #2980b9, #1f618d);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-}
-
-.mode-toggle-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
-}
-
-.mode-toggle-btn.active {
-    background: linear-gradient(135deg, #27ae60, #229954);
-}
-
-.mode-toggle-btn.active:hover {
-    background: linear-gradient(135deg, #229954, #1e8449);
-}
-
 /* Perfect效果 */
 .perfect-effect {
     position: absolute;
@@ -509,8 +471,41 @@ body {
     align-items: center;
     box-shadow: none;
     border: 3px solid #3498db;
-    touch-action: none;
-    z-index: 100;
+}
+
+/* 避开模式按钮样式 */
+.avoid-mode-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 999999999;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    border: 2px solid white;
+}
+
+.avoid-mode-btn:hover {
+    background: rgba(67, 160, 71, 0.9);
+    transform: translateY(-2px);
+}
+
+.avoid-mode-btn.active {
+    background: rgba(244, 67, 54, 0.9);
+}
+
+.avoid-mode-btn.active:hover {
+    background: rgba(211, 47, 47, 0.9);
 }
 
 .dashboard-value {

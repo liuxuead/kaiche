@@ -149,6 +149,95 @@ body {
     text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
 }
 
+/* Perfect显示 */
+.perfect-row {
+    position: absolute;
+    top: 150px;
+    left: 0px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transform: rotate(-90deg);
+    z-index: 100;
+}
+
+.perfect-label {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.perfect-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6b6b;
+    text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+}
+
+/* 视觉效果容器 */
+#effect-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 99999;
+}
+
+/* Perfect效果 */
+.perfect-effect {
+    position: absolute;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6b6b;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.8), 0 0 20px rgba(255, 107, 107, 0.6);
+    animation: perfectFlash 1s ease-out forwards;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+@keyframes perfectFlash {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-20px) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(1);
+    }
+}
+
+/* Great效果 */
+.great-effect {
+    position: absolute;
+    font-size: 28px;
+    font-weight: bold;
+    color: #3498db;
+    text-shadow: 0 0 10px rgba(52, 152, 219, 0.8), 0 0 20px rgba(52, 152, 219, 0.6);
+    animation: greatFlash 1.5s ease-out forwards;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+@keyframes greatFlash {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-15px) scale(1.3);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50px) scale(1);
+    }
+}
+
 /* 等级选择面板 */
 /* 模态框基础样式 */
 .modal {

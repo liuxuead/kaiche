@@ -1106,16 +1106,27 @@ function initGame() {
                         frame.removeChild(ball.element);
                         greenBalls.splice(i, 1);
                         console.log('黄色小球速度为0，不得分');
+                        consecutiveEats = 0; // 重置连续计数
                         continue;
                     }
                     
                     const speedDiff = Math.abs(Math.round(dashboardValue) - ball.speed);
                     let points = 0;
+                    let isPerfect = false;
                     
                     if (speedDiff === 0) {
                         points = 10; // 相同速度，得10分
+                        isPerfect = true; // Perfect判定
+                        perfectCount++; // Perfect计数+1
                     } else if (speedDiff < 10) {
                         points = 10 - speedDiff; // 速度差1-9，得9-1分
+                    }
+                    
+                    // 连续吃球计数
+                    if (points > 0) {
+                        consecutiveEats++;
+                    } else {
+                        consecutiveEats = 0; // 不得分时重置连续计数
                     }
                     
                     // 更新得分
@@ -1125,10 +1136,25 @@ function initGame() {
                         validEatenBalls++;
                     }
                     
+                    // 获取黄球位置用于显示效果
+                    const effectX = yellowBallX + yellowBallSize / 2;
+                    const effectY = yellowBallY;
+                    
+                    // 显示Perfect效果
+                    if (isPerfect) {
+                        showPerfectEffect(effectX, effectY);
+                        updatePerfectDisplay();
+                    }
+                    
+                    // 显示Great效果（连续吃球3次以上）
+                    if (consecutiveEats >= 3) {
+                        showGreatEffect(effectX, effectY, consecutiveEats);
+                    }
+                    
                     // 移除小绿球
                     frame.removeChild(ball.element);
                     greenBalls.splice(i, 1);
-                    console.log('碰撞小绿球，得分:', points, '速度差:', speedDiff);
+                    console.log('碰撞小绿球，得分:', points, '速度差:', speedDiff, 'Perfect:', isPerfect, '连续:', consecutiveEats);
                     
                     // 更新得分显示
                     updateScoreDisplay();
@@ -1200,6 +1226,8 @@ let unlockedLevel = 1; // 已解锁的最高等级
 let roundScore = 0; // 本局得分
 let totalEatenBalls = 0; // 本局吃到的球数
 let validEatenBalls = 0; // 本局有效得分的球数
+let perfectCount = 0; // Perfect次数
+let consecutiveEats = 0; // 连续吃球计数
 let ballsInRound = 0; // 本局已生成的球数
 let greenBalls = []; // 存储小绿球信息
 let roundStartTime = 0; // 本局开始时间
@@ -1269,11 +1297,63 @@ function updateScoreDisplay() {
     }
 }
 
+// 更新Perfect显示
+function updatePerfectDisplay() {
+    const perfectValue = document.getElementById('perfect-value');
+    if (perfectValue) {
+        perfectValue.textContent = perfectCount;
+    }
+}
+
+// 显示Perfect效果
+function showPerfectEffect(x, y) {
+    const container = document.getElementById('effect-container');
+    if (!container) return;
+    
+    const effect = document.createElement('div');
+    effect.className = 'perfect-effect';
+    effect.textContent = 'Perfect +1';
+    effect.style.left = `${x}px`;
+    effect.style.top = `${y - 40}px`;
+    
+    container.appendChild(effect);
+    
+    // 1秒后移除
+    setTimeout(() => {
+        if (effect.parentNode) {
+            effect.parentNode.removeChild(effect);
+        }
+    }, 1000);
+}
+
+// 显示Great效果
+function showGreatEffect(x, y, count) {
+    const container = document.getElementById('effect-container');
+    if (!container) return;
+    
+    const effect = document.createElement('div');
+    effect.className = 'great-effect';
+    effect.textContent = `Great x${count}`;
+    effect.style.left = `${x}px`;
+    effect.style.top = `${y - 80}px`;
+    
+    container.appendChild(effect);
+    
+    // 1.5秒后移除
+    setTimeout(() => {
+        if (effect.parentNode) {
+            effect.parentNode.removeChild(effect);
+        }
+    }, 1500);
+}
+
 // 重置本局
 function resetRound() {
     roundScore = 0;
     totalEatenBalls = 0;
     validEatenBalls = 0;
+    perfectCount = 0;
+    consecutiveEats = 0;
     ballsInRound = 0;
     roundStartTime = Date.now(); // 记录本局开始时间
     

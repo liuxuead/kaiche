@@ -1058,6 +1058,25 @@ function initGame() {
                 newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
             }
             
+            // 避开手指区域检测
+            if (isPointInAvoidArea(newX + GREEN_BALL_SIZE / 2, newY + GREEN_BALL_SIZE / 2)) {
+                // 如果新位置在避开区域内，反弹速度
+                const centerX = newX + GREEN_BALL_SIZE / 2;
+                const centerY = newY + GREEN_BALL_SIZE / 2;
+                
+                // 计算反弹方向（简单实现：反向速度）
+                ball.speedX = -ball.speedX * 0.8;
+                ball.speedY = -ball.speedY * 0.8;
+                
+                // 重新计算位置
+                newX = ball.x + ball.speedX * 0.5;
+                newY = ball.y + ball.speedY * 0.5;
+                
+                // 确保在边界内
+                newX = Math.max(0, Math.min(frameRect.width - GREEN_BALL_SIZE, newX));
+                newY = Math.max(0, Math.min(frameRect.height - GREEN_BALL_SIZE, newY));
+            }
+            
             // 躲避逻辑：简单安全的实现 + 调试日志
             if (currentLevel > 1 && yellowBall && predictionDistance > 0) {
                 const greenBallCenterX = newX + GREEN_BALL_SIZE / 2;
@@ -1199,6 +1218,17 @@ function initGame() {
             console.log('计时器样式:', getComputedStyle(timerValue).fontSize);
         }
     }, 1000);
+    
+    // 模式切换按钮事件
+    const modeToggleBtn = document.getElementById('mode-toggle-btn');
+    if (modeToggleBtn) {
+        modeToggleBtn.addEventListener('click', () => {
+            avoidFingerMode = !avoidFingerMode;
+            modeToggleBtn.textContent = `避开模式: ${avoidFingerMode ? '开启' : '关闭'}`;
+            modeToggleBtn.classList.toggle('active', avoidFingerMode);
+            console.log('避开模式:', avoidFingerMode ? '开启' : '关闭');
+        });
+    }
 
 }
 
@@ -1223,6 +1253,7 @@ const LEVEL_CONFIGS = [
 // 游戏状态
 let currentLevel = 1; // 当前等级
 let unlockedLevel = 1; // 已解锁的最高等级
+let avoidFingerMode = false; // 避开手指区域模式
 let roundScore = 0; // 本局得分
 let totalEatenBalls = 0; // 本局吃到的球数
 let validEatenBalls = 0; // 本局有效得分的球数
@@ -1345,6 +1376,61 @@ function showGreatEffect(x, y, count) {
             effect.parentNode.removeChild(effect);
         }
     }, 1500);
+}
+
+// 检查点是否在避开区域内
+function isPointInAvoidArea(x, y) {
+    if (!avoidFingerMode) return false;
+    
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return false;
+    
+    const containerWidth = gameContainer.clientWidth;
+    const containerHeight = gameContainer.clientHeight;
+    
+    // 获取指尖红圈（topArea）的位置
+    const stats = getStatsAverage();
+    let topArea;
+    
+    if (stats.top.y !== 0) {
+        // 使用真实统计数据
+        topArea = {
+            x: stats.top.x,
+            y: containerHeight - stats.top.y,
+            radius: stats.top.radius
+        };
+    } else {
+        // 使用默认位置
+        topArea = {
+            x: containerWidth * 0.2,
+            y: containerHeight * 0.2,
+            radius: 50
+        };
+    }
+    
+    // 计算避开区域边界
+    const circleTop = topArea.y - topArea.radius;
+    const circleLeft = topArea.x - topArea.radius;
+    
+    // 检查是否在红圈内部
+    const dx = x - topArea.x;
+    const dy = y - topArea.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance <= topArea.radius) {
+        return true;
+    }
+    
+    // 检查是否在从红圈最上面到屏幕右侧的直线下侧
+    if (y >= circleTop && x >= topArea.x) {
+        return true;
+    }
+    
+    // 检查是否在从红圈最左侧到屏幕下面的直线左侧
+    if (x <= circleLeft && y >= topArea.y) {
+        return true;
+    }
+    
+    return false;
 }
 
 // 重置本局
@@ -1581,7 +1667,13 @@ function createGreenBall() {
         const dashboardTop = 40;
         const dashboardSize = 120;
         
-        if (!(ballX < dashboardLeft + dashboardSize && ballY < dashboardTop + dashboardSize)) {
+        // 检查是否在仪表盘区域
+        const inDashboard = ballX < dashboardLeft + dashboardSize && ballY < dashboardTop + dashboardSize;
+        
+        // 检查是否在避开区域
+        const inAvoidArea = isPointInAvoidArea(ballX + GREEN_BALL_SIZE / 2, ballY + GREEN_BALL_SIZE / 2);
+        
+        if (!inDashboard && !inAvoidArea) {
             validPosition = true;
         }
     }

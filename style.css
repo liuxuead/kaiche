@@ -184,6 +184,44 @@ body {
     z-index: 99999;
 }
 
+/* 控制按钮 */
+.mode-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    z-index: 999999;
+    pointer-events: auto;
+}
+
+.mode-toggle-btn:hover {
+    background: linear-gradient(135deg, #2980b9, #1f618d);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.mode-toggle-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+}
+
+.mode-toggle-btn.active {
+    background: linear-gradient(135deg, #27ae60, #229954);
+}
+
+.mode-toggle-btn.active:hover {
+    background: linear-gradient(135deg, #229954, #1e8449);
+}
+
 /* Perfect效果 */
 .perfect-effect {
     position: absolute;

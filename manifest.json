@@ -1,0 +1,14 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Micro Control Ball",
+  "orientation": "landscape-primary",
+  "scope": "/",
+  "short_name": "Micro Control Ball",
+  "start_url": "https://liuxuead.github.io/kaiche/",
+  "theme_color": "#ffffff",
+  "id": "Micro Control Ball",
+  "description": "A minimalist casual action game. Control the ball with precise touch operations, no ads, no in-app purchases, 100% free to play.",
+  "lang": "en"
+}

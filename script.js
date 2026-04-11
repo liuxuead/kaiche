@@ -1240,6 +1240,11 @@ function initGame() {
                         showGreatEffect(effectX, effectY, consecutiveEats);
                     }
                     
+                    // 触发手机震动
+                    if (navigator.vibrate) {
+                        navigator.vibrate(100); // 震动100毫秒
+                    }
+                    
                     // 移除小绿球
                     frame.removeChild(ball.element);
                     greenBalls.splice(i, 1);
@@ -2293,7 +2298,7 @@ function recordTouchData(touch) {
                 }
                 
                 // 显示确认全指数据的提示
-                updateBackgroundText('本次将确认全指数据，请以最舒服的姿势放在屏幕拇指区域');
+                updateBackgroundText('本次将确认全指数据，请以最舒服的姿势放在屏幕黑绿红圈所示的拇指区域');
             }
             
             // 当 completeCount === 4 时，显示初始提示文字
@@ -3183,7 +3188,7 @@ function resetAllData() {
     }
     
     // 更新背景文字
-    updateBackgroundText('请玩家在拇指舒适区域从指节开始录入到指腹到指尖：指节');
+    updateBackgroundText('请玩家在拇指舒适区域从指节开始录入到指腹到指尖：开始录入指节，可根据界面黑圈引导录入');
     
     // 重置所有数据
     touchData.top = { x: 0, y: 0, radius: 50, width: 100, height: 100 };
@@ -3318,8 +3323,8 @@ function updatePressAreaHint() {
     // 在初始状态、未开始录入时或次数=4时显示提示
     if (completeCount === 0 || completeCount === 4) {
         const hintText = pressAreaVisible 
-            ? '长按三秒仪表盘准备录入'
-            : '长按三秒仪表盘准备录入';
+            ? '长按三秒仪表盘准备录入玩家拇指控速区域'
+            : '长按三秒仪表盘准备录入玩家拇指控速区域';
         updateBackgroundText(hintText);
     }
 }

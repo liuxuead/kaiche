@@ -2238,6 +2238,10 @@ function recordTouchData(touch) {
         flashDashboardColor('#f1c40f');
         // 更新背景文字
         updateBackgroundText('指节完成，开始录入指腹');
+        // 重新绘制按压区域，显示新的指根位置
+        if (pressAreaVisible) {
+            drawPressAreas();
+        }
     } else if (touchCount === 2) {
         // 第二次长按，记录到中位置（绿色）
         if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
@@ -2251,6 +2255,10 @@ function recordTouchData(touch) {
             flashDashboardColor('#2ecc71');
             // 更新背景文字
             updateBackgroundText('指腹完成，开始录入指尖');
+            // 重新绘制按压区域，显示新的指节位置
+            if (pressAreaVisible) {
+                drawPressAreas();
+            }
         }
     } else if (touchCount === 3) {
         // 第三次长按，记录到上位置（红色）
@@ -2265,6 +2273,10 @@ function recordTouchData(touch) {
             flashDashboardColor('#e74c3c');
             // 更新背景文字
             updateBackgroundText('指尖完成，开始录入指节');
+            // 重新绘制按压区域，显示新的指尖位置
+            if (pressAreaVisible) {
+                drawPressAreas();
+            }
             
             // 第一次三个数据都记录完，completeCount+1
             completeCount++;
@@ -2308,11 +2320,15 @@ function recordTouchData(touch) {
             // 存当前这一组数据
             saveTouchDataToAll();
             
-            // 清空中和上
-            touchData.middle.x = 0;
-            touchData.middle.y = 0;
-            touchData.top.x = 0;
-            touchData.top.y = 0;
+            // 只有第一组录入时才清空中和上数据
+            // 第二组及以后录入时，保留第一组的绿圈和红圈
+            if (completeCount === 0) {
+                // 清空中和上
+                touchData.middle.x = 0;
+                touchData.middle.y = 0;
+                touchData.top.x = 0;
+                touchData.top.y = 0;
+            }
             
             // 检查是否达到3次，如果是就不再记录
                 if (completeCount >= 3) {
@@ -2333,6 +2349,11 @@ function recordTouchData(touch) {
             touchData.bottom.height = 100;
             console.log('记录触摸数据到下位置:', touchData.bottom);
             
+            // 重新绘制按压区域，显示新的指根位置
+            if (pressAreaVisible) {
+                drawPressAreas();
+            }
+            
             // 设置触摸计数为1，表示已经记录了下
             touchCount = 1;
         } else if (touchData.bottom.x !== 0 || touchData.bottom.y !== 0) {
@@ -2344,6 +2365,10 @@ function recordTouchData(touch) {
                 touchData.middle.width = 150;
                 touchData.middle.height = 100;
                 console.log('记录触摸数据到中位置:', touchData.middle);
+                // 重新绘制按压区域，显示新的指节位置
+                if (pressAreaVisible) {
+                    drawPressAreas();
+                }
             } else if (touchData.top.x === 0 && touchData.top.y === 0) {
                 // 下中有数据，记录到上
                 touchData.top.x = mirrorX;
@@ -2352,6 +2377,10 @@ function recordTouchData(touch) {
                 touchData.top.width = 100;
                 touchData.top.height = 100;
                 console.log('记录触摸数据到上位置:', touchData.top);
+                // 重新绘制按压区域，显示新的指尖位置
+                if (pressAreaVisible) {
+                    drawPressAreas();
+                }
                 
                 // 三个数据又记录完，completeCount+1
                 completeCount++;
@@ -3194,6 +3223,27 @@ function resetAllData() {
     // 清除按压区域
     clearPressAreas();
     
+    // 绘制默认的黑圈，提示用户开始录入
+    if (pressAreaVisible) {
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            const containerWidth = gameContainer.clientWidth;
+            const containerHeight = gameContainer.clientHeight;
+            
+            // 使用DEFAULT_GAME_DATA中的默认值
+            const bottomArea = {
+                x: DEFAULT_GAME_DATA.touchData.bottom.x,
+                y: containerHeight - DEFAULT_GAME_DATA.touchData.bottom.y,
+                radius: DEFAULT_GAME_DATA.touchData.bottom.radius,
+                width: DEFAULT_GAME_DATA.touchData.bottom.width,
+                height: DEFAULT_GAME_DATA.touchData.bottom.height
+            };
+            
+            // 只绘制黑圈
+            createPressArea(gameContainer, bottomArea, '#000000'); // 黑圈
+        }
+    }
+    
     // 更新完成计数器
     const completeCounter = document.getElementById('complete-counter');
     if (completeCounter) {
@@ -3290,10 +3340,49 @@ function drawPressAreas() {
     const containerWidth = gameContainer.clientWidth;
     const containerHeight = gameContainer.clientHeight;
     
+    // 检查touchData中是否有数据
+    const hasBottomData = touchData.bottom.x !== 0 || touchData.bottom.y !== 0;
+    const hasMiddleData = touchData.middle.x !== 0 || touchData.middle.y !== 0;
+    const hasTopData = touchData.top.x !== 0 || touchData.top.y !== 0;
+    
     let bottomArea, middleArea, topArea;
     
-    // 如果有统计数据，使用真实坐标
-    if (stats.top.y !== 0 && stats.bottom.y !== 0 && stats.middle.y !== 0) {
+    // 优先使用touchData中的数据
+    if (hasBottomData || hasMiddleData || hasTopData) {
+        console.log('使用touchData中的数据绘制按压区域');
+        
+        if (hasBottomData) {
+            bottomArea = {
+                x: touchData.bottom.x,
+                y: containerHeight - touchData.bottom.y,
+                radius: touchData.bottom.radius,
+                width: touchData.bottom.width,
+                height: touchData.bottom.height
+            };
+        }
+        
+        if (hasMiddleData) {
+            middleArea = {
+                x: touchData.middle.x,
+                y: containerHeight - touchData.middle.y,
+                radius: touchData.middle.radius,
+                width: touchData.middle.width,
+                height: touchData.middle.height
+            };
+        }
+        
+        if (hasTopData) {
+            topArea = {
+                x: touchData.top.x,
+                y: containerHeight - touchData.top.y,
+                radius: touchData.top.radius,
+                width: touchData.top.width,
+                height: touchData.top.height
+            };
+        }
+    } else if (stats.top.y !== 0 && stats.bottom.y !== 0 && stats.middle.y !== 0) {
+        // 如果有统计数据，使用真实坐标
+        console.log('使用统计数据绘制按压区域');
         // 反转镜像坐标（触摸记录时使用了镜像坐标，现在需要反转回来显示）
         bottomArea = {
             x: stats.bottom.x,
@@ -3348,14 +3437,18 @@ function drawPressAreas() {
         };
     }
     
-    // 绘制下区域（黑色）
-    createPressArea(gameContainer, bottomArea, '#000000');
+    // 只绘制有数据的区域
+    if (bottomArea) {
+        createPressArea(gameContainer, bottomArea, '#000000'); // 黑圈
+    }
     
-    // 绘制中区域（绿色）
-    createPressArea(gameContainer, middleArea, '#2ecc71');
+    if (middleArea) {
+        createPressArea(gameContainer, middleArea, '#2ecc71'); // 绿圈
+    }
     
-    // 绘制上区域（红色）
-    createPressArea(gameContainer, topArea, '#e74c3c');
+    if (topArea) {
+        createPressArea(gameContainer, topArea, '#e74c3c'); // 红圈
+    }
     
 
 }

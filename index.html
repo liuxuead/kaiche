@@ -25,19 +25,19 @@
         
         <!-- 等级显示 -->
         <div class="level-display" id="level-display">
-            <span class="level-label">等级</span>
+            <span class="level-label">Level</span>
             <span class="level-value" id="level-value">1</span>
         </div>
         
         <!-- 得分显示 -->
         <div class="score-row">
-            <span class="score-label">得分</span>
+            <span class="score-label">Score</span>
             <span class="score-value" id="score-value">0</span>
         </div>
         
         <!-- 成功率显示 -->
         <div class="success-rate-row">
-            <span class="success-rate-label">成功率</span>
+            <span class="success-rate-label">Success Rate</span>
             <span class="success-rate-value" id="success-rate-value">100%</span>
         </div>
         
@@ -53,24 +53,24 @@
         <!-- 升级提示模态框 -->
         <!-- 升级成功动画提示 -->
         <div class="challenge-fail-toast" id="level-up-modal">
-            <h3 style="color: #27ae60;">升级成功！</h3>
-            <p id="level-up-message">恭喜解锁新等级！</p>
-            <button onclick="hideModals()">确定</button>
+            <h3 style="color: #27ae60;">Level Up!</h3>
+            <p id="level-up-message">Congratulations! New level unlocked!</p>
+            <button onclick="hideModals()">OK</button>
         </div>
         
         <!-- 挑战失败动画提示 -->
         <div class="challenge-fail-toast" id="challenge-fail-modal">
-            <h3>挑战失败</h3>
-            <p>未能达到目标分数和成功率</p>
-            <button onclick="hideModals()">确定</button>
+            <h3>Challenge Failed</h3>
+            <p>Failed to meet target score and success rate</p>
+            <button onclick="hideModals()">OK</button>
         </div>
         
         <!-- 等级选择面板 -->
         <div class="modal" id="level-select-modal">
             <div class="level-select-content">
-                <h3>选择等级</h3>
+                <h3>Select Level</h3>
                 <div class="level-buttons" id="level-buttons"></div>
-                <button id="level-select-close-btn">关闭</button>
+                <button id="level-select-close-btn">Close</button>
             </div>
         </div>
         

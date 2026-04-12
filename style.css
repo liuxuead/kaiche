@@ -480,7 +480,7 @@ body {
     left: 20px;
     background: rgba(76, 175, 80, 0.9);
     color: white;
-    padding: 12px 20px;
+    padding: 24px 40px;
     border-radius: 25px;
     font-size: 16px;
     font-weight: bold;
@@ -493,6 +493,8 @@ body {
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
     border: 2px solid white;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .avoid-mode-btn:hover {
